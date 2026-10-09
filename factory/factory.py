@@ -274,7 +274,7 @@ def implement(issue):
         prompt += "\n\nYour previous attempt was reviewed and changes were requested. " \
                   "Address every finding:\n" + json.dumps(feedback, indent=2)
     out = run_agent(issue, "implement", "implementer", prompt, wt, IMPLEMENT_SCHEMA, mode="acceptEdits",
-                    allowed=["Bash(./script/presubmit)", "Bash(python3:*)", "Bash(git diff:*)", "Bash(git status:*)"])
+                    allowed=["Bash(./script/presubmit)", "Bash(python3:*)", "Bash(git diff:*)", "Bash(git status:*)", "Bash(git merge main)"])
     if not commit_branch(issue, issue.title) and not feedback:
         raise FactoryError("implementer changed nothing for {}".format(issue.id))
     note = out["summary"]
@@ -414,8 +414,18 @@ def cmd_merge(args):
         raise FactoryError("main checkout has uncommitted changes")
     title = "Merge {}: {}".format(issue.id, issue.title)
     if sh(["git", "merge", "--no-ff", "--no-commit", branch_of(issue)], check=False).returncode != 0:
+        # Main moved under the branch. That is the implementer's to fix, and
+        # the result is reviewed again before a human sees it.
         sh(["git", "merge", "--abort"], check=False)
-        problem = "Merge conflicts with main."
+        out = {"verdict": "request_changes", "summary": "Branch conflicts with main.", "invariants": [],
+               "findings": [{"severity": "blocking", "file": ".", "comment":
+                             "Run `git merge main`, resolve every conflict keeping both changes, "
+                             "and leave the merge uncommitted for the factory."}]}
+        record(issue, "review", {"agent": "merge", "cost_usd": 0, "output": out})
+        issue.relabel(add=["changes-requested"], remove=["agent-approved"])
+        issue.comment("factory-merge", "Branch conflicts with main. Sent back to the implementer.")
+        issue.save("merge conflict")
+        raise FactoryError("{} conflicts with main; run `factory.py run {}`".format(issue.id, issue.id))
     else:
         # Verify the merged result, not the branch: main may have moved on.
         ok, tail = presubmit(ROOT)
@@ -430,7 +440,7 @@ def cmd_merge(args):
             print("{}: merged".format(issue.id))
             return
         sh(["git", "merge", "--abort"], check=False)
-        problem = "Presubmit fails on the merged result:\n\n```\n{}\n```".format(tail)
+    problem = "Presubmit fails on the merged result:\n\n```\n{}\n```".format(tail)
     issue.relabel(add=["needs-human"], remove=["agent-approved"])
     issue.comment("factory-merge", problem)
     issue.save("merge failed")

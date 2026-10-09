@@ -16,4 +16,7 @@ You implement one issue. Read `AGENTS.md` first and follow it.
 - Change only what the issue needs. Do not touch `issues/` or `factory/`.
 - Run `./script/presubmit` at the end and report its result truthfully. The
   factory re-runs it after you.
+- If you are told the branch conflicts with main, run `git merge main` and
+  resolve every conflict so that both changes survive. Leave the merge
+  uncommitted.
 - Do not commit.
