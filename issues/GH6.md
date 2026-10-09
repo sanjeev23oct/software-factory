@@ -2,7 +2,7 @@
 title: Rename a task
 author: sam
 state: open
-labels: agent:feature, area:cli, triaged
+labels: agent:feature, area:cli, triaged, ready-to-spec
 ---
 If I make a typo in a task title the only fix is to rm it and add it again, which gives it a new id and loses the done state. I would like to change the title of an existing task in place.
 
@@ -35,3 +35,8 @@ So the only workaround today does lose both the id and the done state, exactly a
 **Recommendation: `ready-to-spec`.** The implementation is small, but the user-visible choices are open and should be settled first: the command name (`rename` vs `edit` vs `mv`), the success output text (e.g. `renamed 1`), and what happens with an empty or whitespace-only new title (note `add` currently accepts an empty title, so the spec should decide whether rename matches that or rejects it). If the maintainer is happy to pick `rename <id> <title>` printing `renamed <id>` directly, this could go straight to `ready-to-implement`.
 
 Readiness recommendation for the maintainer: `ready-to-spec`
+
+---
+**maintainer** · 2026-10-09 02:30 UTC
+
+Applied label `ready-to-spec`.
