@@ -233,7 +233,9 @@ def diff_locations(annotated):
 
 
 def runs_for(issue, stage):
-    return sorted((RUNS / issue.id).glob("{}-*.json".format(stage)), key=lambda p: int(p.stem.rsplit("-", 1)[1]))
+    # Match the stage exactly: "spec-*" would also pick up "spec-review-1".
+    runs = [p for p in (RUNS / issue.id).glob("*.json") if re.fullmatch(r"{}-\d+".format(re.escape(stage)), p.stem)]
+    return sorted(runs, key=lambda p: int(p.stem.rsplit("-", 1)[1]))
 
 
 def last_result(issue, stage):
