@@ -42,6 +42,8 @@ The agents are prompted, but the rules below are code in
   whatever verdict the reviewer gave.
 - After three rejected review rounds the issue is escalated to a human.
 - `merge` runs presubmit on the merged result and backs the merge out if it fails.
+- A branch that conflicts with main goes back to the implementer to resolve,
+  and is reviewed again before a human is asked to merge it.
 - Agents never commit. The factory commits what they leave in the worktree.
 
 ## Run it
