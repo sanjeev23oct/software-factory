@@ -27,3 +27,18 @@ class CliTest(unittest.TestCase):
         code, _, err = self.run_cli("done", "9")
         self.assertEqual(code, 1)
         self.assertIn("no task with id 9", err)
+
+    def test_done_after_removing_earlier_task_marks_correct_task(self):
+        # Regression test for GH1.
+        self.run_cli("add", "a")
+        self.run_cli("add", "b")
+        self.run_cli("add", "c")
+        self.run_cli("rm", "1")
+
+        code, out, _ = self.run_cli("done", "2")
+        self.assertEqual(code, 0)
+        self.assertEqual(out, "done 2\n")
+
+        code, out, _ = self.run_cli("list")
+        self.assertEqual(code, 0)
+        self.assertEqual(out, "[x]   2  b\n[ ]   3  c\n")
