@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli, ready-to-spec
+labels: triaged, feature, area:cli, ready-to-spec, spec-in-review
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which
@@ -33,3 +33,20 @@ Recommended readiness: `ready-to-spec`
 **maintainer** · 2026-10-09 00:17 UTC
 
 Applied label `ready-to-spec`.
+
+---
+**factory-spec** · 2026-10-09 00:38 UTC
+
+Wrote specs/GH2/product.md and specs/GH2/tech.md for issue GH2 (due dates for tasks).
+
+Product spec defines 7 testable invariants: `add TITLE --due YYYY-MM-DD` sets a due date; `add` without `--due` is unchanged; strict `YYYY-MM-DD` validation with `error: invalid due date '<value>'` on bad input; `list` appends `  due YYYY-MM-DD` to a task's line when present and shows nothing extra otherwise; `list --overdue` shows only tasks with a due date before today that are not done; empty `--overdue` output is not an error; and pre-GH2 task files (no `due` key) load fine, display with no due text, and are never overdue. Out of scope: editing/clearing due dates after creation, sorting by due date, relative dates/times/recurrence, reminders, timezone configuration.
+
+Tech spec maps each invariant to store.py/cli.py changes: Store.add gains a due=None parameter stored as a plain ISO string (no date-object parsing needed, since validated ISO-8601 strings sort correctly as strings — stated as the rejected alternative); a new pure is_overdue(task, today) helper in store.py using .get("due") for backward compatibility with old files; cli.py gains --due (validated via regex + strptime, raising ValueError caught alongside TaskNotFound to keep the "error: <message>"/exit-1 convention instead of argparse's own exit-2 validation) and --overdue on list; format_task appends due text only when present. Testing section lists concrete test cases per invariant in tests/test_cli.py and tests/test_store.py, using dates far in the past/future (year 2000/2999) to avoid clock mocking, plus a hand-written old-shape JSON file to prove backward compatibility. No manual verification steps required.
+
+Specs: `.factory/worktrees/GH2/specs/GH2`
+
+Open questions:
+- Invariant 3: flag name `--due` and strict format `YYYY-MM-DD` — maintainer may prefer a different flag or more flexible date parsing.
+- Invariant 4: due date shown as plain appended text `  due YYYY-MM-DD` — maintainer may prefer a different list layout.
+- Invariant 5: "today" is the local system date with no timezone configuration — maintainer may want this configurable.
+- Invariant 5: a done task is never considered overdue even if its due date passed — maintainer may want done tasks to still count as overdue until some other action clears them.
