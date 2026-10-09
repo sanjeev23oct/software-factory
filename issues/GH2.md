@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli, ready-to-implement
+labels: triaged, feature, area:cli, ready-to-implement, in-review
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which
@@ -55,3 +55,10 @@ Open questions:
 **maintainer** · 2026-10-09 00:39 UTC
 
 Applied label `ready-to-implement`.
+
+---
+**factory-implement** · 2026-10-09 00:40 UTC
+
+Implemented GH2 (due dates for tasks) per specs/GH2/product.md and tech.md. Added `due=None` parameter to `Store.add` (task dict now includes "due", defaulting to None so old files without the key still load via `.get`), and a pure `is_overdue(task, today)` helper in store.py using string comparison on validated ISO-8601 dates. In cli.py: added `--due` to the `add` subparser (plain string, not argparse-typed) with a new `parse_due(value)` helper that validates `YYYY-MM-DD` shape via regex then confirms it's a real calendar date via `strptime`, raising `ValueError("invalid due date '<value>'")` on failure — caught in `main` alongside `TaskNotFound` to produce `error: <message>` on stderr with exit code 1. Added `--overdue` flag to the `list` subparser; `main`'s list branch computes today's date and filters tasks through `is_overdue` when the flag is set. `format_task` now appends `  due YYYY-MM-DD` when a task has a due date, leaving undated tasks' output unchanged.
+
+Branch: `factory/GH2`
