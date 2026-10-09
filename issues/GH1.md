@@ -2,7 +2,7 @@
 title: `done` marks the wrong task after I delete one
 author: priya
 state: open
-labels: triaged, bug, area:storage, repro:confirmed
+labels: triaged, bug, area:storage, repro:confirmed, ready-to-implement
 ---
 I had three tasks. I removed the first one, then ran `done 3` and it said
 "error: no task with id 3" even though `list` clearly shows task 3.
@@ -49,3 +49,8 @@ Not a duplicate: issues/GH2.md (due dates), GH3.md ("its broken", no repro), and
 Recommend `ready-to-implement`: bug reproduced, root cause pinpointed to a single function, fix is localized to `tasklite/store.py`.
 
 Recommended readiness: `ready-to-implement`
+
+---
+**maintainer** · 2026-10-09 00:17 UTC
+
+Applied label `ready-to-implement`.
