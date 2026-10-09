@@ -2,7 +2,7 @@
 title: Traceback when the task file is empty
 author: dana
 state: open
-labels: agent:bug, area:storage, agent:priority-high, repro:high, triaged, ready-to-implement, in-review
+labels: agent:bug, area:storage, agent:priority-high, repro:high, triaged, ready-to-implement, agent-approved
 ---
 My disk filled up and tasks.json ended up as a 0 byte file. Now every command dumps a Python traceback:
 
@@ -84,3 +84,30 @@ uncaught `JSONDecodeError` traceback instead of a clean error.
   (`tasklite/store.py`, `tasklite/cli.py`) plus their tests.
 
 Branch: `factory/GH5`
+
+---
+**factory-review** · 2026-10-09 02:23 UTC
+
+**Review round 1: approve**
+
+## Overview
+Fixes the traceback reported in GH5: a 0-byte (or otherwise malformed/wrong-shape) task file now raises a new `InvalidTaskFile` instead of letting `json.JSONDecodeError`/`KeyError`/`TypeError` escape, and `cli.py` catches it alongside `TaskNotFound` to print `error: <path> is not a valid task file` and exit 1.
+
+Verified the root cause fix is complete, not partial: `Store(args.db)` was moved inside the dispatch `try` block (it previously sat outside it, so even a clean exception from `Store` couldn't have reached the error path), and the catch in `Store.__init__` covers decode failure, missing keys, and wrong-shape JSON (list/str/int/null all raise `TypeError` on the subscript, so they're caught too). Confirmed by reasoning from the diff that both new regression tests fail against the pre-fix code (import error on the new `InvalidTaskFile` symbol, since it doesn't exist pre-fix) and pass after. Ran `./script/presubmit`: 12 tests, OK. Store/CLI split is preserved, no third-party imports, error goes to stderr with exit 1 per convention, and test comments explain why (reference GH5) rather than restating the code. Scope is tight to the two files the triage pinpointed plus their tests; no spec was needed, consistent with GH1's precedent of not requiring `specs/` for a bug fix that restores expected error handling rather than adding new behavior.
+
+## Concerns
+- None blocking.
+
+## Suggestions
+- `tasklite/store.py:27` — minor: suppress the chained traceback when re-raising, see inline comment.
+
+## Verdict
+Found: 0 critical, 0 important, 1 suggestion
+
+**Approve**
+
+`tasklite/store.py:27` 💡 [SUGGESTION] This re-raise implicitly chains the original `JSONDecodeError`/`KeyError`/`TypeError` as the cause. It's harmless today since the error is only ever stringified, but if anything later logs or prints this exception's traceback, the internal cause will leak through. Suppress it explicitly:
+
+```suggestion
+                    raise InvalidTaskFile(path) from None
+```
