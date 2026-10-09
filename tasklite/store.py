@@ -29,15 +29,16 @@ class Store:
         self.tasks.append(task)
         return task
 
+    def _find_index(self, task_id):
+        for i, task in enumerate(self.tasks):
+            if task["id"] == task_id:
+                return i
+        raise TaskNotFound(task_id)
+
     def complete(self, task_id):
-        if task_id < 1 or task_id > len(self.tasks):
-            raise TaskNotFound(task_id)
-        task = self.tasks[task_id - 1]
+        task = self.tasks[self._find_index(task_id)]
         task["done"] = True
         return task
 
     def remove(self, task_id):
-        for i, task in enumerate(self.tasks):
-            if task["id"] == task_id:
-                return self.tasks.pop(i)
-        raise TaskNotFound(task_id)
+        return self.tasks.pop(self._find_index(task_id))
