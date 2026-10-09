@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli, ready-to-implement, agent-approved
+labels: triaged, feature, area:cli, ready-to-implement, changes-requested
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which
@@ -71,3 +71,8 @@ Review round 1: **approve**
 GH2 implements due dates for tasks exactly per specs/GH2/product.md and tech.md. Store.add gains an optional due=None param stored as a plain validated ISO string; a pure is_overdue(task, today) helper uses .get("due") so pre-GH2 files without the key load and are never overdue. CLI adds --due (validated via regex+strptime, raising ValueError → "error: invalid due date '<value>'", exit 1) and --overdue on list; format_task appends "  due YYYY-MM-DD" only when present, leaving undated-task output byte-for-byte unchanged. Manually exercised add/list/done/rm with and without --due, invalid dates (wrong shape, impossible date like 2026-02-30, non-leap-year 2026-02-29), overdue filtering, done-exclusion, and the due-today boundary (correctly not overdue) — all behave as the spec describes. presubmit (compileall + full unittest suite, 21 tests) passes. No scope creep: no editing/clearing due dates, no sorting, no timezone config — all correctly left out per the spec's explicit non-goals. Follows AGENTS.md: stdlib only, Python 3.9-compatible syntax, task ids untouched, backward-compatible file format via .get(), stderr/exit-1 error convention preserved, and new behavior is covered by new regression tests in both test_store.py and test_cli.py.
 
 Invariants: 7/7 satisfied
+
+---
+**factory-merge** · 2026-10-09 00:42 UTC
+
+Branch conflicts with main. Sent back to the implementer.
