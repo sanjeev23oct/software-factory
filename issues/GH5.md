@@ -2,7 +2,7 @@
 title: Traceback when the task file is empty
 author: dana
 state: open
-labels: agent:bug, area:storage, agent:priority-high, repro:high, triaged
+labels: agent:bug, area:storage, agent:priority-high, repro:high, triaged, ready-to-implement
 ---
 My disk filled up and tasks.json ended up as a 0 byte file. Now every command dumps a Python traceback:
 
@@ -27,3 +27,8 @@ Not a duplicate: `GH3` ("its broken") is too vague to match on title or error te
 Recommend `ready-to-implement`: bug reproduced, root cause pinpointed, fix is narrow and localized to `tasklite/store.py` (and possibly where errors are caught in `tasklite/cli.py`).
 
 Readiness recommendation for the maintainer: `ready-to-implement`
+
+---
+**maintainer** · 2026-10-09 02:19 UTC
+
+Applied label `ready-to-implement`.
