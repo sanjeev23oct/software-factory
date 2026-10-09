@@ -2,3 +2,13 @@
 __pycache__/
 *.pyc
 tasks.json
+# Agent result and context files. The factory consumes them; they are never committed.
+/triage_result.json
+/review.json
+/pr-metadata.json
+/implementation_summary.md
+/pr_diff.txt
+/pr_description.md
+/spec_context.md
+/issue_context.md
+/review_feedback.json

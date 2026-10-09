@@ -1,0 +1,32 @@
+{
+  "labels": {
+    "needs-triage": {"applied_by": "factory", "description": "Filed and waiting for the triage agent"},
+    "triaged": {"applied_by": "factory", "description": "Initial triage has been completed for this issue"},
+    "agent:bug": {"applied_by": "triage", "description": "Bug or regression"},
+    "agent:feature": {"applied_by": "triage", "description": "Feature request, not a bug report"},
+    "agent:documentation": {"applied_by": "triage", "description": "Missing or wrong documentation"},
+    "agent:security": {"applied_by": "triage", "description": "Security issue, escalated immediately"},
+    "agent:priority-high": {"applied_by": "triage", "description": "Regression, crash, data loss, or security report"},
+    "area:cli": {"applied_by": "triage", "description": "Argument parsing, command output, exit codes"},
+    "area:storage": {"applied_by": "triage", "description": "The task file, ids, persistence"},
+    "area:docs": {"applied_by": "triage", "description": "README and help text"},
+    "repro:high": {"applied_by": "factory", "description": "Highly reproducible from the available information"},
+    "repro:medium": {"applied_by": "factory", "description": "Partially reproducible, some uncertainty"},
+    "repro:low": {"applied_by": "factory", "description": "Difficult to reproduce from the available information"},
+    "repro:unknown": {"applied_by": "factory", "description": "Not enough information to estimate reproducibility"},
+    "needs-info": {"applied_by": "factory", "description": "The reporter must answer follow-up questions before triage can finish"},
+    "duplicate": {"applied_by": "factory", "description": "Identified as a duplicate of two or more existing issues"},
+    "ready-to-spec": {"applied_by": "maintainer", "description": "Feature whose problem is understood and whose design is open for a spec"},
+    "ready-to-implement": {"applied_by": "maintainer", "description": "Ready for code: an actionable bug, or a feature whose design is settled"},
+    "plan-approved": {"applied_by": "maintainer", "description": "The specs on the branch are approved; implementation may start"},
+    "reserved-internal": {"applied_by": "maintainer", "description": "Reserved for maintainers; agents do no work on it"},
+    "spec-in-review": {"applied_by": "factory", "description": "Specs are written and waiting for the review agent"},
+    "spec-changes-requested": {"applied_by": "factory", "description": "The review agent rejected the specs"},
+    "spec-reviewed": {"applied_by": "factory", "description": "The review agent approved the specs; a maintainer decides next"},
+    "in-review": {"applied_by": "factory", "description": "Implementation is waiting for the review agent"},
+    "changes-requested": {"applied_by": "factory", "description": "The review agent rejected the implementation"},
+    "agent-approved": {"applied_by": "factory", "description": "The review agent approved; a maintainer gives the final review"},
+    "needs-human": {"applied_by": "factory", "description": "Agents are stuck; a maintainer must step in"},
+    "merged": {"applied_by": "factory", "description": "Merged to main"}
+  }
+}

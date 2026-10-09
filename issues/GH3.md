@@ -2,7 +2,7 @@
 title: its broken
 author: anon42
 state: open
-labels: triaged, bug, area:cli, repro:not-applicable, needs-info
+labels: triaged, agent:bug, area:cli, repro:unknown, needs-info
 ---
 doesnt work on my machine sometimes. pls fix asap
 

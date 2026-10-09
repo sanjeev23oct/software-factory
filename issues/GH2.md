@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli, ready-to-implement, agent-approved
+labels: triaged, agent:feature, area:cli, plan-approved, ready-to-implement, agent-approved
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which

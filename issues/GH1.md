@@ -2,7 +2,7 @@
 title: `done` marks the wrong task after I delete one
 author: priya
 state: closed
-labels: triaged, bug, area:storage, repro:confirmed, merged
+labels: triaged, agent:bug, area:storage, repro:high, merged
 ---
 I had three tasks. I removed the first one, then ran `done 3` and it said
 "error: no task with id 3" even though `list` clearly shows task 3.
