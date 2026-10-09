@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli, ready-to-implement, in-review
+labels: triaged, feature, area:cli, ready-to-implement, agent-approved
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which
@@ -62,3 +62,12 @@ Applied label `ready-to-implement`.
 Implemented GH2 (due dates for tasks) per specs/GH2/product.md and tech.md. Added `due=None` parameter to `Store.add` (task dict now includes "due", defaulting to None so old files without the key still load via `.get`), and a pure `is_overdue(task, today)` helper in store.py using string comparison on validated ISO-8601 dates. In cli.py: added `--due` to the `add` subparser (plain string, not argparse-typed) with a new `parse_due(value)` helper that validates `YYYY-MM-DD` shape via regex then confirms it's a real calendar date via `strptime`, raising `ValueError("invalid due date '<value>'")` on failure — caught in `main` alongside `TaskNotFound` to produce `error: <message>` on stderr with exit code 1. Added `--overdue` flag to the `list` subparser; `main`'s list branch computes today's date and filters tasks through `is_overdue` when the flag is set. `format_task` now appends `  due YYYY-MM-DD` when a task has a due date, leaving undated tasks' output unchanged.
 
 Branch: `factory/GH2`
+
+---
+**factory-review** · 2026-10-09 00:42 UTC
+
+Review round 1: **approve**
+
+GH2 implements due dates for tasks exactly per specs/GH2/product.md and tech.md. Store.add gains an optional due=None param stored as a plain validated ISO string; a pure is_overdue(task, today) helper uses .get("due") so pre-GH2 files without the key load and are never overdue. CLI adds --due (validated via regex+strptime, raising ValueError → "error: invalid due date '<value>'", exit 1) and --overdue on list; format_task appends "  due YYYY-MM-DD" only when present, leaving undated-task output byte-for-byte unchanged. Manually exercised add/list/done/rm with and without --due, invalid dates (wrong shape, impossible date like 2026-02-30, non-leap-year 2026-02-29), overdue filtering, done-exclusion, and the due-today boundary (correctly not overdue) — all behave as the spec describes. presubmit (compileall + full unittest suite, 21 tests) passes. No scope creep: no editing/clearing due dates, no sorting, no timezone config — all correctly left out per the spec's explicit non-goals. Follows AGENTS.md: stdlib only, Python 3.9-compatible syntax, task ids untouched, backward-compatible file format via .get(), stderr/exit-1 error convention preserved, and new behavior is covered by new regression tests in both test_store.py and test_cli.py.
+
+Invariants: 7/7 satisfied
