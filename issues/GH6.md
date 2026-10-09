@@ -2,7 +2,7 @@
 title: Rename a task
 author: sam
 state: open
-labels: agent:feature, area:cli, triaged, ready-to-spec, spec-in-review
+labels: agent:feature, area:cli, triaged, ready-to-spec, spec-reviewed
 ---
 If I make a typo in a task title the only fix is to rm it and add it again, which gives it a new id and loses the done state. I would like to change the title of an existing task in place.
 
@@ -116,3 +116,32 @@ Revises `specs/GH6/product.md` and `specs/GH6/tech.md` for the `rename` command 
 **Note.** The unmerged `factory/GH5` branch edits the same `try`/`except` block in `cli.py`, so the implementation may hit a small textual conflict depending on merge order.
 
 Specs: `specs/GH6/` on branch `factory/GH6`
+
+---
+**factory-review** · 2026-10-09 02:58 UTC
+
+**Spec review round 2: approve**
+
+## Overview
+Round 2. All three round 1 findings are resolved: invariant 14 is narrowed to what argparse does, a title of exactly `--` has its own invariant (15), a planned fix and a test, and the usage-error test now asserts `usage:` on stderr.
+
+The specs cover the whole issue: `rename <id> <title>` changes the title in place and keeps id, done state, list position and `next_id`. Scope matches the issue. The plan respects AGENTS.md: mutation stays in `store.py`, the file format is untouched, the error path is the shared `error: no task with id N` / exit 1, and only the standard library is used. The code citations (`tasklite/cli.py:12-23`, `:37-55`, `tasklite/store.py:22-30`, `:32-41`) match the checkout, the README has no tasklite command list, and `factory/GH5` exists unmerged as the Risks section says.
+
+I rebuilt the proposed subparser and ran it on Python 3.9.6, 3.13.13 and 3.14.6. Confirmed as written on all three: every example in invariants 13, 14 and 16 (exit codes, `usage:` on stderr, `usage: tasklite rename` on stdout for `-h`), `rename -1 x` and `rename 0 x` reaching the not-found path (invariant 11), and `rename 1 --` being a usage error. Confirmed for invariant 15: `rename 1 -- --` gives `title == []` on 3.9.6 and `'--'` on 3.13 and 3.14, and `[]` appeared for no other input I tried, so the planned "non-string means `--`" substitution is sound. Every invariant maps to a named test or a stated coverage argument, and the invariant numbers in `tech.md` agree with `product.md` after the renumbering.
+
+The two open questions (command name, empty title) are maintainer decisions and are not counted as defects.
+
+## Concerns
+- Whether `test_rename_title_double_dash` proves the `--` fix depends on which Python runs `./script/presubmit`. It can be made to fail without the fix on every version.
+- Invariant 14's sentence "Other titles beginning with `-` are accepted without `--`" is slightly broader than argparse: `rename 1 -1x` is a usage error on 3.9.6 and 3.13 and is accepted on 3.14. The listed examples are all correct.
+
+Neither blocks implementation.
+
+## Verdict
+Found: 0 critical, 0 important, 2 suggestions
+
+**Approve with nits**
+
+`specs/GH6/tech.md:120` 💡 [SUGGESTION] Make this proof independent of the interpreter. As the spec says at lines 138-140, this test passes on 3.13+ without the `--` handling, so the invariant 15 fix is only proven where `python3` happens to be 3.9 (`script/presubmit` calls plain `python3`). Add a second case that feeds the branch the 3.9 parse result directly, for example with `unittest.mock.patch` on `tasklite.cli.build_parser` returning a parser whose `parse_args` yields `argparse.Namespace(db=self.db, command="rename", id=1, title=[])`, and assert the stored title is the `str` `"--"`. That test fails without the fix on every version, which is what AGENTS.md asks of a test for new behavior, and the manual 3.9 run becomes a cross-check instead of the only proof.
+
+`specs/GH6/product.md:56` 💡 [SUGGESTION] "Other titles beginning with `-` are accepted without `--`" is broader than what ships. With the proposed subparser, `rename 1 -1x` exits 2 on Python 3.9.6 and 3.13.13 and sets the title to `-1x` on 3.14.6, so the sentence is false for that input on the supported floor. The five listed examples are all correct on all three versions. Scope the sentence to them, for example: "A title beginning with `-` that is a number, contains a space, or is `-` alone is accepted without `--` and stored verbatim: ...". Add one line saying that for any other title beginning with `-`, `--` is the form that always works. Do not add a test for `-1x`, since its result differs by Python version.
