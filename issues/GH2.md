@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli, ready-to-spec, spec-in-review
+labels: triaged, feature, area:cli, ready-to-implement
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which
@@ -50,3 +50,8 @@ Open questions:
 - Invariant 4: due date shown as plain appended text `  due YYYY-MM-DD` — maintainer may prefer a different list layout.
 - Invariant 5: "today" is the local system date with no timezone configuration — maintainer may want this configurable.
 - Invariant 5: a done task is never considered overdue even if its due date passed — maintainer may want done tasks to still count as overdue until some other action clears them.
+
+---
+**maintainer** · 2026-10-09 00:39 UTC
+
+Applied label `ready-to-implement`.
