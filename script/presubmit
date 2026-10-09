@@ -1,0 +1,7 @@
+#!/bin/sh
+# The single verification gate. Agents run it; the factory re-runs it itself
+# before every review and every merge, and never takes an agent's word for it.
+set -e
+cd "$(dirname "$0")/.."
+python3 -m compileall -q tasklite tests factory
+python3 -m unittest discover -s tests
