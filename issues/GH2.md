@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli, ready-to-implement, changes-requested
+labels: triaged, feature, area:cli, ready-to-implement, in-review
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which
@@ -76,3 +76,10 @@ Invariants: 7/7 satisfied
 **factory-merge** · 2026-10-09 00:42 UTC
 
 Branch conflicts with main. Sent back to the implementer.
+
+---
+**factory-implement** · 2026-10-09 00:46 UTC
+
+Addressed review feedback: resolved the merge conflict between branch factory/GH2 (GH2 due-date implementation, forked from an earlier spec commit) and main (which had since merged the GH1 _find_index-based fix). Ran `git merge main`, which produced textual conflicts in tasklite/store.py, tests/test_cli.py, and tests/test_store.py because both sides added non-overlapping code near the same lines. Resolved all three by keeping both changes: store.py keeps main's `remove()` (using `_find_index`, the GH1 fix) and appends GH2's `is_overdue(task, today)` helper; test_store.py keeps the GH1 regression test and appends all GH2 due-date/is_overdue tests; test_cli.py keeps the GH1 regression test and appends all GH2 CLI due-date/overdue tests. tasklite/cli.py and other files (README.md, factory/factory.py, .claude/agents/implementer.md, issues/*.md) merged automatically with no conflicts and were left as git produced them. No specs were modified. The git sandbox in this environment blocks `git add`/staging, so the merge remains unresolved at the index level (git status still shows "unmerged paths") even though all conflict markers are gone from the working tree and the code is correct and complete — this matches the reviewer's explicit instruction to "leave the merge uncommitted for the factory," which will stage and commit the resolution.
+
+Branch: `factory/GH2`
