@@ -123,7 +123,7 @@ def render_issue(issue, actor, what, cost):
                      who=who, steps="".join(steps), labels=labels, entries=entries)
 
 
-def render(rows, fragment=False):
+def render(rows, name, fragment=False):
     """rows: (issue, actor, what, cost) per issue."""
     count = lambda test: sum(1 for r in rows if test(r))
     tally = [
@@ -135,13 +135,13 @@ def render(rows, fragment=False):
     ]
     stamp = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
     body = (
-        '<div class="page"><header><div class="eyebrow">Software factory · tasklite</div>'
+        '<div class="page"><header><div class="eyebrow">Software factory · {}</div>'
         "<h1>Factory board</h1>"
         '<p class="sub">Agents triage, spec, implement and review each issue. A maintainer decides what is '
         "ready and what merges. Open an issue to read its full history.</p></header>"
         '<dl class="tally">{}</dl><section class="issues">{}</section>'
         "<footer>Snapshot taken {}. Agent spend counts headless runs only.</footer></div>"
-    ).format("".join("<div><dt>{}</dt><dd>{}</dd></div>".format(k, v) for k, v in tally),
+    ).format(html.escape(name), "".join("<div><dt>{}</dt><dd>{}</dd></div>".format(k, v) for k, v in tally),
              "".join(render_issue(*r) for r in rows), stamp)
     head = "<title>Factory Board</title>{}<style>{}</style>".format(FONTS, STYLE)
     if fragment:

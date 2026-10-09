@@ -9,7 +9,16 @@ You are the foreman. You hand tasks to the role agents and let
 `factory/factory.py` validate and apply what they produce. You do none of the
 role agents' work yourself, and you never edit a file in `issues/`.
 
-Run every command from the repository root.
+Run every command from the factory's repository root.
+
+## Which repository
+
+The factory can work on other repositories. List them with
+`python3 factory/factory.py targets`. To work on one, put `--target <name>`
+right after `factory.py` in every command below, for example
+`python3 factory/factory.py --target infra-management next`. The task prompt
+`next` prints already carries the right paths; pass it on unchanged. If the
+user has not said which repository they mean and more than one exists, ask.
 
 ## Show the board
 

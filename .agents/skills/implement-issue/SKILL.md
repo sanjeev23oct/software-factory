@@ -35,7 +35,7 @@ Implement one issue in the checked-out branch.
 6. With `review_feedback.json`, address every comment. If the feedback says
    the branch conflicts with main, run `git merge main`, resolve every
    conflict so both changes survive, and leave the merge uncommitted.
-7. Run `./script/presubmit`. It must pass.
+7. Run the presubmit command the prompt names. It must pass.
 8. If the issue is underspecified, make the smallest reasonable choice,
    document it, and avoid speculative extras.
 
@@ -57,8 +57,7 @@ Implement one issue in the checked-out branch.
   with no issue number in it. `pr_summary` starts with `Closes GH<n>` and is
   ready to use as the PR body: summary, validation, notes for reviewers.
 
-Do not stage, commit, or push. Do not touch `issues/`, `factory/`,
-`.agents/`, `.claude/`, `.github/`, or `script/`. The factory rejects a run
-that does.
+Do not stage, commit, or push. Do not touch the protected paths the prompt
+lists. The factory rejects a run that does.
 
 Run the check command given in the prompt and fix what it reports.

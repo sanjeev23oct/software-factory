@@ -24,7 +24,8 @@ the specs or any other file.
 - **Issue alignment**: no significant scope creep, no omission.
 - **Internal consistency**: do sections or invariants contradict each other?
   Does every invariant map to a test in the tech spec?
-- **Repository rules**: does the plan respect `AGENTS.md`?
+- **Repository rules**: does the plan respect the engineering guide the
+  prompt names, and the standards that guide points to?
 
 Do not review spec prose as if it were code. Comment on formatting only when
 it harms readability.

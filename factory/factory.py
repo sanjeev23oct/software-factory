@@ -10,6 +10,8 @@ that changes an issue, commits, or merges.
 Two drivers use it. `run` drives headless `claude -p`. The `factory` skill
 drives Claude Code subagents through `next` and `apply`.
 
+    factory.py [--target NAME] <command>   NAME is a repository under targets/; default is this one
+    factory.py targets               list the repositories the factory can work on
     factory.py status
     factory.py board                 write the board as a static page in site/
     factory.py next [ID]             prepare the next agent task, print it as JSON
@@ -32,13 +34,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
-ISSUES = ROOT / "issues"
-SKILLS = ROOT / ".agents" / "skills"
-WORKTREES = ROOT / ".factory" / "worktrees"
-RUNS = ROOT / ".factory" / "runs"
-TAXONOMY = json.loads((ROOT / ".github" / "issue-triage" / "config.json").read_text())["labels"]
-MAIN = "main"
+HOME = Path(__file__).resolve().parent.parent
+SKILLS = HOME / ".agents" / "skills"
+TARGETS = HOME / "targets"
+DEFAULT_TARGET = "tasklite"
 MAX_REVIEW_ROUNDS = 3
 BUDGET_USD = os.environ.get("FACTORY_MAX_BUDGET_USD", "3")
 MODEL = os.environ.get("FACTORY_MODEL")
@@ -46,8 +45,58 @@ MODEL = os.environ.get("FACTORY_MODEL")
 PRIMARY_TYPES = ("agent:bug", "agent:feature", "agent:documentation", "agent:security")
 BLOCKING = ("needs-info", "duplicate", "reserved-internal", "needs-human")
 SEVERITIES = ("🚨 [CRITICAL]", "⚠️ [IMPORTANT]", "💡 [SUGGESTION]", "🧹 [NIT]")
-# Product work may not touch the factory, its skills, or the tracker.
-PROTECTED = ("issues/", "factory/", ".agents/", ".claude/", ".github/", "script/")
+
+# The repository being worked on. Set once by use_target().
+NAME = REPO = ISSUES = WORKTREES = RUNS = TAXONOMY = MAIN = PROTECTED = None
+PRESUBMIT = LOCAL_SKILLS = GUIDE = MERGE = EXTRA_TOOLS = None
+
+
+def use_target(name):
+    """Point the factory at one repository.
+
+    `tasklite` is this repository itself. Any other target is a repository
+    elsewhere on disk, described by targets/<name>/. Its guidance, labels,
+    presubmit and tracker live there, so the factory adds nothing to that
+    repository except `factory/GH<n>` branches.
+    """
+    global NAME, REPO, ISSUES, WORKTREES, RUNS, TAXONOMY, MAIN, PROTECTED
+    global PRESUBMIT, LOCAL_SKILLS, GUIDE, MERGE, EXTRA_TOOLS
+    NAME = name
+    if name == DEFAULT_TARGET:
+        REPO, ISSUES, state = HOME, HOME / "issues", HOME / ".factory"
+        labels, GUIDE, LOCAL_SKILLS = HOME / ".github" / "issue-triage" / "config.json", HOME / "AGENTS.md", SKILLS
+        PRESUBMIT, MAIN, MERGE, EXTRA_TOOLS = ["./script/presubmit"], "main", True, []
+        # Product work may not touch the factory, its skills, or the tracker.
+        PROTECTED = ("issues/", "factory/", ".agents/", ".claude/", ".github/", "script/", "targets/")
+    else:
+        home = TARGETS / name
+        if not (home / "target.json").exists():
+            raise FactoryError("no such target: {} (see `factory.py targets`)".format(name))
+        config = json.loads((home / "target.json").read_text())
+        REPO, ISSUES, state = Path(config["repo"]), home / "issues", HOME / ".factory" / name
+        labels, GUIDE, LOCAL_SKILLS = home / "labels.json", home / "AGENTS.md", home / "skills"
+        PRESUBMIT, MAIN = [str(home / "presubmit")], config.get("main", "main")
+        MERGE, EXTRA_TOOLS = config.get("merge", False), config.get("allowed_tools", [])
+        PROTECTED = tuple(config.get("protected", []))
+        if not (REPO / ".git").exists():
+            raise FactoryError("target {} points at {}, which is not a git checkout".format(name, REPO))
+        # Keep agent scratch files out of that repository's `git status`. This
+        # file is local to the checkout and is never pushed.
+        exclude = REPO / ".git" / "info" / "exclude"
+        text = exclude.read_text() if exclude.exists() else ""
+        missing = ["/" + n for n in SCRATCH if "/" + n not in text.split()]
+        if missing:
+            exclude.parent.mkdir(exist_ok=True)
+            exclude.write_text(text.rstrip("\n") + "\n# software-factory scratch files\n" + "\n".join(missing) + "\n")
+    ISSUES.mkdir(parents=True, exist_ok=True)
+    WORKTREES, RUNS = state / "worktrees", state / "runs"
+    TAXONOMY = json.loads(labels.read_text())["labels"]
+
+
+def factory_cli():
+    """How an agent or a person invokes this script for the current target."""
+    target = "" if NAME == DEFAULT_TARGET else " --target {}".format(NAME)
+    return "python3 {}{}".format(Path(__file__).resolve(), target)
 
 STAGES = {
     "triage": {"agent": "triage", "skill": "triage-issue", "results": ["triage_result.json"]},
@@ -65,7 +114,8 @@ class FactoryError(Exception):
     pass
 
 
-def sh(cmd, cwd=ROOT, check=True):
+def sh(cmd, cwd=None, check=True):
+    cwd = cwd or REPO
     proc = subprocess.run(cmd, cwd=str(cwd), text=True, capture_output=True)
     if check and proc.returncode != 0:
         raise FactoryError("{} failed:\n{}".format(" ".join(cmd), proc.stderr or proc.stdout))
@@ -111,10 +161,12 @@ class Issue:
     def save(self, message):
         front = "".join("{}: {}\n".format(k, v) for k, v in self.meta.items())
         self.path.write_text("---\n{}---\n{}".format(front, self.body))
-        rel = str(self.path.relative_to(ROOT))
-        sh(["git", "add", rel])
-        if sh(["git", "diff", "--cached", "--quiet", "--", rel], check=False).returncode:
-            sh(["git", "commit", "-q", "-m", "issues: {} {}".format(self.id, message), "--", rel])
+        # The tracker is committed in the factory's repository, never in a target's.
+        rel = str(self.path.relative_to(HOME))
+        sh(["git", "add", rel], cwd=HOME)
+        if sh(["git", "diff", "--cached", "--quiet", "--", rel], cwd=HOME, check=False).returncode:
+            tag = "issues" if NAME == DEFAULT_TARGET else "issues({})".format(NAME)
+            sh(["git", "commit", "-q", "-m", "{}: {} {}".format(tag, self.id, message), "--", rel], cwd=HOME)
 
 
 def load(issue_id):
@@ -150,7 +202,7 @@ def worktree(issue, create=True):
 
 
 def checkout_for(issue, stage):
-    return ROOT if stage == "triage" else worktree(issue)
+    return REPO if stage == "triage" else worktree(issue)
 
 
 def spec_files(issue):
@@ -183,7 +235,7 @@ def commit_branch(issue, message):
 
 
 def presubmit(cwd):
-    proc = sh(["./script/presubmit"], cwd=cwd, check=False)
+    proc = sh(PRESUBMIT, cwd=cwd, check=False)
     tail = "\n".join((proc.stdout + proc.stderr).strip().splitlines()[-25:])
     return proc.returncode == 0, tail
 
@@ -379,7 +431,12 @@ def surface_errors(issue, stage, cwd):
         bad = {p for p in changed if not p.startswith("specs/{}/".format(issue.id))}
     else:
         bad = {p for p in changed if p.startswith(PROTECTED)}
-    return ["the {} stage may not change {}; undo it".format(stage, p) for p in sorted(bad)]
+    errors = ["the {} stage may not change {}; undo it".format(stage, p) for p in sorted(bad)]
+    home_baseline = RUNS / issue.id / "home-baseline.json"
+    if REPO != HOME and home_baseline.exists():
+        touched = changed_paths(HOME) - set(json.loads(home_baseline.read_text()))
+        errors += ["agents may not change the factory's own files: {}; undo it".format(p) for p in sorted(touched)]
+    return errors
 
 
 def check(issue, stage):
@@ -430,9 +487,11 @@ def prepare(issue, stage):
         if (cwd / name).exists():
             (cwd / name).unlink()
     inputs = {"issue_context.md": issue_context(issue)}
+    (RUNS / issue.id).mkdir(parents=True, exist_ok=True)
     if stage == "triage":
-        (RUNS / issue.id).mkdir(parents=True, exist_ok=True)
         (RUNS / issue.id / "baseline.json").write_text(json.dumps(sorted(changed_paths(cwd))))
+    if REPO != HOME:
+        (RUNS / issue.id / "home-baseline.json").write_text(json.dumps(sorted(changed_paths(HOME))))
     if stage in ("spec-review", "review"):
         # A reviewer reads the committed branch, never a half-edited tree.
         sh(["git", "checkout", "-q", "--", "."], cwd=cwd)
@@ -464,11 +523,19 @@ def prepare(issue, stage):
                      "summarizing the specs and listing the open questions.".format(SKILLS, issue.id))
     lines += [
         "",
+        "Repository-specific guidance. Where a skill names a default path for one of these, use these:",
+        "- Engineering guide: {} (read it before anything else)".format(GUIDE),
+        "- Companion `-local` skills: {}/<skill-name>-local/SKILL.md".format(LOCAL_SKILLS),
+        "- Label taxonomy: {}".format(ISSUES.parent / "labels.json" if REPO != HOME else HOME / ".github/issue-triage/config.json"),
+        "- Issue tracker directory (read only): {}".format(ISSUES),
+        "- Presubmit command, run from the checkout root: {}".format(" ".join(PRESUBMIT)),
+        "- Protected paths you may not change: {}".format(", ".join(PROTECTED) or "none"),
+        "",
         "Input files at the checkout root: {}.".format(", ".join(inputs)),
         "Write at the checkout root: {}.".format(", ".join(spec["results"])),
         "",
         "Before you finish, run this and fix everything it reports, until it prints OK:",
-        "    python3 {} check {} {}".format(Path(__file__).resolve(), issue.id, stage),
+        "    {} check {} {}".format(factory_cli(), issue.id, stage),
     ]
     return {"id": issue.id, "stage": stage, "agent": spec["agent"], "cwd": str(cwd), "prompt": "\n".join(lines)}
 
@@ -604,14 +671,15 @@ def apply(issue, stage, cost=None):
 
 def run_headless(task):
     """Run a task with `claude -p`. Returns the cost in dollars."""
-    _, front, body = (ROOT / ".claude" / "agents" / (task["agent"] + ".md")).read_text().split("---\n", 2)
+    _, front, body = (HOME / ".claude" / "agents" / (task["agent"] + ".md")).read_text().split("---\n", 2)
     tools = re.search(r"^tools:\s*(.+)$", front, re.M).group(1).replace(" ", "")
     cmd = ["claude", "-p", task["prompt"], "--output-format", "json", "--setting-sources", "project",
            "--append-system-prompt", body, "--permission-mode", "acceptEdits", "--max-budget-usd", BUDGET_USD,
-           "--tools", tools]
+           "--tools", tools, "--add-dir", str(HOME)]
     if MODEL:
         cmd += ["--model", MODEL]
-    cmd += ["--allowedTools", "Bash(python3:*)", "Bash(./script/presubmit)", "Bash(git diff:*)", "Bash(git log:*)",
+    cmd += ["--allowedTools", "Bash(python3:*)", "Bash({})".format(PRESUBMIT[0]), *EXTRA_TOOLS,
+            "Bash(git diff:*)", "Bash(git log:*)",
             "Bash(git show:*)", "Bash(git status:*)", "Bash(git rev-parse:*)", "Bash(git merge main)"]
     proc = subprocess.run(cmd, cwd=task["cwd"], text=True, capture_output=True)
     try:
@@ -645,12 +713,19 @@ def cmd_board(args):
     for issue in all_issues():
         actor, _, what = next_action(issue)
         rows.append((issue, actor, what, board.costs(RUNS / issue.id)))
-    site = ROOT / "site"
-    site.mkdir(exist_ok=True)
-    (site / "index.html").write_text(board.render(rows))
+    site = HOME / "site" if NAME == DEFAULT_TARGET else HOME / "site" / NAME
+    site.mkdir(parents=True, exist_ok=True)
+    (site / "index.html").write_text(board.render(rows, NAME))
     # The same page without the document shell, for hosts that add their own.
-    (site / "board.fragment.html").write_text(board.render(rows, fragment=True))
+    (site / "board.fragment.html").write_text(board.render(rows, NAME, fragment=True))
     print(site / "index.html")
+
+
+def cmd_targets(args):
+    names = [DEFAULT_TARGET] + sorted(p.parent.name for p in TARGETS.glob("*/target.json"))
+    for name in names:
+        repo = HOME if name == DEFAULT_TARGET else json.loads((TARGETS / name / "target.json").read_text())["repo"]
+        print("{}  {}".format(name, repo))
 
 
 def cmd_next(args):
@@ -736,7 +811,10 @@ def cmd_merge(args):
     issue = load(args.id)
     if not issue.has("agent-approved"):
         raise FactoryError("{} has not passed agent review".format(issue.id))
-    if changed_paths(ROOT):
+    if not MERGE:
+        raise FactoryError("merging is switched off for {}. The reviewed work is on branch `{}` in {}; "
+                           "push it and open a merge request yourself.".format(NAME, branch_of(issue), REPO))
+    if changed_paths(REPO):
         raise FactoryError("main checkout has uncommitted changes")
     pr = json.loads(pr_file(issue).read_text()) if pr_file(issue).exists() else {"pr_title": issue.title}
     if sh(["git", "merge", "--no-ff", "--no-commit", branch_of(issue)], check=False).returncode != 0:
@@ -749,7 +827,7 @@ def cmd_merge(args):
                     "changes survive, and leave the merge uncommitted for the factory."})
         raise FactoryError("{} conflicts with main; it has gone back to the implementation agent".format(issue.id))
     # Verify the merged result, not the branch: main may have moved on.
-    ok, tail = presubmit(ROOT)
+    ok, tail = presubmit(REPO)
     if not ok:
         sh(["git", "merge", "--abort"], check=False)
         finish_review(issue, "review", "merge", {
@@ -787,6 +865,8 @@ def cmd_comment(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    parser.add_argument("--target", default=os.environ.get("FACTORY_TARGET", DEFAULT_TARGET),
+                        help="repository to work on (default: %(default)s)")
     sub = parser.add_subparsers(dest="command", required=True)
 
     def command(name, fn, *positionals, **options):
@@ -798,6 +878,7 @@ def main():
         p.set_defaults(fn=fn)
 
     command("status", cmd_status)
+    command("targets", cmd_targets)
     command("board", cmd_board)
     command("next", cmd_next, "id?")
     command("check", cmd_check, "id", "stage")
@@ -812,6 +893,7 @@ def main():
     if getattr(args, "stage", None) and args.stage not in STAGES:
         sys.exit("error: unknown stage; choose from {}".format(", ".join(STAGES)))
     try:
+        use_target(args.target)
         args.fn(args)
     except FactoryError as e:
         sys.exit("error: {}".format(e))

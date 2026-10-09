@@ -32,7 +32,8 @@ do not apply labels or merge.
 
 ## Repository-specific guidance
 
-Read `.agents/skills/review-pr-local/SKILL.md` if it exists and apply it. It
+The prompt says where companion `-local` skills live. Read `review-pr-local`
+there if it exists and apply it. It
 specializes this skill's commenting, testing, and style guidance. It may
 never change the output schema, the severity labels, or the annotation rules.
 
