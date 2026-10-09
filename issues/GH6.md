@@ -2,7 +2,7 @@
 title: Rename a task
 author: sam
 state: open
-labels: agent:feature, area:cli, triaged, ready-to-spec, spec-in-review
+labels: agent:feature, area:cli, triaged, ready-to-spec, spec-changes-requested
 ---
 If I make a typo in a task title the only fix is to rm it and add it again, which gives it a new id and loses the done state. I would like to change the title of an existing task in place.
 
@@ -60,3 +60,31 @@ Adds `specs/GH6/product.md` and `specs/GH6/tech.md` for a new `rename` command.
 **Note.** The unmerged `factory/GH5` branch edits the same `try`/`except` block in `cli.py`, so the implementation may hit a small textual conflict depending on merge order.
 
 Specs: `specs/GH6/` on branch `factory/GH6`
+
+---
+**factory-review** · 2026-10-09 02:55 UTC
+
+**Spec review round 1: request changes**
+
+## Overview
+The specs cover the whole issue: `rename <id> <title>` changes the title in place and keeps id, done state, list position and `next_id`. The plan is feasible and matches the code it cites at `c5b1351` (`tasklite/cli.py:12-23`, `:37-55`, `tasklite/store.py:22-41`). It respects AGENTS.md: mutation stays in `store.py`, the file format is untouched, the error path is the shared `error: no task with id N` / exit 1, and nothing outside the standard library is needed. Scope matches the issue, and the README claim is correct (it has no tasklite command list).
+
+I checked the stated behavior against the existing CLI on a scratch `--db` file and against a copy of the proposed subparser on Python 3.9.6, 3.13 and 3.14. Confirmed as written: invariants 1, 6, 7, 10, 11 (including `0` and `-1`), 12 (no file created on failure), 13 (all four usage cases exit 2) and 16, plus the exact `list` strings in invariants 6 and 10. Every invariant maps to a test or to a stated coverage argument.
+
+The two open questions (command name, empty title) are maintainer decisions and are not counted as defects.
+
+## Concerns
+- Invariant 14 is wrong as a general rule. Only some titles beginning with `-` need `--`. `-1`, `-3.5`, `- buy milk` and `-x y` are accepted without it, today by `add` and by the proposed `rename` parser. As written, the invariant requires a usage error that the tech spec's plain-argparse plan will not produce, so the two specs contradict each other. The tech spec Context repeats the same claim.
+- A title of exactly `--` is not covered, and on Python 3.9 (the version AGENTS.md requires) `rename 1 -- --` yields a list `[]` as the title, which would be written to the task file. On 3.13 and 3.14 it yields the string `--`.
+- Invariant 13 promises a usage message on stderr, but the planned test asserts only the exit code.
+
+## Verdict
+Found: 0 critical, 1 important, 2 suggestions
+
+**Request changes**
+
+`specs/GH6/product.md:53` ⚠️ [IMPORTANT] This invariant is false as a general rule, and contradicts the tech spec. Argparse only treats a `-` argument as an option when it has no space and is not number-like. Verified on Python 3.9.6, 3.13 and 3.14 with the proposed subparser, and with today's `add`: `rename 1 -1` sets the title to `-1`, `rename 1 -3.5` to `-3.5`, `rename 1 "- buy milk"` to `- buy milk`, and `rename 1 "-x y"` to `-x y`, all exit 0 without `--`. Only titles like `-x` or `--foo` fail with exit 2. An implementer holding to "without `--` it is a usage error" would have to add title validation that the tech spec explicitly rules out ("does not validate or normalise `title`"). Narrow the invariant to what ships, for example: "A title the argument parser would read as an option (such as `-x` or `--foo`) must be passed after `--`, the same as for `add`: `rename 1 -- -x` sets the title to `-x`, and `rename 1 -x` is a usage error under invariant 13. Other titles beginning with `-`, such as `-1` or `"- buy milk"`, are accepted without `--` and stored verbatim." Make the same correction in `tech.md` Context (lines 9-11, "already requires `--` before a title starting with `-`"), and add one accepted case such as `rename 1 -1` to `test_rename_title_starting_with_dash` so the boundary is pinned.
+
+`specs/GH6/tech.md:88` 💡 [SUGGESTION] Decide and state what a title of exactly `--` does. With the proposed two-positional subparser, `rename 1 -- --` parses to `title == []` (a list, not a string) on Python 3.9.6, and to `'--'` on 3.13 and 3.14. AGENTS.md requires Python 3.9, so on the supported floor the plan would write a non-string title into the task file and `list` would print `[]`, which breaks invariant 6 ("stored exactly as given"). `add -- --` does not have this problem on 3.9 because it has a single positional. Either add a product invariant plus a test for this input (and have the CLI branch reject or normalise a non-string title before calling `store.rename`), or record it under Risks as a known, accepted argparse limitation on 3.9.
+
+`specs/GH6/tech.md:84` 💡 [SUGGESTION] Invariant 13 promises "a usage message on stderr", but this test only asserts the exit code. Since stderr is already captured with `contextlib.redirect_stderr`, also assert the captured text contains `usage:` for each case, so the whole invariant is proven. Note that for `rename 1 a b` the usage line comes from the top-level parser (`tasklite: error: unrecognized arguments: b`), not the `rename` subparser, so assert on `usage:` rather than on `tasklite rename`.
