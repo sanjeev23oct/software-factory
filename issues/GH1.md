@@ -2,7 +2,7 @@
 title: `done` marks the wrong task after I delete one
 author: priya
 state: open
-labels: triaged, bug, area:storage, repro:confirmed, ready-to-implement
+labels: triaged, bug, area:storage, repro:confirmed, ready-to-implement, in-review
 ---
 I had three tasks. I removed the first one, then ran `done 3` and it said
 "error: no task with id 3" even though `list` clearly shows task 3.
@@ -54,3 +54,14 @@ Recommended readiness: `ready-to-implement`
 **maintainer** · 2026-10-09 00:17 UTC
 
 Applied label `ready-to-implement`.
+
+---
+**factory-implement** · 2026-10-09 00:19 UTC
+
+Fixed GH1: `Store.complete(task_id)` was indexing into `self.tasks` by position (`task_id - 1`) instead of looking up the task by its `id` field. Since `Store.remove` correctly deletes by id (shifting later tasks' list positions), any `done <id>` call after an earlier removal would operate on the wrong task.
+
+Fix: factored a shared `_find_index(task_id)` helper (searches by `id`, raises `TaskNotFound` if absent) and made both `complete` and `remove` use it, so `complete` now looks up tasks by their permanent id exactly like `remove` already did. No other files needed changes; task id permanence and file format were preserved.
+
+Verified the regression tests fail against the original buggy code (reproduced `done 3` instead of `done 2`) and pass with the fix. Also manually reproduced the exact repro steps from the issue end-to-end via the CLI with a scratch db file and confirmed `done 2` now correctly marks task 2.
+
+Branch: `factory/GH1`
