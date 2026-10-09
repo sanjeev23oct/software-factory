@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli
+labels: triaged, feature, area:cli, ready-to-spec
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which
@@ -28,3 +28,8 @@ Duplicate check: not a duplicate. `issues/GH1.md` is an unrelated `done`-indexin
 Why `ready-to-spec` rather than `ready-to-implement`: the problem is well articulated (stop stuffing dates into titles, be able to filter/see overdue), but the design has open questions a spec should pin down before coding — exact flag name/date format, precise definition of "overdue" (relative to what clock/timezone), whether undated tasks sort/display differently, and how old task files without `due` behave on load/save. Recommend writing `specs/GH2/product.md` + `tech.md` to settle those, then implement.
 
 Recommended readiness: `ready-to-spec`
+
+---
+**maintainer** · 2026-10-09 00:17 UTC
+
+Applied label `ready-to-spec`.
