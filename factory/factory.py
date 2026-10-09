@@ -11,6 +11,7 @@ Two drivers use it. `run` drives headless `claude -p`. The `factory` skill
 drives Claude Code subagents through `next` and `apply`.
 
     factory.py status
+    factory.py board                 write the board as a static page in site/
     factory.py next [ID]             prepare the next agent task, print it as JSON
     factory.py check ID STAGE        validate an agent's result files
     factory.py apply ID STAGE        validate, then apply them
@@ -638,6 +639,20 @@ def cmd_status(args):
         print(fmt.format(*row))
 
 
+def cmd_board(args):
+    import board
+    rows = []
+    for issue in all_issues():
+        actor, _, what = next_action(issue)
+        rows.append((issue, actor, what, board.costs(RUNS / issue.id)))
+    site = ROOT / "site"
+    site.mkdir(exist_ok=True)
+    (site / "index.html").write_text(board.render(rows))
+    # The same page without the document shell, for hosts that add their own.
+    (site / "board.fragment.html").write_text(board.render(rows, fragment=True))
+    print(site / "index.html")
+
+
 def cmd_next(args):
     waiting = []
     for issue in [load(args.id)] if args.id else all_issues():
@@ -783,6 +798,7 @@ def main():
         p.set_defaults(fn=fn)
 
     command("status", cmd_status)
+    command("board", cmd_board)
     command("next", cmd_next, "id?")
     command("check", cmd_check, "id", "stage")
     command("apply", cmd_apply, "id", "stage")
