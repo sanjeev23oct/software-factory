@@ -2,7 +2,7 @@
 title: `done` marks the wrong task after I delete one
 author: priya
 state: open
-labels: triaged, bug, area:storage, repro:confirmed, ready-to-implement, in-review
+labels: triaged, bug, area:storage, repro:confirmed, ready-to-implement, agent-approved
 ---
 I had three tasks. I removed the first one, then ran `done 3` and it said
 "error: no task with id 3" even though `list` clearly shows task 3.
@@ -65,3 +65,12 @@ Fix: factored a shared `_find_index(task_id)` helper (searches by `id`, raises `
 Verified the regression tests fail against the original buggy code (reproduced `done 3` instead of `done 2`) and pass with the fix. Also manually reproduced the exact repro steps from the issue end-to-end via the CLI with a scratch db file and confirmed `done 2` now correctly marks task 2.
 
 Branch: `factory/GH1`
+
+---
+**factory-review** · 2026-10-09 00:20 UTC
+
+Review round 1: **approve**
+
+The fix correctly addresses the root cause: `Store.complete` was indexing into the in-memory list by position (`task_id - 1`) instead of looking up the task by its permanent `id` field, unlike `Store.remove` which already did the correct id-based lookup. The fix factors out a shared `_find_index(task_id)` helper used by both `complete` and `remove`, so both now consistently resolve tasks by id regardless of list position shifts caused by prior removals. I manually reproduced the exact repro steps from the issue (add a/b/c, rm 1, done 2, list) and confirmed task 2 is now correctly marked done while task 3 remains unchecked — matching the expected behavior. Regression tests were added at both the store level (test_store.py, asserting correct id is completed and the wrong one is untouched) and the CLI level (test_cli.py, asserting the exact "done 2" output and correct list rendering), satisfying the regression-test rule in AGENTS.md. The change is minimal and confined to tasklite/store.py plus the two test files — no unrelated files touched, no file-format changes (task ids, file structure, and the store/cli split are all preserved), no new third-party dependencies, and presubmit (compileall + full unittest suite, 9/9 tests) passes.
+
+Invariants: 8/8 satisfied
