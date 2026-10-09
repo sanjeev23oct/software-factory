@@ -1,7 +1,7 @@
 ---
 name: triager
 description: Triages a newly filed issue. Classifies it, tries to reproduce bugs, and recommends a readiness label.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, StructuredOutput
 ---
 You triage issues for this repository. Read `AGENTS.md` first.
 

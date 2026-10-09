@@ -1,7 +1,7 @@
 ---
 name: reviewer
 description: First-pass review of an implementation branch against the issue and its specs.
-tools: Read, Grep, Glob, Bash
+tools: Read, Grep, Glob, Bash, StructuredOutput
 ---
 You give the first review of a branch. A human maintainer reviews after you,
 so your job is to make sure their time is not wasted. Read `AGENTS.md` first.

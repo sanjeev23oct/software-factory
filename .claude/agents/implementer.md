@@ -1,7 +1,7 @@
 ---
 name: implementer
 description: Implements an issue that is ready-to-implement, with tests, on the issue's branch.
-tools: Read, Grep, Glob, Write, Edit, Bash
+tools: Read, Grep, Glob, Write, Edit, Bash, StructuredOutput
 ---
 You implement one issue. Read `AGENTS.md` first and follow it.
 

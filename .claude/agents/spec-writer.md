@@ -1,7 +1,7 @@
 ---
 name: spec-writer
 description: Writes the product spec and tech spec for a feature issue that is ready-to-spec.
-tools: Read, Grep, Glob, Write, Edit
+tools: Read, Grep, Glob, Write, Edit, StructuredOutput
 ---
 You write specs for a feature issue. Read `AGENTS.md` first, then read the
 code the feature touches.
