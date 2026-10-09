@@ -2,7 +2,7 @@
 title: Rename a task
 author: sam
 state: open
-labels: agent:feature, area:cli, triaged, ready-to-spec
+labels: agent:feature, area:cli, triaged, ready-to-spec, spec-in-review
 ---
 If I make a typo in a task title the only fix is to rm it and add it again, which gives it a new id and loses the done state. I would like to change the title of an existing task in place.
 
@@ -40,3 +40,23 @@ Readiness recommendation for the maintainer: `ready-to-spec`
 **maintainer** · 2026-10-09 02:30 UTC
 
 Applied label `ready-to-spec`.
+
+---
+**factory-spec** · 2026-10-09 02:41 UTC
+
+Related issue: GH6
+
+Adds `specs/GH6/product.md` and `specs/GH6/tech.md` for a new `rename` command.
+
+**Product spec.** `tasklite rename <id> <title>` changes a task's title in place and prints `renamed <id>`. The task keeps its id, done state and list position, and no id is consumed. The title is stored verbatim as a single argument. An unknown id gives the existing `error: no task with id <id>` on stderr with exit 1 and leaves the task file untouched. Usage errors behave as for the existing commands (exit 2). The task file format does not change.
+
+**Tech spec.** One new `Store.rename(task_id, title)` method beside `complete`, one new subparser and one dispatch branch in `cli.py` reusing the shared `TaskNotFound` path. Lists the store and CLI test cases that prove each invariant. No README change: the README has no tasklite command list.
+
+**Open questions for the maintainer**
+
+1. Command name: the spec picks `rename` (the reporter's word). `edit` and `mv` were the alternatives raised in triage.
+2. Empty or whitespace-only title: the spec accepts it and stores it as given, matching what `add` does today. The alternative is to reject it, either in `rename` only (the two commands would then disagree) or in both (wider than this issue).
+
+**Note.** The unmerged `factory/GH5` branch edits the same `try`/`except` block in `cli.py`, so the implementation may hit a small textual conflict depending on merge order.
+
+Specs: `specs/GH6/` on branch `factory/GH6`
