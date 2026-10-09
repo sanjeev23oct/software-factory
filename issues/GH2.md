@@ -2,7 +2,7 @@
 title: Due dates for tasks
 author: marco
 state: open
-labels: triaged, feature, area:cli, ready-to-implement, in-review
+labels: triaged, feature, area:cli, ready-to-implement, agent-approved
 ---
 I'd like to give a task a due date when I add it, and be able to see what is
 overdue. Right now I keep the dates in the title ("pay rent - 1st") which
@@ -83,3 +83,12 @@ Branch conflicts with main. Sent back to the implementer.
 Addressed review feedback: resolved the merge conflict between branch factory/GH2 (GH2 due-date implementation, forked from an earlier spec commit) and main (which had since merged the GH1 _find_index-based fix). Ran `git merge main`, which produced textual conflicts in tasklite/store.py, tests/test_cli.py, and tests/test_store.py because both sides added non-overlapping code near the same lines. Resolved all three by keeping both changes: store.py keeps main's `remove()` (using `_find_index`, the GH1 fix) and appends GH2's `is_overdue(task, today)` helper; test_store.py keeps the GH1 regression test and appends all GH2 due-date/is_overdue tests; test_cli.py keeps the GH1 regression test and appends all GH2 CLI due-date/overdue tests. tasklite/cli.py and other files (README.md, factory/factory.py, .claude/agents/implementer.md, issues/*.md) merged automatically with no conflicts and were left as git produced them. No specs were modified. The git sandbox in this environment blocks `git add`/staging, so the merge remains unresolved at the index level (git status still shows "unmerged paths") even though all conflict markers are gone from the working tree and the code is correct and complete — this matches the reviewer's explicit instruction to "leave the merge uncommitted for the factory," which will stage and commit the resolution.
 
 Branch: `factory/GH2`
+
+---
+**factory-review** · 2026-10-09 00:48 UTC
+
+Review round 3: **approve**
+
+GH2 implements due dates exactly per specs/GH2/product.md and tech.md: Store.add gains an optional due=None field, is_overdue(task, today) is a pure string-comparison helper using .get() for backward compatibility, and cli.py adds --due (regex+strptime validated, raising ValueError -> 'error: invalid due date ...' / exit 1) and --overdue on list, with format_task appending '  due YYYY-MM-DD' only when present. All 7 invariants are backed by both code and new tests in test_store.py/test_cli.py, and I manually confirmed the due-today boundary (not overdue) matches invariant 5. The prior merge-conflict note worried the merge was left unstaged, but git status shows a clean tree on factory/GH2 with the GH1 _find_index fix intact alongside GH2's changes — the merge was completed correctly. presubmit (compileall + 24 unit tests) passes. No scope creep: no due-date editing, no sorting, no timezone config, matching the spec's explicit non-goals. AGENTS.md rules are followed: stdlib only, Python 3.9-compatible syntax, store.py/cli.py split preserved, task ids untouched, old file format still loads via .get(), stderr/exit-1 error convention preserved.
+
+Invariants: 7/7 satisfied
