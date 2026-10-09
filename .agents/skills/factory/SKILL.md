@@ -27,6 +27,10 @@ Repeat until there is no task:
    Otherwise it has `waiting`, the list of issues waiting on a human.
 2. Start the subagent named in `agent` with the Agent tool. Pass `prompt`
    exactly as given, and nothing else. Wait for it to finish.
+   If that agent type is not available in this session, start a
+   general-purpose subagent instead and put this line before the prompt:
+   "Read .claude/agents/<agent>.md in the repository root and act as that
+   agent."
 3. Apply the result:
 
        python3 factory/factory.py apply <id> <stage>
