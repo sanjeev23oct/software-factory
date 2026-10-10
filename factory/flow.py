@@ -113,6 +113,19 @@ def block(item, why):
 
 def checkout(item):
     wt = core.WORKTREES / item["id"]
+    if item.get("sha"):
+        # Reviewing someone's merge request: work on their commit, detached, and never commit to it.
+        head = core.sh(["git", "rev-parse", "HEAD"], cwd=wt, check=False).stdout.strip() if wt.exists() else None
+        if head != item["sha"]:
+            core.sh(["git", "fetch", "-q", "origin", item["branch"], core.MAIN])
+            if wt.exists():
+                core.sh(["git", "checkout", "-q", "--", "."], cwd=wt)
+                core.sh(["git", "clean", "-fdq"], cwd=wt)
+                core.sh(["git", "checkout", "-q", "--detach", item["sha"]], cwd=wt)
+            else:
+                core.WORKTREES.mkdir(parents=True, exist_ok=True)
+                core.sh(["git", "worktree", "add", "-q", "--detach", str(wt), item["sha"]])
+        return wt
     if not wt.exists():
         core.WORKTREES.mkdir(parents=True, exist_ok=True)
         branch = "factory/{}".format(item["id"])
@@ -121,12 +134,20 @@ def checkout(item):
     return wt
 
 
+def reports(item):
+    """Where a review route keeps what it produced, outside the checkout."""
+    path = STATE / "reports" / item["id"]
+    path.mkdir(parents=True, exist_ok=True)
+    return path
+
+
 def fill(item, text):
     values = {"spec": item["spec"], "checkout": str(checkout(item)), "scripts": str(SCRIPTS),
               "skills": str(core.TARGETS / core.NAME / "skills"), "item": item["id"],
               "branch": "factory/{}".format(item["id"]), "main": core.MAIN, "title": item["title"],
               "issue": item["ref"] if item.get("source") != "file" else "",
-              "presubmit": core.PRESUBMIT[0]}
+              "presubmit": core.PRESUBMIT[0], "reports": str(reports(item)), "ref": item["ref"],
+              "sha": item.get("sha", ""), "base": "origin/" + core.MAIN, "context": str(context_file(item)), "target": str(core.TARGETS / core.NAME)}
     return re.sub(r"\{(\w+)\}", lambda m: values.get(m.group(1), m.group(0)), text)
 
 
@@ -146,7 +167,7 @@ def run_script(item, stage):
     wt = checkout(item)
     if stage.get("intake"):
         where = ["--source", "file", "--ref", item["ref"]] if item["source"] == "file" else source_args(item["ref"])
-        cmd = ["python3", str(SCRIPTS / "read_issue.py"), "--out", str(wt / "issue_context.md")] + where
+        cmd = ["python3", str(reader()), "--out", str(wt / "issue_context.md")] + where
     else:
         cmd = [fill(item, part) for part in stage["run"]]
     proc = subprocess.run(cmd, cwd=str(wt), text=True, capture_output=True)
@@ -165,7 +186,7 @@ def agent_task(item, stage):
         "",
         "Work item: {} - {}".format(item["id"], item["title"]),
         "Checkout: {}".format(wt),
-        "Spec folder for this item: {}".format(item["spec"]),
+        "Spec folder for this item: {}".format(item["spec"] or "none; this is a review of existing work"),
         "",
         "Follow the skill at {}/{}/SKILL.md. Read it first.".format(core.TARGETS / core.NAME / "skills", stage["skill"]),
         "Engineering guide: {} (read it before anything else).".format(core.GUIDE),
@@ -209,6 +230,10 @@ def step(item):
             else:
                 block(item, "{} failed:\n{}".format(stage["id"], output))
             continue
+        if stage.get("when_file") and not Path(fill(item, stage["when_file"])).exists():
+            log(item, "stage skipped", "{} is not there".format(Path(stage["when_file"]).name))
+            move(item)
+            continue
         if stage.get("until") == "all-tasks-ticked" and not unchecked_tasks(item) \
                 and not (checkout(item) / FEEDBACK).exists():
             log(item, "all tasks ticked")
@@ -244,9 +269,14 @@ def finish(item, cost=None):
         raise core.FactoryError("{} `{}` rejected:\n- {}".format(item["id"], stage["id"], "\n- ".join(errors)))
     if (wt / "issue_context.md").exists():
         (wt / "issue_context.md").unlink()
-    core.sh(["git", "add", "-A"], cwd=wt)
-    if core.sh(["git", "diff", "--cached", "--quiet"], cwd=wt, check=False).returncode:
-        core.sh(["git", "commit", "-q", "-m", "{}: {}".format(stage["id"], item["title"])], cwd=wt)
+    if DEFINITION.get("commit", True):
+        core.sh(["git", "add", "-A"], cwd=wt)
+        if core.sh(["git", "diff", "--cached", "--quiet"], cwd=wt, check=False).returncode:
+            core.sh(["git", "commit", "-q", "-m", "{}: {}".format(stage["id"], item["title"])], cwd=wt)
+    else:
+        # A review route keeps its output and leaves the reviewed branch exactly as it was.
+        for produced in stage.get("produces", []):
+            shutil.move(str(wt / fill(item, produced)), str(reports(item) / Path(produced).name))
     log(item, "agent stage finished", cost=cost)
     if not stage.get("until"):
         move(item)
@@ -263,6 +293,8 @@ def slugify(title):
 def next_number():
     """Spec folders are numbered. Take the next number after every folder in
     the repository and every item already started."""
+    if not DEFINITION.get("spec_dir"):
+        return 0
     parent = core.REPO / Path(DEFINITION["spec_dir"]).parent
     used = [int(m.group(1)) for p in parent.glob("*") for m in [re.match(r"(\d+)-", p.name)] if m]
     used += [i["n"] for i in all_items()]
@@ -275,7 +307,7 @@ def start(item_id, title, **source):
     n = next_number()
     item = dict(id=item_id, title=title, n=n, skip=[], attempts={}, status="pending",
                 stage=DEFINITION["stages"][0]["id"], **source)
-    item["spec"] = DEFINITION["spec_dir"].format(n=n, slug=slugify(title))
+    item["spec"] = DEFINITION.get("spec_dir", "").format(n=n, slug=slugify(title))
     log(item, "started", title)
     return item
 
@@ -290,14 +322,18 @@ def source_args(ref=None):
     return args + (["--ref", str(ref)] if ref else [])
 
 
+def reader():
+    return SCRIPTS / ("read_mr.py" if DEFINITION["source"]["type"] == "gitlab-mr" else "read_issue.py")
+
+
 def read_issue(extra):
-    proc = subprocess.run(["python3", str(SCRIPTS / "read_issue.py")] + extra, text=True, capture_output=True)
+    proc = subprocess.run(["python3", str(reader())] + extra, text=True, capture_output=True)
     if proc.returncode:
         raise core.FactoryError((proc.stderr or proc.stdout).strip())
     return proc.stdout.strip()
 
 
-PREFIX = {"gitlab": "GL", "github": "GH", "jira": "", "file": "L"}
+PREFIX = {"gitlab": "GL", "github": "GH", "jira": "", "file": "L", "gitlab-mr": "MR"}
 
 
 def cmd_start(args):
@@ -309,9 +345,11 @@ def cmd_start(args):
         item = start("L{}".format(number), args.title, ref=str(Path(args.file).resolve()), source="file")
     elif args.issue and kind != "file":
         scratch = STATE / "items" / "incoming.md"
-        title = read_issue(source_args(args.issue) + ["--out", str(scratch)]).splitlines()[-1]
+        printed = read_issue(source_args(args.issue) + ["--out", str(scratch)]).splitlines()[-1]
         scratch.unlink()
-        item = start(PREFIX[kind] + str(args.issue), title, ref=str(args.issue), source=kind)
+        extra = json.loads(printed) if kind == "gitlab-mr" else {"title": printed}
+        item = start(PREFIX[kind] + str(args.issue), extra.pop("title"), ref=str(args.issue), source=kind,
+                     **{k: extra[k] for k in ("sha", "branch") if k in extra})
     else:
         raise core.FactoryError("give --issue REF, or --file with --title")
     print("{}  spec folder: {}".format(item["id"], item["spec"]))
@@ -326,8 +364,17 @@ def cmd_poll(args):
     issues = json.loads(read_issue(source_args() + ["--list", "--label", label] + (["--assignee", who] if who else [])))
     new = [i for i in issues if i["ref"] not in started]
     for issue in new:
-        start(PREFIX[kind] + issue["ref"], issue["title"], ref=issue["ref"], source=kind)
+        start(PREFIX[kind] + issue["ref"], issue["title"], ref=issue["ref"], source=kind,
+              **{k: issue[k] for k in ("sha", "branch") if k in issue})
         print("started {}{}: {}".format(PREFIX[kind], issue["ref"], issue["title"]))
+    for issue in issues:
+        # A merge request that gained commits since its last review is reviewed again.
+        known = next((i for i in all_items() if i["ref"] == issue["ref"]), None)
+        if known and issue.get("sha") and known.get("sha") != issue["sha"]:
+            known.update(sha=issue["sha"], stage=DEFINITION["stages"][0]["id"], status="pending", attempts={})
+            shutil.rmtree(reports(known), ignore_errors=True)
+            log(known, "new commits; reviewing again", issue["sha"])
+            print("re-queued {}: new commits".format(known["id"]))
     print("{} open issue(s) labelled `{}`{}, {} new".format(
         len(issues), label, " and assigned to {}".format(who) if who else "", len(new)))
 
@@ -369,9 +416,10 @@ def validate(definition, skills_dir):
     source = definition.get("source", {})
     if source.get("type") not in PREFIX:
         problems.append("source.type must be one of {}".format(", ".join(PREFIX)))
-    need = {"gitlab": ["project"], "github": ["repo"], "jira": ["project"]}.get(source.get("type"), [])
+    need = {"gitlab": ["project"], "gitlab-mr": ["project"], "github": ["repo"], "jira": ["project"]}.get(source.get("type"), [])
     problems += ["source.{} is not set".format(k) for k in need if not source.get(k) or "<" in source[k]]
-    if "{n}" not in definition.get("spec_dir", "") and "{slug}" not in definition.get("spec_dir", ""):
+    builds = definition.get("commit", True)
+    if builds and "{n}" not in definition.get("spec_dir", "") and "{slug}" not in definition.get("spec_dir", ""):
         problems.append("spec_dir needs {n} or {slug} so each item gets its own folder")
     stage_list = definition.get("stages", [])
     if not stage_list or not stage_list[0].get("intake"):
@@ -391,7 +439,7 @@ def validate(definition, skills_dir):
         if stage.get("on_fail") and stage["on_fail"] not in seen:
             problems.append("stage `{}`: on_fail must name an earlier stage".format(name))
         seen.append(name)
-    if not any(s.get("by") == "human" for s in stage_list):
+    if not any(s.get("by") == "human" for s in stage_list) and not definition.get("gate_outside"):
         problems.append("no stage is done by a human; a factory needs at least one human gate")
     return problems
 
@@ -461,6 +509,15 @@ def cmd_retry(args):
     log(item, "unblocked by human")
 
 
+def spent_today():
+    today, total, events = datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%d"), 0.0, STATE / "events.jsonl"
+    for line in events.read_text().splitlines() if events.exists() else []:
+        record = json.loads(line)
+        if record["ts"].startswith(today):
+            total += record.get("cost_usd") or 0
+    return total
+
+
 def cmd_run(args):
     for item in [load(args.item)] if args.item else all_items():
         while True:
@@ -468,8 +525,19 @@ def cmd_run(args):
                 task = step(item)
                 if not task:
                     break
+                spent, cap = spent_today(), DEFINITION.get("limits", {}).get("daily_usd", 20)
+                if spent >= cap:
+                    print("{}: paused - today's agent spend ${:.2f} has reached the ${} limit".format(item["id"], spent, cap))
+                    break
                 print("{}: {} ({} agent working...)".format(item["id"], task["stage"], task["agent"]), flush=True)
-                finish(item, core.run_headless(task))
+                try:
+                    cost = core.run_headless(task)
+                except core.FactoryError as e:
+                    # A run that died still counts as an attempt, or a scheduled job would retry it forever.
+                    item["attempts"][task["stage"]] = item["attempts"].get(task["stage"], 0) + 1
+                    log(item, "agent run failed", str(e))
+                    raise
+                finish(item, cost)
             except core.FactoryError as e:
                 print("{}: stopped - {}".format(item["id"], e))
                 break

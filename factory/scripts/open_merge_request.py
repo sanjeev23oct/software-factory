@@ -92,6 +92,7 @@ def main():
         sys.exit("open_merge_request: refusing to push `{}`; only factory/* branches are pushed".format(args.branch))
     token = token_for(args.host)
     project = api(args.host, token, "GET", "projects/" + quote(args.project, safe=""))
+    args.dry_run = args.dry_run or bool(os.environ.get("FACTORY_DRY_RUN"))
     pushed = push(args.repo, args.host, args.project, args.branch, token, args.dry_run)
     if args.dry_run:
         print("dry run: token accepted for {}; push would do:\n{}".format(project["path_with_namespace"], pushed))
