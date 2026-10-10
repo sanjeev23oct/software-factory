@@ -63,14 +63,16 @@ picks the model. `FACTORY_MAX_BUDGET_USD` caps one agent run (default 3).
 
 The factory can work on a repository elsewhere on disk. Each one is a folder
 under `targets/` holding its guidance, labels, presubmit and skills, so
-nothing is added to that repository except `factory/*` branches.
+nothing is added to that repository except `factory/*` branches. Target
+folders describe private repositories, so they are git-ignored and are not
+part of this repository.
 
     python3 factory/factory.py targets
 
 A target may also define its own factory in `targets/<name>/factory.json`:
 the stages a piece of work goes through, in order, and whether each is done
 by a script, by an agent following a skill, or by a human. `factory/flow.py`
-runs that definition. `targets/infra-management/factory.json` is one:
+runs that definition. One such definition, for a .NET and React application, goes:
 requirement, `requirements.md`, human approval, optional `design.md`,
 `tasks.md`, a script that checks every task names a skill, the repository's
 own maker-checker build loop, a script that checks the evidence, and an

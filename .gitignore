@@ -13,3 +13,6 @@ tasks.json
 /issue_context.md
 /review_feedback.json
 site/
+# Targets for private repositories stay on this machine.
+targets/*/
+!targets/example/
