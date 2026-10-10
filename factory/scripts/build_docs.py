@@ -270,8 +270,8 @@ def body():
   <div class="links"><a href="#routes">Routes</a><a href="#proof">Proof</a><a href="#start">Get started</a><a class="keep" href="%(repo)s">GitHub</a></div></nav>
 
 <header class="hero" id="top">
-  <h1>Every issue takes a route.</h1>
-  <div><p>You choose the stops. Claude does the driving. You step on only where you want a say.</p>
+  <h1>Map the route. Claude drives it.</h1>
+  <div><p>Choose the stops between an issue and a merge. Step in only where you want a say.</p>
     <div class="cta"><a class="btn solid" href="#start">Get started</a><a class="btn" href="%(repo)s">GitHub</a></div></div>
 </header>
 
