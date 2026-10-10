@@ -1,11 +1,13 @@
 #!/usr/bin/env python3
-"""A local page for editing a target's process rules.
+"""Local pages for editing a factory without touching its files.
 
-    python3 factory/rules_editor.py [--port 8787] [--no-open]
+    python3 factory/editor.py [--port 8787] [--no-open]
 
-It serves on 127.0.0.1 only. The page reads and writes
-targets/<name>/process.json, and can try unsaved rules against a real merge
-request without posting anything.
+  /        the route: where work comes from, the stops, the gates, the limits
+  /rules   the process rules a merge request is checked against
+
+It serves on 127.0.0.1 only. It reads and writes targets/<name>/factory.json
+and process.json, keeping the previous version of each as a .bak file.
 """
 
 import argparse
@@ -21,10 +23,57 @@ from urllib.parse import parse_qs, urlparse
 
 HOME = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(HOME / "factory" / "scripts"))
+sys.path.insert(0, str(HOME / "factory"))
 import check_mr_process as process  # noqa: E402
+import flow  # noqa: E402
 
 TARGETS = HOME / "targets"
-PAGE = HOME / "factory" / "rules_editor.html"
+PAGES = {"/": HOME / "factory" / "editor_route.html", "/rules": HOME / "factory" / "editor_rules.html"}
+LIBRARY = HOME / "factories"
+
+
+def route_dir(name):
+    path = TARGETS / name
+    if "/" in name or name.startswith(".") or not (path / "factory.json").exists():
+        raise ValueError("no such factory: {}".format(name))
+    return path
+
+
+def about(skill_dir):
+    """The one-line description from a skill's front matter."""
+    path = skill_dir / "SKILL.md"
+    for line in path.read_text().splitlines() if path.exists() else []:
+        if line.startswith("description:"):
+            return line.split(":", 1)[1].strip()
+    return ""
+
+
+def library(home, definition):
+    """Stops a person can add: every stop used by a sample factory, plus the ones this factory already has."""
+    stops, seen = [], {s["id"] for s in definition["stages"]}
+    for path in sorted(LIBRARY.glob("*/factory.json")):
+        for stage in json.loads(path.read_text())["stages"]:
+            if stage["id"] in seen or stage.get("intake") or stage["by"] == "human":
+                continue
+            seen.add(stage["id"])
+            stage = dict(stage, enabled=True)
+            stops.append({"stage": stage, "about": about(LIBRARY / "skills" / stage.get("skill", ""))})
+    return stops
+
+
+def save_route(name, definition):
+    home = route_dir(name)
+    for stage in definition.get("stages", []):
+        skill = stage.get("skill")
+        if skill and not (home / "skills" / skill).exists() and (LIBRARY / "skills" / skill).exists():
+            shutil.copytree(LIBRARY / "skills" / skill, home / "skills" / skill)
+    problems = flow.validate(definition, home / "skills")
+    if problems:
+        return problems
+    path = home / "factory.json"
+    shutil.copy(path, path.with_suffix(".json.bak"))
+    path.write_text(json.dumps(definition, indent=2) + "\n")
+    return []
 
 
 def target_dir(name):
@@ -81,8 +130,16 @@ class Handler(BaseHTTPRequestHandler):
     def do_GET(self):
         url = urlparse(self.path)
         try:
-            if url.path == "/":
-                self.send(PAGE.read_bytes(), kind="text/html")
+            if url.path in PAGES:
+                self.send(PAGES[url.path].read_bytes(), kind="text/html")
+            elif url.path == "/api/routes":
+                self.send({"targets": sorted(p.parent.name for p in TARGETS.glob("*/factory.json"))})
+            elif url.path == "/api/route":
+                home = route_dir(parse_qs(url.query)["target"][0])
+                definition = json.loads((home / "factory.json").read_text())
+                skills = {p.parent.name: about(p.parent) for p in sorted((home / "skills").glob("*/SKILL.md"))}
+                self.send({"definition": definition, "skills": skills, "library": library(home, definition),
+                           "has_rules": (home / "process.json").exists()})
             elif url.path == "/api/state":
                 names = sorted(p.parent.name for p in TARGETS.glob("*/process.json"))
                 self.send({"targets": names, "checks": process.CHECKS, "rule_types": process.RULE_TYPES})
@@ -101,6 +158,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.send({"error": "refused"}, 403)
         try:
             data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
+            if self.path == "/api/route/save":
+                problems = save_route(data["target"], data["definition"])
+                return self.send({"problems": problems} if problems else {"saved": True})
             problems = process.validate(data["config"])
             if problems:
                 return self.send({"problems": problems})
@@ -124,7 +184,7 @@ def main():
     args = p.parse_args()
     server = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     url = "http://127.0.0.1:{}/".format(args.port)
-    print("Rules editor at {}  (Ctrl-C to stop)".format(url))
+    print("Factory editor at {}  (Ctrl-C to stop)".format(url))
     if not args.no_open:
         webbrowser.open(url)
     try:

@@ -101,6 +101,16 @@ Create your own from one:
     python3 factory/flow.py --target shop validate
 
 Then edit `targets/shop/factory.json`, `AGENTS.md` and `presubmit`.
+
+### Editing a factory without touching files
+
+    python3 factory/editor.py
+
+opens a local page with two tabs. **Route** shows the stops and gates as a
+list you reorder, switch on or off, and add to, with a drawing of the route
+that updates as you edit. **Review rules** sets how strict each process check
+is, lets you add your own rules by filling in a sentence, and can try them on
+a real merge request before you save. It serves on 127.0.0.1 only.
 [docs/index.html](docs/index.html) explains the concept and walks through
 creating a factory. `python3 factory/scripts/build_docs.py` regenerates it
 from the samples.

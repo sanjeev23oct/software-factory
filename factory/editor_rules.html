@@ -40,6 +40,9 @@ button { cursor: pointer; }
 .bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
 .bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 14px; }
 .bar .grow { flex: 1; min-width: 0; }
+.tabs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 99px; padding: 3px; }
+.tabs a { text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 600; font-size: 15px; color: var(--muted); }
+.tabs a[aria-current] { background: var(--ink); color: var(--bg); }
 .bar select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); max-width: 100%; }
 #state { font-size: 14px; color: var(--muted); }
 #state.dirty { color: var(--warn); } #state.bad { color: var(--fail); } #state.good { color: var(--ok); }
@@ -101,7 +104,8 @@ details summary { cursor: pointer; font-weight: 600; }
 </head>
 <body>
 <div class="bar"><div class="wrap">
-  <h1>Process rules</h1>
+  <h1>Factory</h1>
+  <nav class="tabs"><a href="/">Route</a><a href="/rules" aria-current="page">Review rules</a></nav>
   <select id="target" aria-label="Factory"></select>
   <span class="grow" id="state" role="status"></span>
   <button class="btn" id="save" disabled>Save</button>

@@ -88,7 +88,12 @@ def stages(item):
 
 
 def current(item):
-    return next(s for s in stages(item) if s["id"] == item["stage"])
+    for stage in stages(item):
+        if stage["id"] == item["stage"]:
+            return stage
+    # The route was edited while this item was on a stop that no longer exists.
+    raise core.FactoryError("{} is at `{}`, which is no longer on the route. Start it again or put the stop back.".format(
+        item["id"], item["stage"]))
 
 
 def move(item, stage_id=None):

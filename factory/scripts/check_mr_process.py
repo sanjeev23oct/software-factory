@@ -10,7 +10,7 @@ team's own rules. The report is a markdown table of PASS, WARN and FAIL. The ok
 file is written only when nothing failed, so a later stage can tell whether the
 request has earned an agent's time.
 
-The rules editor (factory/rules_editor.py) reads CHECKS and RULE_TYPES below
+The editor (factory/editor.py) reads CHECKS and RULE_TYPES below
 and writes the config, so a check added here appears there.
 """
 

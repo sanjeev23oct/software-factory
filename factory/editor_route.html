@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Route</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sticky bar; a live drawing of the route; then the source, the list of stops, and the limits. */
+:root {
+  --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5; --field: #ffffff;
+  --route: #1f5fd0; --gate-bg: #fbecd0; --gate: #a66300; --check: #5d6b7e; --ok: #12905a; --bad: #c2362b; --bad-bg: #fbe4e1; --warn: #a66300;
+  --display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a; --field: #0b121c;
+    --route: #6aa0ff; --gate-bg: #3a2a0c; --gate: #ffb84d; --check: #92a0b3; --ok: #4fd09a; --bad: #ff8a80; --bad-bg: #3d1714; --warn: #ffb84d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a; --field: #0b121c;
+  --route: #6aa0ff; --gate-bg: #3a2a0c; --gate: #ffb84d; --check: #92a0b3; --ok: #4fd09a; --bad: #ff8a80; --bad-bg: #3d1714; --warn: #ffb84d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { max-width: 960px; margin: 0 auto; padding-inline: 20px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font: 700 26px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+h2 { font: 700 30px/1 var(--display); text-transform: uppercase; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--route); outline-offset: 2px; }
+
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 14px; }
+.bar .grow { flex: 1; min-width: 0; }
+.tabs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 99px; padding: 3px; }
+.tabs a { text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 600; font-size: 15px; color: var(--muted); }
+.tabs a[aria-current] { background: var(--ink); color: var(--bg); }
+select, input[type=text], input[type=number] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); min-width: 0; max-width: 100%; }
+#state { font-size: 14px; color: var(--muted); }
+#state.dirty { color: var(--warn); } #state.bad { color: var(--bad); } #state.good { color: var(--ok); }
+.btn { padding: 10px 18px; border-radius: 99px; border: 2px solid var(--ink); background: var(--ink); color: var(--bg); font-weight: 600; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn.ghost { background: transparent; color: var(--ink); }
+
+main { display: grid; gap: 18px; padding-block: 22px 60px; }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 16px; min-width: 0; }
+.panel > header { display: grid; gap: 4px; }
+.panel > header p { color: var(--muted); font-size: 15px; }
+.problems { background: var(--bad-bg); color: var(--bad); border-radius: 10px; padding: 12px 14px; font-size: 15px; }
+.problems ul { margin: 6px 0 0; padding-left: 18px; }
+
+/* the drawing */
+.scroll { overflow-x: auto; padding-block: 4px 2px; }
+.draw { display: flex; align-items: flex-start; min-width: max-content; }
+.node { display: grid; justify-items: center; gap: 8px; width: 78px; position: relative; text-align: center; }
+.node::before { content: ""; position: absolute; top: 13px; left: -50%; width: 100%; height: 6px; background: var(--route); }
+.node:first-child::before { content: none; }
+.node i { position: relative; width: 16px; height: 16px; border-radius: 50%; background: var(--paper); border: 4px solid var(--route); margin-top: 8px; }
+.node.gate i { width: 28px; height: 28px; margin-top: 2px; border-color: var(--ink); }
+.node.gate i::after { content: ""; position: absolute; inset: 5px; border-radius: 50%; background: var(--gate); }
+.node.check i { border-color: var(--check); width: 12px; height: 12px; margin-top: 10px; border-width: 3px; }
+.node.optional i { border-style: dashed; }
+.node.off { opacity: 0.35; }
+.node span { font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; padding-inline: 4px; }
+.node.gate span { font-weight: 600; }
+.key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+.key b { font-weight: 600; color: var(--ink); }
+
+/* forms */
+.grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 210px), 1fr)); gap: 12px; }
+.field { display: grid; gap: 4px; min-width: 0; }
+.field label { font-size: 14px; font-weight: 600; } .field small { color: var(--muted); font-size: 13px; }
+
+.stop { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px 14px; align-items: start; padding: 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); }
+.stop.gate { background: var(--gate-bg); border-color: transparent; }
+.stop.off { opacity: 0.55; }
+.order { display: grid; gap: 4px; }
+.order button { border: 1px solid var(--line); background: var(--paper); border-radius: 6px; width: 30px; height: 26px; line-height: 1; padding: 0; }
+.order button:disabled { opacity: 0.3; cursor: default; }
+.body { display: grid; gap: 8px; min-width: 0; }
+.line1 { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.line1 input { font-weight: 600; flex: 1 1 180px; }
+.kind { font: 600 12px var(--body); letter-spacing: 0.06em; text-transform: uppercase; padding: 4px 9px; border-radius: 99px; background: var(--paper); color: var(--muted); white-space: nowrap; }
+.stop.gate .kind { color: var(--gate); }
+.what { font-size: 14px; color: var(--muted); }
+.opts { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font-size: 14px; }
+.opts label { display: flex; gap: 6px; align-items: center; }
+.opts select { padding: 5px 8px; font-size: 14px; }
+.side { display: grid; gap: 6px; justify-items: end; }
+.x { border: 0; background: transparent; color: var(--muted); font-size: 14px; text-decoration: underline; padding: 2px; }
+.adds { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.add { border: 1.5px dashed var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 8px; align-content: start; }
+.add b { font-weight: 600; } .add span { font-size: 14px; color: var(--muted); }
+.add .rowf { display: flex; gap: 8px; flex-wrap: wrap; } .add .rowf > :first-child { flex: 1 1 140px; min-width: 0; }
+@media (max-width: 640px) { .stop { grid-template-columns: auto minmax(0, 1fr); } .side { grid-column: 2; justify-items: start; grid-auto-flow: column; justify-content: start; gap: 14px; } }
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <h1>Factory</h1>
+  <nav class="tabs"><a href="/" aria-current="page">Route</a><a href="/rules">Review rules</a></nav>
+  <select id="target" aria-label="Factory"></select>
+  <span class="grow" id="state" role="status"></span>
+  <button class="btn" id="save" disabled>Save</button>
+</div></div>
+
+<div class="wrap"><main>
+  <div id="problems" class="problems" hidden></div>
+
+  <section class="panel">
+    <header><h2>The route</h2><p id="about"></p></header>
+    <div class="scroll"><div class="draw" id="draw"></div></div>
+    <div class="key"><span><b>Ring</b> a gate: a person approves</span><span><b>Blue stop</b> work an agent does</span><span><b>Small grey stop</b> an automatic check</span><span><b>Dashed</b> optional</span></div>
+  </section>
+
+  <section class="panel">
+    <header><h2>Where work comes from</h2></header>
+    <div class="grid" id="source"></div>
+  </section>
+
+  <section class="panel">
+    <header><h2>Stops and gates</h2><p>Work moves down this list. Use the arrows to reorder. A gate holds the work until a person approves.</p></header>
+    <div id="stops" style="display:grid;gap:10px"></div>
+    <div class="adds">
+      <div class="add"><b>Add a gate</b><span>A point where a person must approve before work continues.</span>
+        <div class="rowf"><input type="text" id="gatename" placeholder="what is approved, e.g. design" aria-label="What the gate approves"><button class="btn ghost" id="addgate">Add</button></div></div>
+      <div class="add"><b>Add a stop</b><span id="libabout">Pick a ready-made stop.</span>
+        <div class="rowf"><select id="lib" aria-label="Stop to add"></select><button class="btn ghost" id="addstop">Add</button></div></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <header><h2>Limits</h2><p>What stops an unattended factory from running away.</p></header>
+    <div class="grid">
+      <div class="field"><label for="max_attempts">Tries per stop</label><input type="number" id="max_attempts" min="1" max="10"><small>After this many failed tries the item waits for a person.</small></div>
+      <div class="field"><label for="daily_usd">Agent spend per day, in dollars</label><input type="number" id="daily_usd" min="1"><small>Reaching it pauses the route until tomorrow.</small></div>
+    </div>
+  </section>
+</main></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var def = null, skills = {}, lib = [], saved = '';
+  var SOURCES = {
+    'gitlab': { name: 'GitLab issues', fields: [['host', 'GitLab host', 'gitlab.com'], ['project', 'Project', 'group/project'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
+    'gitlab-mr': { name: 'GitLab merge requests', fields: [['host', 'GitLab host', 'gitlab.com'], ['project', 'Project', 'group/project'], ['label', 'Pick up requests labelled', 'factory-review'], ['assignee', 'Only when this person is a reviewer', 'username, or leave empty']] },
+    'github': { name: 'GitHub issues', fields: [['repo', 'Repository', 'owner/name'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
+    'jira': { name: 'Jira issues', fields: [['project', 'Project key', 'SHOP'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
+    'file': { name: 'A file you point it at', fields: [] }
+  };
+  var KIND = { human: 'Gate', agent: 'Agent stop', script: 'Automatic check' };
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML.replace(/"/g, '&quot;'); }
+  function slug(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+  function pretty(id) { return id.replace(/^approve-/, '').replace(/-/g, ' '); }
+  function call(path, body) {
+    return fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Factory-Editor': '1' }, body: JSON.stringify(body) } : undefined)
+      .then(function (r) { return r.json(); });
+  }
+  function on(stage) { return stage.enabled !== false; }
+  function setState() {
+    var dirty = JSON.stringify(def) !== saved;
+    $('save').disabled = !dirty;
+    $('state').className = dirty ? 'dirty' : '';
+    $('state').textContent = dirty ? 'Unsaved changes' : '';
+  }
+  function showProblems(problems) {
+    $('problems').hidden = !problems || !problems.length;
+    if (problems && problems.length) {
+      $('problems').innerHTML = 'Fix these first:<ul>' + problems.map(function (p) { return '<li>' + esc(p.replace(/`/g, '')) + '</li>'; }).join('') + '</ul>';
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function drawRoute() {
+    $('draw').innerHTML = def.stages.map(function (s) {
+      var cls = s.by === 'human' ? 'gate' : s.by === 'script' && !s.intake ? 'check' : '';
+      return '<div class="node ' + cls + (s.optional ? ' optional' : '') + (on(s) ? '' : ' off') + '"><i></i><span>' +
+        esc(s.by === 'human' ? 'Gate: ' + pretty(s.id) : s.intake ? 'Intake' : pretty(s.id)) + '</span></div>';
+    }).join('');
+    var gates = def.stages.filter(function (s) { return s.by === 'human' && on(s); }).length;
+    var live = def.stages.filter(on).length;
+    $('about').textContent = live + ' stops, ' + gates + (gates === 1 ? ' gate' : ' gates') + (def.gate_outside ? '. The deciding gate is outside the factory: ' + def.gate_outside : '.');
+  }
+  function drawSource() {
+    var s = def.source, spec = SOURCES[s.type] || SOURCES.file;
+    $('source').innerHTML = '<div class="field"><label for="stype">Source</label><select id="stype">' + Object.keys(SOURCES).map(function (k) {
+      return '<option value="' + k + '"' + (k === s.type ? ' selected' : '') + '>' + SOURCES[k].name + '</option>'; }).join('') + '</select></div>' +
+      spec.fields.map(function (f) {
+        return '<div class="field"><label for="s_' + f[0] + '">' + f[1] + '</label><input type="text" id="s_' + f[0] + '" data-source="' + f[0] + '" value="' + esc(s[f[0]] || '') + '" placeholder="' + esc(f[2]) + '"></div>';
+      }).join('');
+  }
+  function drawStops() {
+    $('stops').innerHTML = def.stages.map(function (s, i) {
+      var locked = !!s.intake, earlier = def.stages.slice(0, i).filter(function (e) { return e.by === 'agent'; });
+      var what = s.by === 'human' ? 'Waits here until a person approves.' : (skills[s.skill] || '');
+      var opts = '';
+      if (s.by === 'agent') { opts += '<label><input type="checkbox" data-i="' + i + '" data-k="optional"' + (s.optional ? ' checked' : '') + '>Optional: can be skipped when approving</label>'; }
+      if (s.by === 'script' && !s.intake) {
+        opts += '<label>If it fails, go back to <select data-i="' + i + '" data-k="on_fail"><option value="">nowhere: wait for a person</option>' +
+          earlier.map(function (e) { return '<option value="' + esc(e.id) + '"' + (s.on_fail === e.id ? ' selected' : '') + '>' + esc(pretty(e.id)) + '</option>'; }).join('') + '</select></label>';
+      }
+      return '<div class="stop ' + (s.by === 'human' ? 'gate' : '') + (on(s) ? '' : ' off') + '">' +
+        '<div class="order"><button type="button" data-move="-1" data-i="' + i + '" aria-label="Move up"' + (locked || i <= 1 ? ' disabled' : '') + '>&#8593;</button>' +
+        '<button type="button" data-move="1" data-i="' + i + '" aria-label="Move down"' + (locked || i === def.stages.length - 1 ? ' disabled' : '') + '>&#8595;</button></div>' +
+        '<div class="body"><div class="line1"><input type="text" data-i="' + i + '" data-k="id" value="' + esc(s.id) + '" aria-label="Name"' + (locked ? ' disabled' : '') + '>' +
+        '<span class="kind">' + (s.intake ? 'Intake' : KIND[s.by]) + '</span></div>' +
+        (what ? '<div class="what">' + esc(what) + '</div>' : '') + (opts ? '<div class="opts">' + opts + '</div>' : '') + '</div>' +
+        '<div class="side">' + (locked ? '' : '<label class="opts"><input type="checkbox" data-i="' + i + '" data-k="enabled"' + (on(s) ? ' checked' : '') + '>On</label>' +
+        '<button type="button" class="x" data-remove="' + i + '">Remove</button>') + '</div></div>';
+    }).join('');
+  }
+  function drawLibrary() {
+    var have = def.stages.map(function (s) { return s.id; });
+    var free = lib.filter(function (l) { return have.indexOf(l.stage.id) < 0; });
+    $('lib').innerHTML = free.length ? free.map(function (l) {
+      return '<option value="' + esc(l.stage.id) + '">' + esc(pretty(l.stage.id)) + ' (' + (l.stage.by === 'agent' ? 'agent' : 'check') + ')</option>'; }).join('') : '<option value="">Nothing left to add</option>';
+    libAbout();
+  }
+  function libAbout() {
+    var pick = lib.filter(function (l) { return l.stage.id === $('lib').value; })[0];
+    $('libabout').textContent = pick && pick.about ? pick.about : 'Pick a ready-made stop.';
+  }
+  function drawLimits() {
+    def.limits = def.limits || {};
+    $('max_attempts').value = def.limits.max_attempts || 3;
+    $('daily_usd').value = def.limits.daily_usd || 20;
+  }
+  function draw() { drawRoute(); drawSource(); drawStops(); drawLibrary(); drawLimits(); setState(); }
+
+  function load(name) {
+    call('/api/route?target=' + encodeURIComponent(name)).then(function (data) {
+      if (data.error) { $('state').className = 'bad'; $('state').textContent = data.error; return; }
+      def = data.definition; skills = data.skills; lib = data.library; saved = JSON.stringify(def);
+      lib.forEach(function (l) { if (l.stage.skill && !skills[l.stage.skill]) { skills[l.stage.skill] = l.about; } });
+      showProblems(null); draw();
+    });
+  }
+  function rename(i, to) {
+    var from = def.stages[i].id; to = slug(to); if (!to || to === from) { return; }
+    if (def.stages[i].by === 'human' && to.indexOf('approve-') !== 0) { to = 'approve-' + to; }
+    def.stages.forEach(function (s) { if (s.on_fail === from) { s.on_fail = to; } });
+    def.stages[i].id = to;
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || !def) { return; }
+    if (b.dataset.move) {
+      var i = +b.dataset.i, j = i + (+b.dataset.move);
+      if (j < 1 || j >= def.stages.length) { return; }
+      var t = def.stages[i]; def.stages[i] = def.stages[j]; def.stages[j] = t;
+      // A check can only send work back to a stop that comes before it.
+      def.stages.forEach(function (s, k) { if (s.on_fail && def.stages.slice(0, k).map(function (x) { return x.id; }).indexOf(s.on_fail) < 0) { delete s.on_fail; } });
+    } else if (b.dataset.remove) {
+      var gone = def.stages.splice(+b.dataset.remove, 1)[0];
+      def.stages.forEach(function (s) { if (s.on_fail === gone.id) { delete s.on_fail; } });
+    } else if (b.id === 'addgate') {
+      var name = slug($('gatename').value); if (!name) { $('gatename').focus(); return; }
+      def.stages.push({ id: 'approve-' + name.replace(/^approve-/, ''), by: 'human' }); $('gatename').value = '';
+    } else if (b.id === 'addstop') {
+      var pick = lib.filter(function (l) { return l.stage.id === $('lib').value; })[0]; if (!pick) { return; }
+      var stage = JSON.parse(JSON.stringify(pick.stage)); delete stage.enabled;
+      if (stage.on_fail && def.stages.map(function (s) { return s.id; }).indexOf(stage.on_fail) < 0) { delete stage.on_fail; }
+      def.stages.push(stage);
+    } else { return; }
+    drawRoute(); drawStops(); drawLibrary(); setState();
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!def) { return; }
+    if (t.id === 'target') { load(t.value); return; }
+    if (t.id === 'lib') { libAbout(); return; }
+    if (t.id === 'stype') { def.source = { type: t.value, label: def.source.label }; drawSource(); drawRoute(); setState(); return; }
+    if (t.dataset.k) {
+      var s = def.stages[+t.dataset.i], k = t.dataset.k;
+      if (k === 'id') { rename(+t.dataset.i, t.value); }
+      else if (k === 'optional') { if (t.checked) { s.optional = true; } else { delete s.optional; } }
+      else if (k === 'enabled') { if (t.checked) { delete s.enabled; } else { s.enabled = false; } }
+      else if (k === 'on_fail') { if (t.value) { s.on_fail = t.value; } else { delete s.on_fail; } }
+      drawRoute(); drawStops(); setState();
+    }
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (!def) { return; }
+    if (t.dataset.source) { if (t.value.trim()) { def.source[t.dataset.source] = t.value.trim(); } else { delete def.source[t.dataset.source]; } setState(); }
+    else if (t.id === 'max_attempts') { def.limits.max_attempts = +t.value || 3; setState(); }
+    else if (t.id === 'daily_usd') { def.limits.daily_usd = +t.value || 20; setState(); }
+  });
+  $('save').addEventListener('click', function () {
+    call('/api/route/save', { target: $('target').value, definition: def }).then(function (data) {
+      showProblems(data.problems);
+      if (data.saved) { saved = JSON.stringify(def); setState(); $('state').className = 'good'; $('state').textContent = 'Saved'; }
+      else if (data.error) { $('state').className = 'bad'; $('state').textContent = data.error; }
+    });
+  });
+  window.addEventListener('beforeunload', function (e) { if (def && JSON.stringify(def) !== saved) { e.preventDefault(); e.returnValue = ''; } });
+
+  call('/api/routes').then(function (data) {
+    $('target').innerHTML = data.targets.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('');
+    if (data.targets.length) { load(data.targets[0]); }
+    else { $('state').className = 'bad'; $('state').textContent = 'No factory yet. Create one with: flow.py init'; }
+  });
+})();
+</script>
+</body>
+</html>
