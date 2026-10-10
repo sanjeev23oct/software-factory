@@ -124,6 +124,8 @@ def checkout(item):
 def fill(item, text):
     values = {"spec": item["spec"], "checkout": str(checkout(item)), "scripts": str(SCRIPTS),
               "skills": str(core.TARGETS / core.NAME / "skills"), "item": item["id"],
+              "branch": "factory/{}".format(item["id"]), "main": core.MAIN, "title": item["title"],
+              "issue": item["ref"] if item.get("source") != "file" else "",
               "presubmit": core.PRESUBMIT[0]}
     return re.sub(r"\{(\w+)\}", lambda m: values.get(m.group(1), m.group(0)), text)
 
@@ -320,12 +322,14 @@ def cmd_poll(args):
     if kind == "file":
         raise core.FactoryError("this factory takes requirements from files; there is nothing to poll")
     started = {i["ref"] for i in all_items()}
-    issues = json.loads(read_issue(source_args() + ["--list", "--label", label]))
+    who = DEFINITION["source"].get("assignee")
+    issues = json.loads(read_issue(source_args() + ["--list", "--label", label] + (["--assignee", who] if who else [])))
     new = [i for i in issues if i["ref"] not in started]
     for issue in new:
         start(PREFIX[kind] + issue["ref"], issue["title"], ref=issue["ref"], source=kind)
         print("started {}{}: {}".format(PREFIX[kind], issue["ref"], issue["title"]))
-    print("{} open issue(s) labelled `{}`, {} new".format(len(issues), label, len(new)))
+    print("{} open issue(s) labelled `{}`{}, {} new".format(
+        len(issues), label, " and assigned to {}".format(who) if who else "", len(new)))
 
 
 def cmd_init(args):

@@ -5,7 +5,7 @@
     read_issue.py --source github --repo owner/name --ref 12 --out issue_context.md
     read_issue.py --source jira --ref ABC-12 --out issue_context.md
     read_issue.py --source file --ref requirement.md --out issue_context.md
-    read_issue.py --source github --repo owner/name --list --label factory
+    read_issue.py --source github --repo owner/name --list --label factory [--assignee username]
 
 GitLab uses the `glab` login on this machine and GitHub uses `gh`. Jira reads
 JIRA_BASE_URL, JIRA_EMAIL and JIRA_API_TOKEN from the environment.
@@ -74,13 +74,16 @@ def fetch(args):
 
 def listing(args):
     if args.source == "gitlab":
-        found = gitlab(args, "issues?state=opened&labels={}&per_page=100".format(quote(args.label)))
+        who = "&assignee_username={}".format(quote(args.assignee)) if args.assignee else ""
+        found = gitlab(args, "issues?state=opened&labels={}&per_page=100{}".format(quote(args.label), who))
         return [{"ref": str(i["iid"]), "title": i["title"]} for i in found]
     if args.source == "github":
-        found = cli(["gh", "api", "repos/{}/issues?state=open&labels={}&per_page=100".format(args.repo, quote(args.label))])
+        who = "&assignee={}".format(quote(args.assignee)) if args.assignee else ""
+        found = cli(["gh", "api", "repos/{}/issues?state=open&labels={}&per_page=100{}".format(args.repo, quote(args.label), who)])
         return [{"ref": str(i["number"]), "title": i["title"]} for i in found if "pull_request" not in i]
     if args.source == "jira":
-        jql = quote('project = "{}" AND labels = "{}" AND statusCategory != Done'.format(args.project, args.label))
+        who = ' AND assignee = "{}"'.format(args.assignee) if args.assignee else ""
+        jql = quote('project = "{}" AND labels = "{}" AND statusCategory != Done{}'.format(args.project, args.label, who))
         found = jira("/rest/api/2/search?jql={}&fields=summary&maxResults=100".format(jql))
         return [{"ref": i["key"], "title": i["fields"]["summary"]} for i in found["issues"]]
     return []
@@ -96,6 +99,7 @@ def main():
     p.add_argument("--out")
     p.add_argument("--list", action="store_true")
     p.add_argument("--label", default="factory")
+    p.add_argument("--assignee", help="when listing, only issues assigned to this username")
     args = p.parse_args()
 
     if args.list:
