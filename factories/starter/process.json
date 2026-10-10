@@ -1,0 +1,29 @@
+{
+  "spec_root": "specs",
+  "required_spec_files": [
+    "requirements.md",
+    "tasks.md"
+  ],
+  "skills_dirs": [
+    ".claude/skills"
+  ],
+  "code": {
+    "app": [
+      "src/"
+    ]
+  },
+  "tests": {
+    "app": [
+      "tests/",
+      "test/"
+    ]
+  },
+  "tests_warn_only": [],
+  "protected": [
+    ".github/",
+    ".gitlab-ci.yml"
+  ],
+  "max_added_lines": 800,
+  "checks": {},
+  "rules": []
+}

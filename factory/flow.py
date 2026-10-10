@@ -153,7 +153,9 @@ def fill(item, text):
               "branch": "factory/{}".format(item["id"]), "main": core.MAIN, "title": item["title"],
               "issue": item["ref"] if item.get("source") != "file" else "",
               "presubmit": core.PRESUBMIT[0], "reports": str(reports(item)), "ref": item["ref"],
-              "sha": item.get("sha", ""), "base": "origin/" + core.MAIN, "context": str(context_file(item)), "target": str(core.TARGETS / core.NAME)}
+              "sha": item.get("sha", ""), "base": "origin/" + core.MAIN, "context": str(context_file(item)),
+              "source_repo": DEFINITION["source"].get("repo", ""), "source_project": DEFINITION["source"].get("project", ""),
+              "source_host": DEFINITION["source"].get("host", ""), "target": str(core.TARGETS / core.NAME)}
     return re.sub(r"\{(\w+)\}", lambda m: values.get(m.group(1), m.group(0)), text)
 
 
@@ -329,7 +331,7 @@ def source_args(ref=None):
 
 
 def reader():
-    return SCRIPTS / ("read_mr.py" if DEFINITION["source"]["type"] == "gitlab-mr" else "read_issue.py")
+    return SCRIPTS / ("read_mr.py" if DEFINITION["source"]["type"] in REVIEWS else "read_issue.py")
 
 
 def read_issue(extra):
@@ -339,7 +341,8 @@ def read_issue(extra):
     return proc.stdout.strip()
 
 
-PREFIX = {"gitlab": "GL", "github": "GH", "jira": "", "file": "L", "gitlab-mr": "MR"}
+PREFIX = {"gitlab": "GL", "github": "GH", "jira": "", "file": "L", "gitlab-mr": "MR", "github-pr": "PR"}
+REVIEWS = ("gitlab-mr", "github-pr")
 
 
 def cmd_start(args):
@@ -353,7 +356,7 @@ def cmd_start(args):
         scratch = STATE / "items" / "incoming.md"
         printed = read_issue(source_args(args.issue) + ["--out", str(scratch)]).splitlines()[-1]
         scratch.unlink()
-        extra = json.loads(printed) if kind == "gitlab-mr" else {"title": printed}
+        extra = json.loads(printed) if kind in REVIEWS else {"title": printed}
         item = start(PREFIX[kind] + str(args.issue), extra.pop("title"), ref=str(args.issue), source=kind,
                      **{k: extra[k] for k in ("sha", "branch") if k in extra})
     else:
@@ -412,6 +415,11 @@ def cmd_init(args):
     shutil.copy(core.HOME / ".github" / "issue-triage" / "config.json", home / "labels.json")
     for name in ("AGENTS.md", "presubmit"):
         shutil.copy(FACTORIES / "starter" / name, home / name)
+    if definition.get("commit") is False:
+        # A review route checks requests against rules; start it with the generic set.
+        rules = json.loads((FACTORIES / "starter" / "process.json").read_text())
+        rules["skills_dirs"].append(str(home / "skills"))
+        (home / "process.json").write_text(json.dumps(rules, indent=2) + "\n")
     (home / "presubmit").chmod(0o755)
     print("Created {}".format(home))
     print("Edit before the first run: factory.json (source), AGENTS.md (your rules), presubmit (your checks).")
@@ -423,7 +431,8 @@ def validate(definition, skills_dir):
     source = definition.get("source", {})
     if source.get("type") not in PREFIX:
         problems.append("source.type must be one of {}".format(", ".join(PREFIX)))
-    need = {"gitlab": ["project"], "gitlab-mr": ["project"], "github": ["repo"], "jira": ["project"]}.get(source.get("type"), [])
+    need = {"gitlab": ["project"], "gitlab-mr": ["project"], "github": ["repo"], "github-pr": ["repo"],
+            "jira": ["project"]}.get(source.get("type"), [])
     problems += ["source.{} is not set".format(k) for k in need if not source.get(k) or "<" in source[k]]
     builds = definition.get("commit", True)
     if builds and "{n}" not in definition.get("spec_dir", "") and "{slug}" not in definition.get("spec_dir", ""):
@@ -544,6 +553,7 @@ def cmd_run(args):
                     print("{}: paused - today's agent spend ${:.2f} has reached the ${} limit".format(item["id"], spent, cap))
                     break
                 print("{}: {} ({} agent working...)".format(item["id"], task["stage"], task["agent"]), flush=True)
+                core.BUDGET_USD = str(DEFINITION.get("limits", {}).get("run_usd", core.BUDGET_USD))
                 try:
                     cost = core.run_headless(task)
                 except core.FactoryError as e:

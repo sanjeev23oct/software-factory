@@ -1,0 +1,74 @@
+{
+  "description": "Review pull requests: a script checks the process, an agent reviews the code only if it passed, one comment is posted.",
+  "commit": false,
+  "gate_outside": "A person reads the review and decides whether to merge.",
+  "source": {
+    "type": "github-pr",
+    "repo": "<owner>/<repo>",
+    "label": "factory-review"
+  },
+  "limits": {
+    "max_attempts": 2,
+    "daily_usd": 10
+  },
+  "build_skills": [],
+  "stages": [
+    {
+      "id": "read-request",
+      "by": "script",
+      "skill": "read-request",
+      "intake": true
+    },
+    {
+      "id": "process-check",
+      "by": "script",
+      "skill": "process-check",
+      "run": [
+        "python3",
+        "{scripts}/check_mr_process.py",
+        "--repo",
+        "{checkout}",
+        "--base",
+        "{base}",
+        "--config",
+        "{target}/process.json",
+        "--context",
+        "{context}",
+        "--out",
+        "{reports}/process.md",
+        "--ok-file",
+        "{reports}/process.ok"
+      ]
+    },
+    {
+      "id": "review",
+      "by": "agent",
+      "agent": "review",
+      "skill": "review-request",
+      "when_file": "{reports}/process.ok",
+      "writes": [
+        "factory_review.md"
+      ],
+      "produces": [
+        "factory_review.md"
+      ]
+    },
+    {
+      "id": "post-review",
+      "by": "script",
+      "skill": "post-review",
+      "run": [
+        "python3",
+        "{scripts}/post_mr_note.py",
+        "--github",
+        "{source_repo}",
+        "--ref",
+        "{ref}",
+        "--sha",
+        "{sha}",
+        "{reports}/process.md",
+        "{reports}/factory_review.md"
+      ]
+    }
+  ]
+}

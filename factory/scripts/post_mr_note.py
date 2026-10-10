@@ -15,6 +15,7 @@ merges, or changes labels.
 import argparse
 import json
 import os
+import subprocess
 import sys
 import urllib.error
 import urllib.request
@@ -38,10 +39,31 @@ def api(host, token, method, path, data=None):
         sys.exit("post_mr_note: GitLab said {} for {} {}: {}".format(e.code, method, path, e.read().decode()[:300]))
 
 
+def post_github(args, body):
+    env = {k: v for k, v in os.environ.items() if k not in ("GITHUB_TOKEN", "GH_TOKEN")}
+
+    def gh(method, path, payload=None):
+        cmd = ["gh", "api", "-X", method, "repos/{}/{}".format(args.github, path)] + (["--input", "-"] if payload else [])
+        proc = subprocess.run(cmd, input=json.dumps(payload) if payload else None, text=True, capture_output=True, env=env)
+        if proc.returncode:
+            sys.exit("post_mr_note: gh api {} failed: {}".format(path, (proc.stderr or proc.stdout).strip()[:300]))
+        return json.loads(proc.stdout or "null")
+
+    mine = [c for c in gh("GET", "issues/{}/comments?per_page=100".format(args.ref)) if MARKER in c["body"]]
+    if mine:
+        gh("PATCH", "issues/comments/{}".format(mine[-1]["id"]), {"body": body})
+        print("Updated the review comment on #{}".format(args.ref))
+    else:
+        gh("POST", "issues/{}/comments".format(args.ref), {"body": body})
+        print("Posted the review comment on #{}".format(args.ref))
+
+
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    for name in ("host", "project", "ref"):
-        p.add_argument("--" + name, required=True)
+    p.add_argument("--ref", required=True)
+    p.add_argument("--host")
+    p.add_argument("--project")
+    p.add_argument("--github", help="owner/name: post on a GitHub pull request with the `gh` login instead")
     p.add_argument("--sha", default="")
     p.add_argument("files", nargs="+")
     p.add_argument("--dry-run", action="store_true")
@@ -56,6 +78,8 @@ def main():
         print("dry run: nothing posted. The comment would be:\n")
         print(body)
         return
+    if args.github:
+        return post_github(args, body)
     token = token_for(args.host)
     base = "projects/{}/merge_requests/{}/notes".format(quote(args.project, safe=""), args.ref)
     mine = [n for n in api(args.host, token, "GET", base + "?per_page=100") if MARKER in n["body"]]

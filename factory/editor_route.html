@@ -188,6 +188,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
     'gitlab': { name: 'GitLab issues', fields: [['host', 'GitLab host', 'gitlab.com'], ['project', 'Project', 'group/project'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
     'gitlab-mr': { name: 'GitLab merge requests', fields: [['host', 'GitLab host', 'gitlab.com'], ['project', 'Project', 'group/project'], ['label', 'Pick up requests labelled', 'factory-review'], ['assignee', 'Only when this person is a reviewer', 'username, or leave empty']] },
     'github': { name: 'GitHub issues', fields: [['repo', 'Repository', 'owner/name'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
+    'github-pr': { name: 'GitHub pull requests', fields: [['repo', 'Repository', 'owner/name'], ['label', 'Pick up requests labelled', 'factory-review'], ['assignee', 'Only when this person is a reviewer', 'username, or leave empty']] },
     'jira': { name: 'Jira issues', fields: [['project', 'Project key', 'SHOP'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
     'file': { name: 'A file you point it at', fields: [] }
   };
@@ -345,7 +346,10 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   function listFactories(pick) {
     return call('/api/routes').then(function (data) {
       $('target').innerHTML = data.targets.map(function (t) { return '<option' + (t === pick ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
-      if (data.targets.length) { load(pick || data.targets[0]); }
+      pick = pick || decodeURIComponent(location.hash.slice(1));
+      if (data.targets.indexOf(pick) < 0) { pick = data.targets[0]; }
+      $('target').value = pick;
+      if (data.targets.length) { load(pick); }
       else { $('newpanel').hidden = false; $('state').textContent = 'No factory yet. Add a repository to start.'; }
     });
   }
