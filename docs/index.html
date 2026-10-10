@@ -1,211 +1,301 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Software Factory Guide</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>
-/* Layout: one reading column; stage strips are the recurring figure and may run wider than the text. */
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Software Factory</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap"><style>
+/* Layout: dark hero with a live-looking run panel, then alternating full-width bands of cards and diagrams. */
 :root {
-  --bg: #edf0f3; --surface: #f8fafb; --ink: #17212b; --muted: #5a6875; --line: #cfd6dd;
-  --accent: #0b6a86; --script: #4b5a68; --agent: #0b6a86; --human: #9a5b00; --human-bg: #f6e7c8; --code-bg: #e2e7ec;
+  --bg: #f4f6f8; --surface: #ffffff; --ink: #121a22; --muted: #5b6875; --line: #d5dce3;
+  --hero: #0e151c; --hero-ink: #e8eef3; --hero-muted: #93a3b1; --hero-line: #26333f; --hero-panel: #151f29;
+  --accent: #0a7ea4; --accent-ink: #ffffff; --script: #56677a; --agent: #0a7ea4; --human: #b86e00;
+  --script-bg: #e6ebf0; --agent-bg: #d9eef6; --human-bg: #fbe9c6; --done: #23835a; --code-bg: #0e151c; --code-ink: #dbe6ee;
   --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
   --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #11181f; --surface: #18222b; --ink: #e3e9ee; --muted: #94a3b0; --line: #2c3945;
-    --accent: #5bb8d4; --script: #a9b6c2; --agent: #5bb8d4; --human: #e0a84a; --human-bg: #3a2c10; --code-bg: #1f2b35;
+    --bg: #0b1117; --surface: #131c25; --ink: #e6edf2; --muted: #93a3b1; --line: #26333f;
+    --hero: #070b10; --hero-panel: #111a22;
+    --accent: #45b5db; --accent-ink: #06222d; --script: #a3b2c0; --agent: #45b5db; --human: #e9ae4d;
+    --script-bg: #1c2731; --agent-bg: #0f3140; --human-bg: #3b2c0e; --done: #62c795; --code-bg: #070b10;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #11181f; --surface: #18222b; --ink: #e3e9ee; --muted: #94a3b0; --line: #2c3945;
-  --accent: #5bb8d4; --script: #a9b6c2; --agent: #5bb8d4; --human: #e0a84a; --human-bg: #3a2c10; --code-bg: #1f2b35;
+  --bg: #0b1117; --surface: #131c25; --ink: #e6edf2; --muted: #93a3b1; --line: #26333f;
+  --hero: #070b10; --hero-panel: #111a22;
+  --accent: #45b5db; --accent-ink: #06222d; --script: #a3b2c0; --agent: #45b5db; --human: #e9ae4d;
+  --script-bg: #1c2731; --agent-bg: #0f3140; --human-bg: #3b2c0e; --done: #62c795; --code-bg: #070b10;
   color-scheme: dark;
 }
-body { background: var(--bg); color: var(--ink); font: 16px/1.6 var(--body); margin: 0; }
-.page { max-width: 880px; margin: 0 auto; padding-inline: 20px; padding-block: 48px 80px; display: grid; gap: 56px; }
-section, header { display: grid; gap: 16px; min-width: 0; }
-h1 { font: 800 clamp(30px, 6vw, 46px)/1.08 var(--display); letter-spacing: -0.015em; margin: 0; text-wrap: balance; max-width: 18ch; }
-h2 { font: 800 24px/1.2 var(--display); margin: 0; text-wrap: balance; padding-top: 14px; border-top: 2px solid var(--ink); }
-h3 { font: 700 17px/1.3 var(--display); margin: 0; }
-p, ul, ol { margin: 0; max-width: 66ch; }
-ul, ol { padding-left: 1.2em; display: grid; gap: 6px; }
-.lede { font-size: 19px; line-height: 1.5; max-width: 60ch; }
-.eyebrow, .chip, .legend span, th { font: 600 11px/1.2 var(--mono); letter-spacing: 0.07em; text-transform: uppercase; }
-.eyebrow { color: var(--muted); }
-a { color: var(--accent); }
-a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-code { font: 0.88em var(--mono); background: var(--code-bg); padding: 1px 5px; border-radius: 3px; overflow-wrap: anywhere; }
-pre { margin: 0; background: var(--code-bg); border-radius: 4px; padding: 14px 16px; overflow-x: auto; font: 13px/1.55 var(--mono); }
-pre code { background: none; padding: 0; font-size: inherit; overflow-wrap: normal; }
-.kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; }
-.kind { display: grid; gap: 6px; align-content: start; padding-top: 10px; border-top: 4px solid var(--c); min-width: 0; }
-.kind h3 { color: var(--c); }
-.kind p { font-size: 15px; }
-.script { --c: var(--script); } .agent { --c: var(--agent); } .human { --c: var(--human); }
-.factory { display: grid; gap: 10px; padding-block: 18px; border-bottom: 1px solid var(--line); min-width: 0; }
-.factory:last-of-type { border-bottom: 0; }
-.factory .meta { color: var(--muted); font-size: 14px; }
-.strip { display: flex; flex-wrap: wrap; gap: 6px 4px; align-items: center; list-style: none; padding: 0; max-width: none; }
-.strip li { display: flex; align-items: center; gap: 4px; }
-.strip li + li::before { content: "\2192"; color: var(--muted); font: 13px var(--mono); }
-.chip { padding: 6px 8px; border: 1.5px solid var(--c); color: var(--c); border-radius: 2px; white-space: nowrap; text-transform: none; letter-spacing: 0; font-size: 12px; }
-.chip.human { background: var(--human-bg); font-weight: 600; }
-.chip.optional { border-style: dashed; }
-.chip.off { opacity: 0.55; border-style: dotted; }
-.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; color: var(--muted); }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); margin: 0; }
+.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font: 800 clamp(34px, 6.4vw, 60px)/1.02 var(--display); letter-spacing: -0.02em; text-wrap: balance; }
+h2 { font: 800 clamp(24px, 3.6vw, 32px)/1.12 var(--display); letter-spacing: -0.01em; text-wrap: balance; }
+h3 { font: 700 17px/1.25 var(--display); }
+a { color: inherit; }
+a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.label { font: 600 11px/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+svg { width: 20px; height: 20px; flex: none; }
+
+/* hero */
+.hero { background: var(--hero); color: var(--hero-ink); }
+nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 18px; }
+.brand { font: 800 17px var(--display); display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.brand i { width: 18px; height: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
+.brand i b { background: var(--hero-muted); border-radius: 1px; }
+.brand i b:nth-child(2) { background: #45b5db; } .brand i b:nth-child(3) { background: #e9ae4d; }
+nav .links { display: flex; gap: 22px; font-size: 14px; color: var(--hero-muted); }
+nav .links a { text-decoration: none; } nav .links a:hover { color: var(--hero-ink); }
+.hero-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 44px; align-items: center; padding-block: 44px 64px; }
+.hero-copy { display: grid; gap: 20px; }
+.hero-copy p { color: var(--hero-muted); font-size: 18px; max-width: 34ch; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; }
+.btn { font: 600 15px var(--body); padding: 11px 18px; border-radius: 6px; text-decoration: none; border: 1.5px solid transparent; }
+.btn.primary { background: #45b5db; color: #06222d; } .btn.ghost { border-color: var(--hero-line); color: var(--hero-ink); }
+.panel { background: var(--hero-panel); border: 1px solid var(--hero-line); border-radius: 10px; overflow: hidden; min-width: 0;
+  box-shadow: 0 24px 60px -30px #000; }
+.panel-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--hero-line); color: var(--hero-muted); }
+.panel-bar s { width: 9px; height: 9px; border-radius: 50%; background: var(--hero-line); }
+.panel-bar span { margin-left: 8px; font: 12px var(--mono); }
+.run { padding: 16px; display: grid; gap: 10px; border-bottom: 1px solid var(--hero-line); }
+.run:last-child { border-bottom: 0; }
+.run-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+.run-head b { font: 600 14px var(--body); min-width: 0; overflow-wrap: anywhere; }
+.run-head b em { font: 500 12px var(--mono); color: var(--hero-muted); margin-right: 8px; font-style: normal; }
+.pill { font: 600 11px var(--mono); padding: 4px 8px; border-radius: 99px; white-space: nowrap; }
+.pill.agent { background: #0f3140; color: #7fd0ec; } .pill.human { background: #3b2c0e; color: #f0bd62; } .pill.done { background: #123524; color: #74d3a2; }
+.rail { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+.rail i { height: 6px; border-radius: 3px; background: var(--hero-line); }
+.rail i.d { background: #3f9d72; } .rail i.a { background: #45b5db; animation: pulse 1.6s ease-in-out infinite; } .rail i.h { background: #e9ae4d; }
+.run small { font: 12px var(--mono); color: var(--hero-muted); }
+@keyframes pulse { 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .rail i.a { animation: none; } }
+.example { padding: 8px 16px; font: 11px var(--mono); color: var(--hero-muted); border-top: 1px solid var(--hero-line); }
+
+/* bands */
+.band { padding-block: 64px; }
+.band.alt { background: var(--surface); border-block: 1px solid var(--line); }
+.head { display: grid; gap: 8px; margin-bottom: 28px; }
+.head .label { color: var(--accent); }
+.head p { color: var(--muted); max-width: 60ch; }
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-bottom: 1px solid var(--line); background: var(--surface); }
+.stats div { padding: 20px; border-right: 1px solid var(--line); }
+.stats b { display: block; font: 800 30px/1 var(--display); font-variant-numeric: tabular-nums; }
+.stats span { color: var(--muted); font-size: 14px; }
+
+.kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; }
+.kinds > *, .steps > *, .samples > *, .sources > *, .proof > *, .step > *, .sample > * { min-width: 0; }
+.kind { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: grid; gap: 10px; align-content: start; }
+.band.alt .kind { background: var(--bg); }
+.badge { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; background: var(--tint); color: var(--c); }
+.script { --c: var(--script); --tint: var(--script-bg); } .agent { --c: var(--agent); --tint: var(--agent-bg); } .human { --c: var(--human); --tint: var(--human-bg); }
+.kind p { color: var(--muted); font-size: 15px; }
+.kind ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
+.kind li { font: 12px var(--mono); padding: 3px 8px; border-radius: 4px; background: var(--tint); color: var(--c); }
+
+/* flow diagram */
+.flow { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px 20px; }
+.node { min-width: 0; position: relative; padding: 14px 10px; border-radius: 8px;
+  background: var(--tint); color: var(--c); display: grid; gap: 6px; align-content: start; }
+.node:not(:last-child)::after { content: ""; position: absolute; right: -14px; top: 50%; width: 8px; height: 8px;
+  border-top: 2px solid var(--muted); border-right: 2px solid var(--muted); transform: translateY(-50%) rotate(45deg); }
+.node b { font: 700 14px/1.2 var(--display); color: var(--ink); }
+.node span { font: 11px/1.3 var(--mono); }
+.node.end { --tint: transparent; --c: var(--muted); border: 1.5px dashed var(--line); }
+.back { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: 14px; }
+.back span::before { content: "\21A9"; margin-right: 6px; color: var(--human); }
+
+/* samples */
+.samples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.sample { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: grid; gap: 14px; align-content: start; min-width: 0; }
+.sample-top { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
+.sample-top p { color: var(--muted); font-size: 14px; }
+.from { font: 600 11px var(--mono); padding: 4px 8px; border: 1px solid var(--line); border-radius: 99px; white-space: nowrap; color: var(--muted); }
+.bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
+.bar i { height: 22px; border-radius: 4px; background: var(--c); display: grid; place-items: center; color: var(--surface); }
+.bar i.human { color: #3b2c0e; }
+.bar i svg { width: 13px; height: 13px; }
+.bar i.opt { opacity: 0.55; }
+.mix { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
+.mix b { color: var(--c); font-variant-numeric: tabular-nums; }
+.gates { font-size: 14px; }
+.gates b { color: var(--human); }
+details summary { cursor: pointer; font-size: 13px; color: var(--accent); list-style: none; }
+details summary::-webkit-details-marker { display: none; }
+details summary::after { content: " +"; } details[open] summary::after { content: " \2212"; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 10px; }
+.chips span { font: 11px var(--mono); padding: 3px 7px; border-radius: 4px; background: var(--tint); color: var(--c); }
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 18px; font-size: 13px; color: var(--muted); }
 .legend span { display: flex; align-items: center; gap: 6px; }
-.legend i { width: 14px; height: 14px; border: 1.5px solid var(--c); border-radius: 2px; display: block; }
-.legend i.human { background: var(--human-bg); } .legend i.optional { border-style: dashed; --c: var(--muted); }
-.scroll { overflow-x: auto; }
-table { border-collapse: collapse; width: 100%; font-size: 15px; }
-th { text-align: left; color: var(--muted); padding: 0 14px 8px 0; border-bottom: 1px solid var(--ink); white-space: nowrap; }
-td { padding: 10px 14px 10px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
-td:first-child { font-weight: 600; white-space: nowrap; }
-.steps { counter-reset: step; list-style: none; padding: 0; gap: 22px; max-width: none; }
-.steps > li { counter-increment: step; display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 4px 12px; }
-.steps > li::before { content: counter(step); font: 800 22px/1.2 var(--display); color: var(--accent); grid-row: span 3; }
-.steps > li > * { grid-column: 2; }
-footer { color: var(--muted); font-size: 14px; }
+.legend i { width: 14px; height: 14px; border-radius: 3px; background: var(--c); }
+
+/* proof */
+.proof { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 32px; align-items: center; }
+.chain { display: grid; gap: 10px; }
+.link { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; }
+.link b { font: 700 15px var(--display); display: block; } .link span { color: var(--muted); font-size: 14px; }
+.sheet { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font: 13px var(--mono); min-width: 0; }
+.band:not(.alt) .sheet { background: var(--surface); }
+.sheet-head { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.sheet-head b { color: var(--done); }
+.sheet-scroll { overflow-x: auto; }
+.sheet table { border-collapse: collapse; width: 100%; }
+.sheet td, .sheet th { padding: 8px 14px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.sheet th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
+.sheet tr:last-child td { border-bottom: 0; }
+.sheet td.ok { color: var(--done); } .sheet td.ok svg { width: 14px; height: 14px; vertical-align: -2px; }
+.sheet-foot { padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+
+/* steps and sources */
+.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
+.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.band.alt .step { background: var(--bg); }
+.step .n { font: 800 13px var(--mono); color: var(--accent); }
+.step p { color: var(--muted); font-size: 14px; }
+.cmd { position: relative; background: var(--code-bg); color: var(--code-ink); border-radius: 6px; max-width: 100%; overflow: hidden; }
+.cmd pre { margin: 0; padding: 34px 14px 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12.5px/1.6 var(--mono); }
+.cmd button { position: absolute; top: 7px; right: 7px; font: 600 11px var(--mono); background: #26333f; color: #dbe6ee; border: 0; border-radius: 4px; padding: 5px 8px; cursor: pointer; }
+.sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 12px; }
+.source { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 6px; }
+.source b { font: 700 17px var(--display); } .source span { color: var(--muted); font-size: 13px; }
+.state { font: 600 11px var(--mono); display: flex; align-items: center; gap: 6px; }
+.state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--done); }
+.state.pending { color: var(--human); } .state.pending::before { background: var(--human); }
+.state.ok { color: var(--done); }
+.road { display: flex; flex-wrap: wrap; gap: 8px; }
+.road span { font-size: 14px; padding: 7px 12px; border: 1px dashed var(--line); border-radius: 99px; color: var(--muted); }
+footer { padding-block: 32px; color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
+@media (max-width: 820px) {
+  .hero-grid, .proof, .samples { grid-template-columns: minmax(0, 1fr); }
+  .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  nav .links a:not(.keep) { display: none; }
+  .band { padding-block: 44px; }
+  .stats div { border-bottom: 1px solid var(--line); }
+}
 </style></head><body>
-<div class="page">
-<header>
-  <div class="eyebrow">Software factory · concept and samples</div>
-  <h1>Decide once who does each step</h1>
-  <p class="lede">A software factory is a written definition of how a piece of work travels from a request to
-  a reviewed change. For every step it answers one question: is this done by a script, by an AI agent, or by a person?</p>
-  <p>Once that is written down, the factory can run it for you. Scripts and agents do their steps unattended.
-  The factory stops only where you said a person is needed, and waits.</p>
-</header>
+<div class="hero"><div class="wrap">
+  <nav><a class="brand" href="#top"><i><b></b><b></b><b></b><b></b></i>Software Factory</a>
+    <div class="links"><a href="#how">How it works</a><a href="#samples">Samples</a><a href="#create">Create yours</a>
+    <a class="keep" href="https://github.com/sanjeev23oct/software-factory">GitHub</a></div></nav>
+  <div class="hero-grid" id="top">
+    <div class="hero-copy">
+      <h1>Issues in. Reviewed changes out.</h1>
+      <p>Define who does each step of your development process. Scripts and AI agents run it. You step in only where you chose to.</p>
+      <div class="cta"><a class="btn primary" href="#create">Create a factory</a><a class="btn ghost" href="https://github.com/sanjeev23oct/software-factory">View on GitHub</a></div>
+    </div>
+    <div class="panel" aria-label="Example of three issues moving through a factory">
+      <div class="panel-bar"><s></s><s></s><s></s><span>shop · backend-api factory</span></div>
+      <div class="run"><div class="run-head"><b><em>GH42</em>Export orders as CSV</b><span class="pill agent">Agent building</span></div>
+        <div class="rail"><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='a'></i><i></i><i></i><i></i></div><small>build · task 2.3 of 7 · maker then checker</small></div>
+      <div class="run"><div class="run-head"><b><em>GH43</em>Fix rounding in order totals</b><span class="pill human">Waiting for you</span></div>
+        <div class="rail"><i class='d'></i><i class='d'></i><i class='h'></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div><small>approve-requirements · requirements.md is ready to read</small></div>
+      <div class="run"><div class="run-head"><b><em>GH40</em>Rate-limit the login endpoint</b><span class="pill done">Evidence passed</span></div>
+        <div class="rail"><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i><i class='d'></i></div><small>verify · 41 checks re-run by script, 41 passed</small></div>
+      <div class="example">Example run, for illustration</div>
+    </div>
+  </div>
+</div></div>
 
-<section>
-  <h2>Three kinds of step</h2>
+<div class="stats"><div><b>4</b><span>sample factories</span></div><div><b>18</b><span>skills included</span></div>
+  <div><b>4</b><span>places work can start</span></div><div><b>42%</b><span>of sample steps need no AI</span></div></div>
+
+<section class="band" id="how"><div class="wrap">
+  <div class="head"><span class="label">How it works</span><h2>Every step has one of three owners</h2></div>
   <div class="kinds">
-    <div class="kind script"><h3>Script</h3><p>Anything with one right answer. Fetch the issue, check that every
-    task names a skill, run the tests, re-check the evidence. No AI is involved, so it costs nothing and gives the same result every time.</p></div>
-    <div class="kind agent"><h3>Agent</h3><p>Anything that needs judgment. Write the requirements, design the change,
-    build a task, review a diff. An agent follows a skill, a short document that says how to do that one job.</p></div>
-    <div class="kind human"><h3>Human</h3><p>Anything that is a decision about your product. Is this what we want
-    to build? Does this screen look right? Should this merge? The factory waits here for as long as it takes.</p></div>
+    <div class="kind script"><span class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10l3 2.5L8 15M13 15h3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><h3>Script</h3><p>One right answer. Free, instant, the same every time.</p>
+      <ul><li>read the issue</li><li>lint tasks</li><li>run tests</li><li>check evidence</li></ul></div>
+    <div class="kind agent"><span class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M18.5 16.5v4M16.5 18.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><h3>Agent</h3><p>Needs judgment. Follows a skill written for that one job.</p>
+      <ul><li>write requirements</li><li>design</li><li>build a task</li><li>review</li></ul></div>
+    <div class="kind human"><span class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><h3>You</h3><p>A decision about your product. The factory waits.</p>
+      <ul><li>approve requirements</li><li>approve screens</li><li>merge</li></ul></div>
   </div>
-  <p>Designing a factory is mostly deciding where the human steps go. Too many and nothing moves without you.
-  Too few and you find out about a wrong turn after the work is done.</p>
-</section>
+</div></section>
 
-<section>
-  <h2>Four sample factories</h2>
-  <p>Each is a real definition in the repository. They differ in where work comes from, which steps exist, and where a person is asked.</p>
-  <div class="legend">
-    <span class="script"><i></i>Script</span><span class="agent"><i></i>Agent</span>
-    <span class="human"><i class="human"></i>Human</span><span><i class="optional"></i>Optional step</span>
+<section class="band alt"><div class="wrap">
+  <div class="head"><span class="label">One item, start to finish</span><h2>The path a feature takes</h2></div>
+  <div class="flow">
+    <div class="node script"><b>Read issue</b><span>script</span></div>
+    <div class="node agent"><b>Requirements</b><span>agent</span></div>
+    <div class="node human"><b>You approve</b><span>human</span></div>
+    <div class="node agent"><b>Tasks</b><span>agent · a skill per task</span></div>
+    <div class="node script"><b>Lint tasks</b><span>script</span></div>
+    <div class="node agent"><b>Build</b><span>maker + checker</span></div>
+    <div class="node script"><b>Check evidence</b><span>script</span></div>
+    <div class="node end"><b>Merge request</b><span>yours to merge</span></div>
   </div>
-  <div><div class="factory"><h3>spec-driven</h3><p>Requirement to requirements, one approval, optional design, tasks with a skill each, maker-checker build with evidence.</p><ol class="strip"><li><span class="chip script">read-issue</span></li><li><span class="chip agent">requirements</span></li><li><span class="chip human">approve-requirements</span></li><li><span class="chip agent optional">design</span></li><li><span class="chip agent">tasks</span></li><li><span class="chip script">lint-tasks</span></li><li><span class="chip agent">build</span></li><li><span class="chip script">check-evidence</span></li><li><span class="chip script">verify</span></li><li><span class="chip script off">merge-request</span></li></ol><div class="meta">Starts from a file · 1 human decision · 4 of 9 stages are scripts</div></div><div class="factory"><h3>backend-api</h3><p>Backend and database work from GitHub issues. Design is required and approved separately, because API and schema changes are expensive to undo.</p><ol class="strip"><li><span class="chip script">read-issue</span></li><li><span class="chip agent">requirements</span></li><li><span class="chip human">approve-requirements</span></li><li><span class="chip agent">design</span></li><li><span class="chip human">approve-design</span></li><li><span class="chip agent">tasks</span></li><li><span class="chip script">lint-tasks</span></li><li><span class="chip agent">build</span></li><li><span class="chip script">check-evidence</span></li><li><span class="chip script">verify</span></li><li><span class="chip script off">merge-request</span></li></ol><div class="meta">Starts from GitHub issues · 2 human decisions · 4 of 10 stages are scripts</div></div><div class="factory"><h3>ui-app</h3><p>UI work from GitLab issues. A visual spec pins every screen and state; a human looks at the result before it goes further.</p><ol class="strip"><li><span class="chip script">read-issue</span></li><li><span class="chip agent">requirements</span></li><li><span class="chip human">approve-requirements</span></li><li><span class="chip agent optional">visual-spec</span></li><li><span class="chip agent">tasks</span></li><li><span class="chip script">lint-tasks</span></li><li><span class="chip agent">build</span></li><li><span class="chip script">check-evidence</span></li><li><span class="chip script">verify</span></li><li><span class="chip human">approve-screens</span></li><li><span class="chip script off">merge-request</span></li></ol><div class="meta">Starts from GitLab issues · 2 human decisions · 4 of 10 stages are scripts</div></div><div class="factory"><h3>bugfix</h3><p>Bug reports from Jira. No spec: reproduce with a failing test, fix, verify, review, then one human approval.</p><ol class="strip"><li><span class="chip script">read-issue</span></li><li><span class="chip agent">reproduce</span></li><li><span class="chip agent">fix</span></li><li><span class="chip script">verify</span></li><li><span class="chip agent">review</span></li><li><span class="chip script">check-review</span></li><li><span class="chip human">approve-fix</span></li><li><span class="chip script off">merge-request</span></li></ol><div class="meta">Starts from Jira issues · 1 human decision · 3 of 7 stages are scripts</div></div></div>
-</section>
+  <div class="back"><span>A task with no skill goes back to Tasks</span><span>Work ticked without evidence goes back to Build</span>
+    <span>Three failed attempts parks the item for you</span></div>
+</div></section>
 
-<section>
-  <h2>What a definition contains</h2>
-  <p>A factory is one file, <code>factory.json</code>, plus a folder of skills. This is the start of the
-  <code>spec-driven</code> sample, pointed at a GitHub repository:</p>
-  <pre><code>{
-  &quot;source&quot;: {
-    &quot;type&quot;: &quot;github&quot;,
-    &quot;repo&quot;: &quot;acme/shop&quot;,
-    &quot;label&quot;: &quot;factory&quot;
-  },
-  &quot;spec_dir&quot;: &quot;specs/{n}-{slug}&quot;,
-  &quot;limits&quot;: {
-    &quot;max_attempts&quot;: 3
-  },
-  &quot;stages&quot;: [
-    {&quot;id&quot;: &quot;read-issue&quot;, &quot;by&quot;: &quot;script&quot;, &quot;skill&quot;: &quot;read-issue&quot;},
-    {&quot;id&quot;: &quot;requirements&quot;, &quot;by&quot;: &quot;agent&quot;, &quot;skill&quot;: &quot;write-requirements&quot;},
-    {&quot;id&quot;: &quot;approve-requirements&quot;, &quot;by&quot;: &quot;human&quot;},
-    {&quot;id&quot;: &quot;design&quot;, &quot;by&quot;: &quot;agent&quot;, &quot;skill&quot;: &quot;write-design&quot;, &quot;optional&quot;: true},
-    {&quot;id&quot;: &quot;tasks&quot;, &quot;by&quot;: &quot;agent&quot;, &quot;skill&quot;: &quot;write-tasks&quot;},
-    {&quot;id&quot;: &quot;lint-tasks&quot;, &quot;by&quot;: &quot;script&quot;, &quot;skill&quot;: &quot;lint-tasks&quot;, &quot;on_fail&quot;: &quot;tasks&quot;},
-    &quot;...&quot;
-  ]
-}</code></pre>
-  <div class="scroll"><table>
-    <tr><th>Part</th><th>What it decides</th></tr>
-    <tr><td>source</td><td>Where work comes from, and which label marks an issue as ready for the factory.</td></tr>
-    <tr><td>stages</td><td>The steps, in order. Each has an <code>id</code>, who does it (<code>by</code>), and the skill it follows.</td></tr>
-    <tr><td>optional</td><td>A step a person may skip when approving, such as a design for a small change.</td></tr>
-    <tr><td>on_fail</td><td>Where work goes back to when a script rejects it. The earlier stage redoes it with the findings.</td></tr>
-    <tr><td>writes</td><td>The only files an agent step may change. Anything else it touches is rejected.</td></tr>
-    <tr><td>limits</td><td>How many attempts a step gets before the item is parked for a person.</td></tr>
-  </table></div>
-</section>
+<section class="band" id="samples"><div class="wrap">
+  <div class="head"><span class="label">Sample factories</span><h2>Start from one that fits the work</h2></div>
+  <div class="legend"><span class="script"><i></i>Script</span><span class="agent"><i></i>Agent</span><span class="human"><i></i>Human decision</span></div>
+  <div class="samples"><article class="sample"><div class="sample-top"><div><h3>Spec-driven</h3><p>Full-stack features</p></div><span class="from">from File</span></div><div class="bar" role="img" aria-label="9 stages"><i class="script" title="read-issue"></i><i class="agent" title="requirements"></i><i class="human" title="approve-requirements"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></i><i class="agent opt" title="design"></i><i class="agent" title="tasks"></i><i class="script" title="lint-tasks"></i><i class="agent" title="build"></i><i class="script" title="check-evidence"></i><i class="script" title="verify"></i></div><div class="mix"><span class="script"><b>4</b> script</span><span class="agent"><b>4</b> agent</span><span class="human"><b>1</b> human</span></div><div class="gates">You decide on: <b>requirements</b></div><details><summary>All 9 stages</summary><div class="chips"><span class="script">read-issue</span><span class="agent">requirements</span><span class="human">approve-requirements</span><span class="agent">design</span><span class="agent">tasks</span><span class="script">lint-tasks</span><span class="agent">build</span><span class="script">check-evidence</span><span class="script">verify</span></div></details></article><article class="sample"><div class="sample-top"><div><h3>Backend API</h3><p>APIs and databases</p></div><span class="from">from GitHub</span></div><div class="bar" role="img" aria-label="10 stages"><i class="script" title="read-issue"></i><i class="agent" title="requirements"></i><i class="human" title="approve-requirements"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></i><i class="agent" title="design"></i><i class="human" title="approve-design"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></i><i class="agent" title="tasks"></i><i class="script" title="lint-tasks"></i><i class="agent" title="build"></i><i class="script" title="check-evidence"></i><i class="script" title="verify"></i></div><div class="mix"><span class="script"><b>4</b> script</span><span class="agent"><b>4</b> agent</span><span class="human"><b>2</b> human</span></div><div class="gates">You decide on: <b>requirements, then design</b></div><details><summary>All 10 stages</summary><div class="chips"><span class="script">read-issue</span><span class="agent">requirements</span><span class="human">approve-requirements</span><span class="agent">design</span><span class="human">approve-design</span><span class="agent">tasks</span><span class="script">lint-tasks</span><span class="agent">build</span><span class="script">check-evidence</span><span class="script">verify</span></div></details></article><article class="sample"><div class="sample-top"><div><h3>UI app</h3><p>Screens and forms</p></div><span class="from">from GitLab</span></div><div class="bar" role="img" aria-label="10 stages"><i class="script" title="read-issue"></i><i class="agent" title="requirements"></i><i class="human" title="approve-requirements"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></i><i class="agent opt" title="visual-spec"></i><i class="agent" title="tasks"></i><i class="script" title="lint-tasks"></i><i class="agent" title="build"></i><i class="script" title="check-evidence"></i><i class="script" title="verify"></i><i class="human" title="approve-screens"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></i></div><div class="mix"><span class="script"><b>4</b> script</span><span class="agent"><b>4</b> agent</span><span class="human"><b>2</b> human</span></div><div class="gates">You decide on: <b>requirements, then screens</b></div><details><summary>All 10 stages</summary><div class="chips"><span class="script">read-issue</span><span class="agent">requirements</span><span class="human">approve-requirements</span><span class="agent">visual-spec</span><span class="agent">tasks</span><span class="script">lint-tasks</span><span class="agent">build</span><span class="script">check-evidence</span><span class="script">verify</span><span class="human">approve-screens</span></div></details></article><article class="sample"><div class="sample-top"><div><h3>Bug fix</h3><p>Bug reports</p></div><span class="from">from Jira</span></div><div class="bar" role="img" aria-label="7 stages"><i class="script" title="read-issue"></i><i class="agent" title="reproduce"></i><i class="agent" title="fix"></i><i class="script" title="verify"></i><i class="agent" title="review"></i><i class="script" title="check-review"></i><i class="human" title="approve-fix"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></i></div><div class="mix"><span class="script"><b>3</b> script</span><span class="agent"><b>3</b> agent</span><span class="human"><b>1</b> human</span></div><div class="gates">You decide on: <b>fix</b></div><details><summary>All 7 stages</summary><div class="chips"><span class="script">read-issue</span><span class="agent">reproduce</span><span class="agent">fix</span><span class="script">verify</span><span class="agent">review</span><span class="script">check-review</span><span class="human">approve-fix</span></div></details></article></div>
+</div></section>
 
-<section>
-  <h2>Where work can start</h2>
-  <div class="scroll"><table>
-    <tr><th>Source</th><th>How the factory reads it</th><th>State</th></tr>
-    <tr><td>GitHub issues</td><td>The <code>gh</code> login on your machine</td><td>Reading and polling tested</td></tr>
-    <tr><td>GitLab issues</td><td>The <code>glab</code> login; self-hosted instances work</td><td>Reading and polling tested</td></tr>
-    <tr><td>Jira issues</td><td><code>JIRA_BASE_URL</code>, <code>JIRA_EMAIL</code>, <code>JIRA_API_TOKEN</code></td><td>Written, not yet tested against a real Jira</td></tr>
-    <tr><td>A file</td><td>Any text or markdown file you point it at</td><td>Tested</td></tr>
-  </table></div>
-  <p>Every source ends up as the same file, <code>issue_context.md</code>, so the rest of a factory does not care
-  where the work came from. To move a factory from Jira to GitHub you change three lines of <code>source</code>.</p>
-  <p>The factory only reads from these today. It does not comment, label, or open pull requests.</p>
-</section>
+<section class="band alt"><div class="wrap">
+  <div class="head"><span class="label">Proof, not promises</span><h2>Nothing is done until a script agrees</h2></div>
+  <div class="proof">
+    <div class="chain">
+      <div class="link agent"><span class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M18.5 16.5v4M16.5 18.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><b>Maker builds the task</b><span>Using the skill the task names. It may not run the gate.</span></div></div>
+      <div class="link agent"><span class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M18.5 16.5v4M16.5 18.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><b>A separate checker runs the gate</b><span>Fresh context. Writes the evidence sheet.</span></div></div>
+      <div class="link script"><span class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10l3 2.5L8 15M13 15h3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg></span><div><b>A script re-runs the checks itself</b><span>Mismatch or missing evidence sends the work back.</span></div></div>
+      <div class="link human"><span class="badge"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></span><div><b>You review evidence, not logs</b><span>Each gate leaves one file you can read in a minute.</span></div></div>
+    </div>
+    <div class="sheet" aria-label="Example evidence sheet">
+      <div class="sheet-head"><span>evidence/2-backend-gate.md</span><b>Status: PASS · 5/5</b></div>
+      <div class="sheet-scroll"><table>
+        <tr><th>Check</th><th>Expected</th><th>Actual</th><th></th></tr>
+        <tr><td>dotnet build errors</td><td>0</td><td>0</td><td class="ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></td></tr>
+        <tr><td>POST /api/orders/export</td><td>201</td><td>201</td><td class="ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></td></tr>
+        <tr><td>export without permission</td><td>403</td><td>403</td><td class="ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></td></tr>
+        <tr><td>grep -c 'EntityFramework'</td><td>0</td><td>0</td><td class="ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></td></tr>
+        <tr><td>integration tests</td><td>12 passed</td><td>12 passed</td><td class="ok"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></td></tr>
+      </table></div>
+      <div class="sheet-foot">Example sheet, for illustration</div>
+    </div>
+  </div>
+</div></section>
 
-<section>
-  <h2>Create your own</h2>
-  <ol class="steps">
-    <li><h3>Start from the nearest sample</h3>
-      <p>Pick the one closest to how your team already works, and point it at your repository.</p>
-      <pre><code>python3 factory/flow.py init shop --sample backend-api --repo ~/code/shop</code></pre></li>
-    <li><h3>Tell it about your repository</h3>
-      <p>Three files in <code>targets/shop/</code>: the source in <code>factory.json</code>, your engineering rules in
-      <code>AGENTS.md</code>, and your build and test commands in <code>presubmit</code>.</p></li>
-    <li><h3>Move the human steps to where you want them</h3>
-      <p>Edit the <code>stages</code> list. Delete an approval to let work flow through. Add one before a step you want to see first.
-      Mark a step <code>optional</code>. Add a script step for any check you can express as a command.</p>
-      <pre><code>python3 factory/flow.py --target shop show
-python3 factory/flow.py --target shop validate</code></pre></li>
-    <li><h3>Run one real item</h3>
-      <p>Take a single issue through before trusting it with more. It stops at your first human step.</p>
-      <pre><code>python3 factory/flow.py --target shop start --issue 42
-python3 factory/flow.py --target shop run
-python3 factory/flow.py --target shop approve GH42</code></pre></li>
-  </ol>
-</section>
+<section class="band" id="create"><div class="wrap">
+  <div class="head"><span class="label">Create yours</span><h2>Three commands to a running factory</h2></div>
+  <div class="steps">
+    <div class="step"><span class="n">01</span><h3>Start from a sample</h3><p>Point it at your repository.</p><div class="cmd"><pre>python3 factory/flow.py init shop \
+  --sample backend-api --repo ~/code/shop</pre><button type="button">Copy</button></div></div>
+    <div class="step"><span class="n">02</span><h3>Make it yours</h3><p>Set the source, your rules, and your test command. Move the human steps where you want them.</p><div class="cmd"><pre>python3 factory/flow.py --target shop show
+python3 factory/flow.py --target shop validate</pre><button type="button">Copy</button></div></div>
+    <div class="step"><span class="n">03</span><h3>Run one issue</h3><p>It stops at your first human step.</p><div class="cmd"><pre>python3 factory/flow.py --target shop \
+  start --issue 42
+python3 factory/flow.py --target shop run</pre><button type="button">Copy</button></div></div>
+  </div>
+</div></section>
 
-<section>
-  <h2>Matching a factory to the work</h2>
-  <div class="scroll"><table>
-    <tr><th>Kind of work</th><th>What matters</th><th>What the factory does about it</th></tr>
-    <tr><td>Backend and data</td><td>API shapes and schema changes are expensive to undo.</td><td>Design is required and has its own approval before any code.</td></tr>
-    <tr><td>UI</td><td>A screen can pass every check and still look wrong.</td><td>A visual spec pins text and states; a person looks at the result at the end.</td></tr>
-    <tr><td>Bug fixes</td><td>Speed, and proof the bug is really gone.</td><td>No spec. A failing test first, then the fix, then one approval.</td></tr>
-    <tr><td>Full-stack features</td><td>Agreement on what is being built.</td><td>One approval on the requirements; scripts police everything after.</td></tr>
-  </table></div>
-</section>
+<section class="band alt"><div class="wrap">
+  <div class="head"><span class="label">Sources</span><h2>Start from where your work already lives</h2></div>
+  <div class="sources">
+    <div class="source"><b>GitHub</b><span>Uses your <code>gh</code> login</span><span class="state ok">Tested</span></div>
+    <div class="source"><b>GitLab</b><span>Uses your <code>glab</code> login. Self-hosted works.</span><span class="state ok">Tested</span></div>
+    <div class="source"><b>Jira</b><span>Uses an API token</span><span class="state pending">Written, not yet tested</span></div>
+    <div class="source"><b>A file</b><span>Any text or markdown file</span><span class="state ok">Tested</span></div>
+  </div>
+</div></section>
 
-<section>
-  <h2>What keeps it honest</h2>
-  <p>An agent saying a task is done proves nothing. These rules hold whatever the definition says. All but the first are enforced by scripts.</p>
-  <ul>
-    <li><strong>Maker and checker are different agents.</strong> The one that builds a task never runs its gate or writes its evidence. This is an instruction in the build skill, backed by the evidence check below.</li>
-    <li><strong>A ticked box needs evidence.</strong> A script confirms the evidence file exists and records a pass, and re-runs the checks it can.</li>
-    <li><strong>Every task names a skill.</strong> A script rejects a task list where one does not.</li>
-    <li><strong>Agents write only where the step allows.</strong> The factory inspects the files that changed, not what the agent reports.</li>
-    <li><strong>Every definition has a human step.</strong> One with none is refused.</li>
-    <li><strong>Agents never commit, push, or merge.</strong> The factory commits after its checks pass, on a branch of its own.</li>
-  </ul>
-</section>
+<section class="band"><div class="wrap">
+  <div class="head"><span class="label">Roadmap</span><h2>Not built yet</h2></div>
+  <div class="road"><span>Comment and label on the issue</span><span>Open the merge request</span><span>Approve by label</span>
+    <span>Scheduled, unattended runs</span><span>Visual editor for a definition</span><span>Triage stage</span></div>
+</div></section>
 
-<section>
-  <h2>Not built yet</h2>
-  <ul>
-    <li>Writing back: comments, labels, and opening the merge or pull request.</li>
-    <li>Approving by setting a label on the issue. Approval is a command today.</li>
-    <li>A scheduler for unattended runs. <code>poll</code> exists; nothing calls it on a timer.</li>
-    <li>A screen for editing a definition. It is a JSON file for now.</li>
-    <li>Triage as a stage in these definitions. It exists in the older label-driven flow in the same repository.</li>
-  </ul>
-</section>
+<div class="wrap"><footer><span>Software Factory · runs on Claude Code</span><a href="https://github.com/sanjeev23oct/software-factory">github.com/sanjeev23oct/software-factory</a></footer></div>
 
-<footer>Source: <a href="https://github.com/sanjeev23oct/software-factory">github.com/sanjeev23oct/software-factory</a>.
-The stage strips on this page are generated from the sample definitions. The approach follows the factory Warp runs on its own repository.</footer>
-</div>
+<script>
+document.querySelectorAll('.cmd button').forEach(function (button) {
+  button.addEventListener('click', function () {
+    var pre = button.parentNode.querySelector('pre');
+    var done = function () { button.textContent = 'Copied'; setTimeout(function () { button.textContent = 'Copy'; }, 1400); };
+    var select = function () { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+    try { navigator.clipboard.writeText(pre.textContent).then(done, select); } catch (e) { select(); }
+  });
+});
+</script>
 </body></html>
