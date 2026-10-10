@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Render docs/index.html, the product page for the factory.
 
-The sample cards and the counts are drawn from factories/, so the page cannot
-drift from the sample definitions. Run it after changing a sample:
+The line shown for each sample factory is drawn from factories/*/factory.json,
+so the page cannot drift from the definitions. Run it after changing a sample:
 
     python3 factory/scripts/build_docs.py
 """
@@ -14,372 +14,382 @@ from pathlib import Path
 HOME = Path(__file__).resolve().parent.parent.parent
 REPO_URL = "https://github.com/sanjeev23oct/software-factory"
 ORDER = ["spec-driven", "backend-api", "ui-app", "bugfix"]
-TITLES = {"spec-driven": "Spec-driven", "backend-api": "Backend API", "ui-app": "UI app", "bugfix": "Bug fix"}
-FOR = {"spec-driven": "Full-stack features", "backend-api": "APIs and databases",
-       "ui-app": "Screens and forms", "bugfix": "Bug reports"}
-STARTS = {"file": "File", "github": "GitHub", "gitlab": "GitLab", "jira": "Jira"}
+TAB = {"spec-driven": "spec-driven", "backend-api": "backend api", "ui-app": "ui app", "bugfix": "bug fix"}
+ISSUE = {"spec-driven": ("FILE", "export-orders.md", "export orders as csv"),
+         "backend-api": ("GITHUB", "#42", "rate-limit headers on the public api"),
+         "ui-app": ("GITLAB", "#118", "bulk-edit drawer for equipment"),
+         "bugfix": ("JIRA", "SHOP-311", "order total rounds the wrong way")}
+NAMES = {"requirements": "Requirements", "design": "Design", "visual-spec": "Visual spec", "tasks": "Tasks",
+         "build": "Build", "verify": "Verify", "reproduce": "Reproduce", "fix": "Fix", "review": "Review"}
+NOTES = {"requirements": "what to build, as testable criteria", "design": "data, api and screens, spelled out",
+         "visual-spec": "every screen and state pinned down", "tasks": "small tasks, a skill named on each",
+         "build": "maker builds, checker proves it", "verify": "build, lint and tests", "reproduce": "a failing test first",
+         "fix": "the root cause, nothing more", "review": "an independent read of the diff"}
+GATES = {"approve-requirements": "review the requirements", "approve-design": "review the design",
+         "approve-screens": "review the screens", "approve-fix": "review the fix"}
 
-ICONS = {
-    "script": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16v14H4z" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 10l3 2.5L8 15M13 15h3.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-    "agent": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l1.9 5.6L19.5 10.5l-5.6 1.9L12 18l-1.9-5.6L4.5 10.5l5.6-1.9z" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"/><path d="M18.5 16.5v4M16.5 18.5h4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    "human": '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.6" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-3.8 3.4-6 7-6s6.4 2.2 7 6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>',
-    "check": '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>',
-}
+
+def line(name):
+    """The stages a person cares about, with the points where the line stops for them."""
+    definition = json.loads((HOME / "factories" / name / "factory.json").read_text())
+    source, ref, title = ISSUE[name]
+    nodes = [{"name": "Intake", "note": "from " + source.lower()}]
+    for stage in definition["stages"]:
+        if stage.get("intake"):
+            continue
+        if stage["by"] == "human":
+            nodes[-1]["gate"] = GATES[stage["id"]]
+        elif stage["id"] == "merge-request":
+            nodes.append({"name": "Merge request", "note": "opened for you", "planned": True, "gate": "merge is yours"})
+        elif stage["id"] in NAMES:
+            nodes.append({"name": NAMES[stage["id"]], "note": NOTES[stage["id"]], "optional": bool(stage.get("optional"))})
+    return {"id": name, "tab": TAB[name], "source": source, "ref": ref, "title": title, "nodes": nodes}
+
 
 STYLE = """
-/* Layout: dark hero with a live-looking run panel, then alternating full-width bands of cards and diagrams. */
+/* Layout: a technical drawing. One figure, the line, carries the page; everything else is a short numbered note beside a figure. */
 :root {
-  --bg: #f4f6f8; --surface: #ffffff; --ink: #121a22; --muted: #5b6875; --line: #d5dce3;
-  --hero: #0e151c; --hero-ink: #e8eef3; --hero-muted: #93a3b1; --hero-line: #26333f; --hero-panel: #151f29;
-  --accent: #0a7ea4; --accent-ink: #ffffff; --script: #56677a; --agent: #0a7ea4; --human: #b86e00;
-  --script-bg: #e6ebf0; --agent-bg: #d9eef6; --human-bg: #fbe9c6; --done: #23835a; --code-bg: #0e151c; --code-ink: #dbe6ee;
-  --display: "Archivo", "Helvetica Neue", Arial, sans-serif;
-  --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
-  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+  --bg: #fafbf9; --dot: #dfe3de; --surface: #ffffff; --ink: #14181b; --muted: #6a7378; --line: #cfd5d1; --rule: #14181b;
+  --accent: #d9481c; --accent-soft: #fbe6dd; --ok: #1f7a55; --code: #14181b; --code-ink: #e8ece9; --code-dim: #8b979d;
+  --display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0b1117; --surface: #131c25; --ink: #e6edf2; --muted: #93a3b1; --line: #26333f;
-    --hero: #070b10; --hero-panel: #111a22;
-    --accent: #45b5db; --accent-ink: #06222d; --script: #a3b2c0; --agent: #45b5db; --human: #e9ae4d;
-    --script-bg: #1c2731; --agent-bg: #0f3140; --human-bg: #3b2c0e; --done: #62c795; --code-bg: #070b10;
+    --bg: #0e1113; --dot: #20262a; --surface: #14181b; --ink: #e9edea; --muted: #8b979d; --line: #2b3338; --rule: #e9edea;
+    --accent: #ff7a4d; --accent-soft: #3a1c10; --ok: #5fc898; --code: #080a0b;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0b1117; --surface: #131c25; --ink: #e6edf2; --muted: #93a3b1; --line: #26333f;
-  --hero: #070b10; --hero-panel: #111a22;
-  --accent: #45b5db; --accent-ink: #06222d; --script: #a3b2c0; --agent: #45b5db; --human: #e9ae4d;
-  --script-bg: #1c2731; --agent-bg: #0f3140; --human-bg: #3b2c0e; --done: #62c795; --code-bg: #070b10;
+  --bg: #0e1113; --dot: #20262a; --surface: #14181b; --ink: #e9edea; --muted: #8b979d; --line: #2b3338; --rule: #e9edea;
+  --accent: #ff7a4d; --accent-soft: #3a1c10; --ok: #5fc898; --code: #080a0b;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { background: var(--bg); color: var(--ink); font: 16px/1.55 var(--body); margin: 0; }
-.wrap { max-width: 1080px; margin: 0 auto; padding-inline: 20px; }
+body { margin: 0; color: var(--ink); font: 14px/1.6 var(--mono);
+  background: radial-gradient(var(--dot) 1px, transparent 1px) 0 0 / 22px 22px, var(--bg); }
+.wrap { max-width: 1140px; margin: 0 auto; padding-inline: 20px; }
 h1, h2, h3, p { margin: 0; }
-h1 { font: 800 clamp(34px, 6.4vw, 60px)/1.02 var(--display); letter-spacing: -0.02em; text-wrap: balance; }
-h2 { font: 800 clamp(24px, 3.6vw, 32px)/1.12 var(--display); letter-spacing: -0.01em; text-wrap: balance; }
-h3 { font: 700 17px/1.25 var(--display); }
+h1 { font: 600 clamp(36px, 6.6vw, 68px)/1.02 var(--display); letter-spacing: -0.03em; text-wrap: balance; max-width: 15ch; }
+h2 { font: 600 clamp(26px, 4vw, 38px)/1.1 var(--display); letter-spacing: -0.02em; text-wrap: balance; }
+h3 { font: 600 19px/1.25 var(--display); letter-spacing: -0.01em; }
 a { color: inherit; }
-a:focus-visible, button:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.label { font: 600 11px/1.2 var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
-svg { width: 20px; height: 20px; flex: none; }
+a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.tag { font: 500 11px/1.3 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+.tag b { font-weight: 700; } .tag i { font-style: normal; color: var(--muted); }
+.dim { color: var(--muted); }
 
-/* hero */
-.hero { background: var(--hero); color: var(--hero-ink); }
-nav { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding-block: 18px; }
-.brand { font: 800 17px var(--display); display: flex; align-items: center; gap: 9px; text-decoration: none; }
-.brand i { width: 18px; height: 18px; display: grid; grid-template-columns: 1fr 1fr; gap: 2px; }
-.brand i b { background: var(--hero-muted); border-radius: 1px; }
-.brand i b:nth-child(2) { background: #45b5db; } .brand i b:nth-child(3) { background: #e9ae4d; }
-nav .links { display: flex; gap: 22px; font-size: 14px; color: var(--hero-muted); }
-nav .links a { text-decoration: none; } nav .links a:hover { color: var(--hero-ink); }
-.hero-grid { display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 44px; align-items: center; padding-block: 44px 64px; }
-.hero-copy { display: grid; gap: 20px; }
-.hero-copy p { color: var(--hero-muted); font-size: 18px; max-width: 34ch; }
-.cta { display: flex; flex-wrap: wrap; gap: 10px; }
-.btn { font: 600 15px var(--body); padding: 11px 18px; border-radius: 6px; text-decoration: none; border: 1.5px solid transparent; }
-.btn.primary { background: #45b5db; color: #06222d; } .btn.ghost { border-color: var(--hero-line); color: var(--hero-ink); }
-.panel { background: var(--hero-panel); border: 1px solid var(--hero-line); border-radius: 10px; overflow: hidden; min-width: 0;
-  box-shadow: 0 24px 60px -30px #000; }
-.panel-bar { display: flex; align-items: center; gap: 6px; padding: 10px 14px; border-bottom: 1px solid var(--hero-line); color: var(--hero-muted); }
-.panel-bar s { width: 9px; height: 9px; border-radius: 50%; background: var(--hero-line); }
-.panel-bar span { margin-left: 8px; font: 12px var(--mono); }
-.run { padding: 16px; display: grid; gap: 10px; border-bottom: 1px solid var(--hero-line); }
-.run:last-child { border-bottom: 0; }
-.run-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
-.run-head b { font: 600 14px var(--body); min-width: 0; overflow-wrap: anywhere; }
-.run-head b em { font: 500 12px var(--mono); color: var(--hero-muted); margin-right: 8px; font-style: normal; }
-.pill { font: 600 11px var(--mono); padding: 4px 8px; border-radius: 99px; white-space: nowrap; }
-.pill.agent { background: #0f3140; color: #7fd0ec; } .pill.human { background: #3b2c0e; color: #f0bd62; } .pill.done { background: #123524; color: #74d3a2; }
-.rail { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
-.rail i { height: 6px; border-radius: 3px; background: var(--hero-line); }
-.rail i.d { background: #3f9d72; } .rail i.a { background: #45b5db; animation: pulse 1.6s ease-in-out infinite; } .rail i.h { background: #e9ae4d; }
-.run small { font: 12px var(--mono); color: var(--hero-muted); }
-@keyframes pulse { 50% { opacity: 0.45; } }
-@media (prefers-reduced-motion: reduce) { .rail i.a { animation: none; } }
-.example { padding: 8px 16px; font: 11px var(--mono); color: var(--hero-muted); border-top: 1px solid var(--hero-line); }
+nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 18px; border-bottom: 1px solid var(--line); }
+.brand { font: 600 17px var(--display); text-decoration: none; display: flex; align-items: center; gap: 9px; }
+.brand span { width: 20px; height: 20px; border: 1.5px solid var(--ink); display: grid; place-items: center; font: 700 11px var(--mono); border-radius: 50%; }
+nav div { display: flex; gap: 22px; }
+nav div a { text-decoration: none; font-size: 13px; color: var(--muted); } nav div a:hover { color: var(--ink); }
 
-/* bands */
-.band { padding-block: 64px; }
-.band.alt { background: var(--surface); border-block: 1px solid var(--line); }
-.head { display: grid; gap: 8px; margin-bottom: 28px; }
-.head .label { color: var(--accent); }
-.head p { color: var(--muted); max-width: 60ch; }
-.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-bottom: 1px solid var(--line); background: var(--surface); }
-.stats div { padding: 20px; border-right: 1px solid var(--line); }
-.stats b { display: block; font: 800 30px/1 var(--display); font-variant-numeric: tabular-nums; }
-.stats span { color: var(--muted); font-size: 14px; }
+.hero { padding-block: 72px 56px; display: grid; gap: 22px; }
+.hero p { font-size: 15px; color: var(--muted); max-width: 62ch; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
+.btn { font: 500 13px var(--mono); padding: 11px 16px; text-decoration: none; border: 1.5px solid var(--ink); }
+.btn.solid { background: var(--ink); color: var(--bg); }
 
-.kinds { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 16px; }
-.kinds > *, .steps > *, .samples > *, .sources > *, .proof > *, .step > *, .sample > * { min-width: 0; }
-.kind { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: grid; gap: 10px; align-content: start; }
-.band.alt .kind { background: var(--bg); }
-.badge { width: 40px; height: 40px; border-radius: 8px; display: grid; place-items: center; background: var(--tint); color: var(--c); }
-.script { --c: var(--script); --tint: var(--script-bg); } .agent { --c: var(--agent); --tint: var(--agent-bg); } .human { --c: var(--human); --tint: var(--human-bg); }
-.kind p { color: var(--muted); font-size: 15px; }
-.kind ul { margin: 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px; }
-.kind li { font: 12px var(--mono); padding: 3px 8px; border-radius: 4px; background: var(--tint); color: var(--c); }
+section { padding-block: 56px; border-top: 1px solid var(--line); }
+.head { display: grid; gap: 12px; margin-bottom: 28px; }
+.head p { color: var(--muted); max-width: 70ch; }
 
-/* flow diagram */
-.flow { display: grid; grid-template-columns: repeat(8, minmax(0, 1fr)); gap: 12px 20px; }
-.node { min-width: 0; position: relative; padding: 14px 10px; border-radius: 8px;
-  background: var(--tint); color: var(--c); display: grid; gap: 6px; align-content: start; }
-.node:not(:last-child)::after { content: ""; position: absolute; right: -14px; top: 50%; width: 8px; height: 8px;
-  border-top: 2px solid var(--muted); border-right: 2px solid var(--muted); transform: translateY(-50%) rotate(45deg); }
-.node b { font: 700 14px/1.2 var(--display); color: var(--ink); }
-.node span { font: 11px/1.3 var(--mono); }
-.node.end { --tint: transparent; --c: var(--muted); border: 1.5px dashed var(--line); }
-.back { margin-top: 14px; display: flex; flex-wrap: wrap; gap: 8px 20px; color: var(--muted); font-size: 14px; }
-.back span::before { content: "\\21A9"; margin-right: 6px; color: var(--human); }
+/* the figure */
+.fig { border: 1.5px solid var(--rule); background: var(--surface); }
+.fig-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-bottom: 1.5px solid var(--rule); }
+.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
+.tabs button { font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 10px; cursor: pointer;
+  background: transparent; color: var(--muted); border: 1px solid var(--line); }
+.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.fig-body { padding: 26px 22px 22px; display: grid; gap: 26px; }
+.carry { text-align: center; display: grid; gap: 6px; }
+.carry .what { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
+.carry .what b { color: var(--accent); margin-right: 8px; }
+.f { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--accent);
+  color: var(--accent); font: 700 10px var(--mono); vertical-align: -3px; margin-right: 6px; }
+.track { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 0 22px; align-items: start; min-height: 200px; }
+.cell { display: grid; gap: 0; position: relative; min-width: 0; }
+.node { border: 1px solid var(--line); background: var(--bg); padding: 16px 8px 14px; min-height: 138px; display: grid; gap: 6px;
+  align-content: start; text-align: center; position: relative; transition: border-color .25s, background .25s; }
+.cell:not(:last-child) .node::after { content: "\\2192"; position: absolute; right: -18px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; }
+.node .num { font-size: 11px; letter-spacing: 0.1em; color: var(--muted); }
+.node .name { font: 600 13px/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.04em; overflow-wrap: anywhere; }
+.node .note { font-size: 11px; line-height: 1.4; color: var(--muted); }
+.node .opt { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.node.planned { border-style: dashed; }
+.node .badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity .2s; background: var(--surface); margin: 0; }
+.cell.here .node { border-color: var(--accent); background: var(--accent-soft); }
+.cell.here .badge { opacity: 1; }
+.cell.past .node { border-color: var(--ok); }
+.cell.past .num::after { content: " \\2713"; color: var(--ok); }
+.gate { position: relative; z-index: 1; justify-self: end; margin-right: -11px; transform: translateX(50%); display: grid; justify-items: center; gap: 4px; width: max-content; max-width: 150px; text-align: center; }
+.gate::before { content: ""; width: 1.5px; height: 18px; background: var(--muted); }
+.gate span { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+.gate small { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); opacity: 0; transition: opacity .2s; }
+.cell.held .gate span { color: var(--accent); } .cell.held .gate::before { background: var(--accent); }
+.cell.held .gate small { opacity: 1; color: var(--accent); }
+.cell:last-child .gate { justify-self: center; margin: 0; transform: none; }
+.caption { border: 1px solid var(--line); padding: 12px; text-align: center; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.caption b { color: var(--ink); font-weight: 500; }
 
-/* samples */
-.samples { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
-.sample { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: grid; gap: 14px; align-content: start; min-width: 0; }
-.sample-top { display: flex; justify-content: space-between; align-items: start; gap: 12px; }
-.sample-top p { color: var(--muted); font-size: 14px; }
-.from { font: 600 11px var(--mono); padding: 4px 8px; border: 1px solid var(--line); border-radius: 99px; white-space: nowrap; color: var(--muted); }
-.bar { display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; gap: 3px; }
-.bar i { height: 22px; border-radius: 4px; background: var(--c); display: grid; place-items: center; color: var(--surface); }
-.bar i.human { color: #3b2c0e; }
-.bar i svg { width: 13px; height: 13px; }
-.bar i.opt { opacity: 0.55; }
-.mix { display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 13px; color: var(--muted); }
-.mix b { color: var(--c); font-variant-numeric: tabular-nums; }
-.gates { font-size: 14px; }
-.gates b { color: var(--human); }
-details summary { cursor: pointer; font-size: 13px; color: var(--accent); list-style: none; }
-details summary::-webkit-details-marker { display: none; }
-details summary::after { content: " +"; } details[open] summary::after { content: " \\2212"; }
-.chips { display: flex; flex-wrap: wrap; gap: 5px; padding-top: 10px; }
-.chips span { font: 11px var(--mono); padding: 3px 7px; border-radius: 4px; background: var(--tint); color: var(--c); }
-.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-bottom: 18px; font-size: 13px; color: var(--muted); }
-.legend span { display: flex; align-items: center; gap: 6px; }
-.legend i { width: 14px; height: 14px; border-radius: 3px; background: var(--c); }
-
-/* proof */
-.proof { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 32px; align-items: center; }
-.chain { display: grid; gap: 10px; }
-.link { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 12px; align-items: center; }
-.link b { font: 700 15px var(--display); display: block; } .link span { color: var(--muted); font-size: 14px; }
-.sheet { background: var(--bg); border: 1px solid var(--line); border-radius: 10px; overflow: hidden; font: 13px var(--mono); min-width: 0; }
-.band:not(.alt) .sheet { background: var(--surface); }
-.sheet-head { padding: 12px 14px; border-bottom: 1px solid var(--line); display: flex; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
-.sheet-head b { color: var(--done); }
+/* rows: numbered notes beside a figure */
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1.5px solid var(--rule); background: var(--surface); }
+.notes { display: grid; }
+.note-row { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 4px 10px; padding: 22px; border-bottom: 1px solid var(--line); }
+.note-row:last-child { border-bottom: 0; }
+.note-row .n { font-size: 11px; color: var(--muted); padding-top: 5px; }
+.note-row p { grid-column: 2; color: var(--muted); font-size: 13px; }
+.side { border-left: 1.5px solid var(--rule); padding: 22px; display: grid; gap: 14px; align-content: center; min-width: 0;
+  background: radial-gradient(var(--dot) 1px, transparent 1px) 0 0 / 14px 14px; }
+.code { background: var(--code); color: var(--code-ink); font: 12px/1.65 var(--mono); padding: 16px; overflow-x: auto; margin: 0; }
+.code .k { color: #ff9a76; } .code .c { color: var(--code-dim); }
+.tree { background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; font: 12px/1.8 var(--mono); white-space: pre; overflow-x: auto; margin: 0; }
+.sheet { background: var(--surface); border: 1px solid var(--line); font-size: 12px; min-width: 0; }
+.sheet-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
+.sheet-top b { color: var(--ok); font-weight: 500; }
 .sheet-scroll { overflow-x: auto; }
-.sheet table { border-collapse: collapse; width: 100%; }
-.sheet td, .sheet th { padding: 8px 14px; text-align: left; border-bottom: 1px solid var(--line); white-space: nowrap; }
-.sheet th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; }
-.sheet tr:last-child td { border-bottom: 0; }
-.sheet td.ok { color: var(--done); } .sheet td.ok svg { width: 14px; height: 14px; vertical-align: -2px; }
-.sheet-foot { padding: 10px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 12px; }
+.sheet table { width: 100%; border-collapse: collapse; }
+.sheet th, .sheet td { text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+.sheet th { font-weight: 500; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.sheet tr:last-child td { border-bottom: 0; } .sheet td:last-child { color: var(--ok); }
+.eg { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
 
-/* steps and sources */
-.steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr)); gap: 16px; }
-.step { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 22px; display: grid; gap: 10px; align-content: start; min-width: 0; }
-.band.alt .step { background: var(--bg); }
-.step .n { font: 800 13px var(--mono); color: var(--accent); }
-.step p { color: var(--muted); font-size: 14px; }
-.cmd { position: relative; background: var(--code-bg); color: var(--code-ink); border-radius: 6px; max-width: 100%; overflow: hidden; }
-.cmd pre { margin: 0; padding: 34px 14px 12px; white-space: pre-wrap; overflow-wrap: anywhere; font: 12.5px/1.6 var(--mono); }
-.cmd button { position: absolute; top: 7px; right: 7px; font: 600 11px var(--mono); background: #26333f; color: #dbe6ee; border: 0; border-radius: 4px; padding: 5px 8px; cursor: pointer; }
-.sources { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: 12px; }
-.source { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 18px; display: grid; gap: 6px; }
-.source b { font: 700 17px var(--display); } .source span { color: var(--muted); font-size: 13px; }
-.state { font: 600 11px var(--mono); display: flex; align-items: center; gap: 6px; }
-.state::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--done); }
-.state.pending { color: var(--human); } .state.pending::before { background: var(--human); }
-.state.ok { color: var(--done); }
-.road { display: flex; flex-wrap: wrap; gap: 8px; }
-.road span { font-size: 14px; padding: 7px 12px; border: 1px dashed var(--line); border-radius: 99px; color: var(--muted); }
-footer { padding-block: 32px; color: var(--muted); font-size: 14px; display: flex; flex-wrap: wrap; gap: 8px 24px; justify-content: space-between; }
-@media (max-width: 820px) {
-  .hero-grid, .proof, .samples { grid-template-columns: minmax(0, 1fr); }
-  .flow { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  nav .links a:not(.keep) { display: none; }
-  .band { padding-block: 44px; }
-  .stats div { border-bottom: 1px solid var(--line); }
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1.5px solid var(--rule); background: var(--surface); }
+.step { padding: 22px; display: grid; gap: 10px; align-content: start; border-right: 1px solid var(--line); min-width: 0; }
+.step:last-child { border-right: 0; }
+.step p { color: var(--muted); font-size: 13px; }
+.cmd { position: relative; min-width: 0; }
+.cmd pre { margin: 0; background: var(--code); color: var(--code-ink); padding: 34px 14px 14px; font: 12px/1.65 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmd button { position: absolute; top: 8px; right: 8px; font: 500 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
+  background: transparent; color: var(--code-dim); border: 1px solid #3a4348; padding: 4px 7px; cursor: pointer; }
+.status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1.5px solid var(--rule); background: var(--surface); }
+.status div { padding: 22px; display: grid; gap: 10px; align-content: start; }
+.status div + div { border-left: 1px solid var(--line); }
+.status ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; font-size: 13px; }
+.status li::before { content: "\\2713"; color: var(--ok); margin-right: 10px; }
+.status .later li::before { content: "\\25CB"; color: var(--muted); }
+footer { padding-block: 28px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; font-size: 12px; color: var(--muted); }
+
+@media (max-width: 860px) {
+  nav div a:not(.keep) { display: none; }
+  .hero { padding-block: 48px 40px; }
+  .split, .steps, .status { grid-template-columns: minmax(0, 1fr); }
+  .side { border-left: 0; border-top: 1.5px solid var(--rule); }
+  .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; }
+  .status div + div { border-left: 0; border-top: 1px solid var(--line); }
+  .track { grid-template-columns: minmax(0, 1fr); gap: 0; min-height: 0; }
+  .node { min-height: 0; grid-template-columns: 34px minmax(0, 1fr); text-align: left; column-gap: 10px; padding: 12px 14px; }
+  .node .num { grid-row: span 3; padding-top: 2px; } .node .note, .node .opt { grid-column: 2; }
+  .cell:not(:last-child) .node::after { content: none; }
+  .cell { padding-bottom: 16px; }
+  .cell:not(:last-child)::after { content: "\\2193"; position: absolute; bottom: -3px; left: 26px; color: var(--muted); font-size: 12px; }
+  .node .badge { left: auto; right: 10px; top: 12px; transform: none; background: transparent; }
+  .gate, .cell:last-child .gate { justify-self: start; margin: 0 0 0 44px; transform: none; max-width: none; justify-items: start; grid-auto-flow: column; align-items: center; gap: 8px; padding-top: 8px; }
+  .gate::before { width: 14px; height: 1.5px; }
 }
+@media (prefers-reduced-motion: reduce) { .node, .gate small, .node .badge { transition: none; } }
 """
 
-FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@700;800'
-         '&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;600&display=swap">')
+FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700'
+         '&family=Schibsted+Grotesk:wght@500;600&display=swap">')
 
 SCRIPT = """
 <script>
-document.querySelectorAll('.cmd button').forEach(function (button) {
-  button.addEventListener('click', function () {
-    var pre = button.parentNode.querySelector('pre');
-    var done = function () { button.textContent = 'Copied'; setTimeout(function () { button.textContent = 'Copy'; }, 1400); };
-    var select = function () { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
-    try { navigator.clipboard.writeText(pre.textContent).then(done, select); } catch (e) { select(); }
+(function () {
+  var lines = %s;
+  var track = document.getElementById('track'), carry = document.getElementById('carry');
+  var tabs = document.querySelectorAll('.tabs button'), timer = null;
+  var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+  function draw(line) {
+    track.style.setProperty('--n', line.nodes.length);
+    track.innerHTML = line.nodes.map(function (n, i) {
+      return '<div class="cell"><div class="node' + (n.planned ? ' planned' : '') + '"><span class="f badge">F</span>' +
+        '<span class="num">0' + (i + 1) + '</span><span class="name">' + esc(n.name) + '</span>' +
+        '<span class="note">' + esc(n.note) + '</span>' +
+        (n.optional ? '<span class="opt">optional</span>' : '') + (n.planned ? '<span class="opt">planned</span>' : '') + '</div>' +
+        (n.gate ? '<div class="gate"><span>[' + esc(n.gate) + ']</span><small>waiting for you</small></div>' : '') + '</div>';
+    }).join('');
+    carry.innerHTML = '<div class="what"><span class="f">F</span><b>' + esc(line.source) + '</b>' + esc(line.ref) + ' &middot; ' + esc(line.title) + '</div>' +
+      '<div class="eg">example issue &middot; the foreman carries it down the line</div>';
+  }
+  function play(line) {
+    clearInterval(timer);
+    var cells = track.children, i = 1, hold = 0;
+    function show() {
+      for (var k = 0; k < cells.length; k++) {
+        cells[k].classList.toggle('past', k < i);
+        cells[k].classList.toggle('here', k === i);
+        cells[k].classList.toggle('held', k === i && hold > 0);
+      }
+    }
+    hold = line.nodes[i].gate ? 1 : 0;
+    show();
+    if (still) { return; }
+    timer = setInterval(function () {
+      if (line.nodes[i].gate && hold < 2) { hold++; show(); return; }
+      hold = 0; i = (i + 1) %% cells.length; show();
+    }, 1300);
+  }
+  function pick(id) {
+    var line = lines.filter(function (l) { return l.id === id; })[0];
+    tabs.forEach(function (t) { t.setAttribute('aria-selected', t.dataset.id === id ? 'true' : 'false'); });
+    draw(line); play(line);
+  }
+  tabs.forEach(function (t) { t.addEventListener('click', function () { pick(t.dataset.id); }); });
+  pick(lines[0].id);
+  document.querySelectorAll('.cmd button').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var pre = button.parentNode.querySelector('pre');
+      var done = function () { button.textContent = 'copied'; setTimeout(function () { button.textContent = 'copy'; }, 1400); };
+      var select = function () { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
+      try { navigator.clipboard.writeText(pre.textContent).then(done, select); } catch (e) { select(); }
+    });
   });
-});
+})();
 </script>
 """
 
 
-def load(name):
-    return json.loads((HOME / "factories" / name / "factory.json").read_text())
-
-
-def sample_card(name):
-    d = load(name)
-    live = [s for s in d["stages"] if s.get("enabled", True)]
-    count = {kind: sum(1 for s in live if s["by"] == kind) for kind in ("script", "agent", "human")}
-    bar = "".join('<i class="{}{}" title="{}">{}</i>'.format(
-        s["by"], " opt" if s.get("optional") else "", html.escape(s["id"]),
-        ICONS["human"] if s["by"] == "human" else "") for s in live)
-    gates = [s["id"].replace("approve-", "") for s in live if s["by"] == "human"]
-    chips = "".join('<span class="{}">{}</span>'.format(s["by"], html.escape(s["id"])) for s in live)
-    return (
-        '<article class="sample"><div class="sample-top"><div><h3>{title}</h3><p>{purpose}</p></div>'
-        '<span class="from">from {start}</span></div>'
-        '<div class="bar" role="img" aria-label="{n} stages">{bar}</div>'
-        '<div class="mix"><span class="script"><b>{script}</b> script</span><span class="agent"><b>{agent}</b> agent</span>'
-        '<span class="human"><b>{human}</b> human</span></div>'
-        '<div class="gates">You decide on: <b>{gates}</b></div>'
-        '<details><summary>All {n} stages</summary><div class="chips">{chips}</div></details></article>'
-    ).format(title=TITLES[name], purpose=FOR[name], start=STARTS[d["source"]["type"]], bar=bar, n=len(live),
-             gates=", then ".join(gates), chips=chips, **count)
+def static_track(line_data):
+    """The first line, drawn without script so the page is complete before it runs."""
+    cells = []
+    for i, node in enumerate(line_data["nodes"]):
+        extra = ('<span class="opt">optional</span>' if node.get("optional") else "") + \
+                ('<span class="opt">planned</span>' if node.get("planned") else "")
+        gate = '<div class="gate"><span>[{}]</span><small>waiting for you</small></div>'.format(node["gate"]) if node.get("gate") else ""
+        cells.append('<div class="cell"><div class="node{}"><span class="f badge">F</span><span class="num">0{}</span>'
+                     '<span class="name">{}</span><span class="note">{}</span>{}</div>{}</div>'.format(
+                         " planned" if node.get("planned") else "", i + 1, node["name"], node["note"], extra, gate))
+    return "".join(cells)
 
 
 def cmd(text):
-    return '<div class="cmd"><pre>{}</pre><button type="button">Copy</button></div>'.format(html.escape(text))
+    return '<div class="cmd"><pre>{}</pre><button type="button">copy</button></div>'.format(html.escape(text))
 
 
-def body():
-    samples = [load(n) for n in ORDER]
-    live = [s for d in samples for s in d["stages"] if s.get("enabled", True)]
-    scripted = round(100 * sum(1 for s in live if s["by"] == "script") / len(live))
-    skills = len(list((HOME / "factories" / "skills").glob("*/SKILL.md")))
-    rail = lambda done, kind, rest: "".join(["<i class='d'></i>"] * done + ["<i class='{}'></i>".format(kind)] + ["<i></i>"] * rest)
+def body(lines):
+    first = lines[0]
+    tabs = "".join('<button type="button" role="tab" data-id="{}" aria-selected="{}">{}</button>'.format(
+        l["id"], "true" if l is first else "false", l["tab"]) for l in lines)
     return """
-<div class="hero"><div class="wrap">
-  <nav><a class="brand" href="#top"><i><b></b><b></b><b></b><b></b></i>Software Factory</a>
-    <div class="links"><a href="#how">How it works</a><a href="#samples">Samples</a><a href="#create">Create yours</a>
-    <a class="keep" href="%(repo)s">GitHub</a></div></nav>
-  <div class="hero-grid" id="top">
-    <div class="hero-copy">
-      <h1>Issues in. Reviewed changes out.</h1>
-      <p>Define who does each step of your development process. Scripts and AI agents run it. You step in only where you chose to.</p>
-      <div class="cta"><a class="btn primary" href="#create">Create a factory</a><a class="btn ghost" href="%(repo)s">View on GitHub</a></div>
-    </div>
-    <div class="panel" aria-label="Example of three issues moving through a factory">
-      <div class="panel-bar"><s></s><s></s><s></s><span>shop · backend-api factory</span></div>
-      <div class="run"><div class="run-head"><b><em>GH42</em>Export orders as CSV</b><span class="pill agent">Agent building</span></div>
-        <div class="rail">%(rail1)s</div><small>build · task 2.3 of 7 · maker then checker</small></div>
-      <div class="run"><div class="run-head"><b><em>GH43</em>Fix rounding in order totals</b><span class="pill human">Waiting for you</span></div>
-        <div class="rail">%(rail2)s</div><small>approve-requirements · requirements.md is ready to read</small></div>
-      <div class="run"><div class="run-head"><b><em>GH40</em>Rate-limit the login endpoint</b><span class="pill done">Evidence passed</span></div>
-        <div class="rail">%(rail3)s</div><small>verify · 41 checks re-run by script, 41 passed</small></div>
-      <div class="example">Example run, for illustration</div>
-    </div>
-  </div>
-</div></div>
+<div class="wrap">
+<nav><a class="brand" href="#top"><span>F</span>Software Factory</a>
+  <div><a href="#flow">flow</a><a href="#config">config</a><a href="#start">get started</a><a class="keep" href="%(repo)s">github</a></div></nav>
 
-<div class="stats"><div><b>%(samples)s</b><span>sample factories</span></div><div><b>%(skills)s</b><span>skills included</span></div>
-  <div><b>4</b><span>places work can start</span></div><div><b>%(scripted)s%%</b><span>of sample steps need no AI</span></div></div>
+<header class="hero" id="top">
+  <span class="tag"><b># software factory</b> <i>[runs on claude code]</i></span>
+  <h1>Your development process, run as a line.</h1>
+  <p>define the line once. agents work each stage. it stops only where you decide.</p>
+  <div class="cta"><a class="btn solid" href="#start">get started</a><a class="btn" href="%(repo)s">view on github</a></div>
+</header>
 
-<section class="band" id="how"><div class="wrap">
-  <div class="head"><span class="label">How it works</span><h2>Every step has one of three owners</h2></div>
-  <div class="kinds">
-    <div class="kind script"><span class="badge">%(i_script)s</span><h3>Script</h3><p>One right answer. Free, instant, the same every time.</p>
-      <ul><li>read the issue</li><li>lint tasks</li><li>run tests</li><li>check evidence</li></ul></div>
-    <div class="kind agent"><span class="badge">%(i_agent)s</span><h3>Agent</h3><p>Needs judgment. Follows a skill written for that one job.</p>
-      <ul><li>write requirements</li><li>design</li><li>build a task</li><li>review</li></ul></div>
-    <div class="kind human"><span class="badge">%(i_human)s</span><h3>You</h3><p>A decision about your product. The factory waits.</p>
-      <ul><li>approve requirements</li><li>approve screens</li><li>merge</li></ul></div>
-  </div>
-</div></section>
-
-<section class="band alt"><div class="wrap">
-  <div class="head"><span class="label">One item, start to finish</span><h2>The path a feature takes</h2></div>
-  <div class="flow">
-    <div class="node script"><b>Read issue</b><span>script</span></div>
-    <div class="node agent"><b>Requirements</b><span>agent</span></div>
-    <div class="node human"><b>You approve</b><span>human</span></div>
-    <div class="node agent"><b>Tasks</b><span>agent · a skill per task</span></div>
-    <div class="node script"><b>Lint tasks</b><span>script</span></div>
-    <div class="node agent"><b>Build</b><span>maker + checker</span></div>
-    <div class="node script"><b>Check evidence</b><span>script</span></div>
-    <div class="node end"><b>Merge request</b><span>yours to merge</span></div>
-  </div>
-  <div class="back"><span>A task with no skill goes back to Tasks</span><span>Work ticked without evidence goes back to Build</span>
-    <span>Three failed attempts parks the item for you</span></div>
-</div></section>
-
-<section class="band" id="samples"><div class="wrap">
-  <div class="head"><span class="label">Sample factories</span><h2>Start from one that fits the work</h2></div>
-  <div class="legend"><span class="script"><i></i>Script</span><span class="agent"><i></i>Agent</span><span class="human"><i></i>Human decision</span></div>
-  <div class="samples">%(cards)s</div>
-</div></section>
-
-<section class="band alt"><div class="wrap">
-  <div class="head"><span class="label">Proof, not promises</span><h2>Nothing is done until a script agrees</h2></div>
-  <div class="proof">
-    <div class="chain">
-      <div class="link agent"><span class="badge">%(i_agent)s</span><div><b>Maker builds the task</b><span>Using the skill the task names. It may not run the gate.</span></div></div>
-      <div class="link agent"><span class="badge">%(i_agent)s</span><div><b>A separate checker runs the gate</b><span>Fresh context. Writes the evidence sheet.</span></div></div>
-      <div class="link script"><span class="badge">%(i_script)s</span><div><b>A script re-runs the checks itself</b><span>Mismatch or missing evidence sends the work back.</span></div></div>
-      <div class="link human"><span class="badge">%(i_human)s</span><div><b>You review evidence, not logs</b><span>Each gate leaves one file you can read in a minute.</span></div></div>
-    </div>
-    <div class="sheet" aria-label="Example evidence sheet">
-      <div class="sheet-head"><span>evidence/2-backend-gate.md</span><b>Status: PASS · 5/5</b></div>
-      <div class="sheet-scroll"><table>
-        <tr><th>Check</th><th>Expected</th><th>Actual</th><th></th></tr>
-        <tr><td>dotnet build errors</td><td>0</td><td>0</td><td class="ok">%(i_check)s</td></tr>
-        <tr><td>POST /api/orders/export</td><td>201</td><td>201</td><td class="ok">%(i_check)s</td></tr>
-        <tr><td>export without permission</td><td>403</td><td>403</td><td class="ok">%(i_check)s</td></tr>
-        <tr><td>grep -c 'EntityFramework'</td><td>0</td><td>0</td><td class="ok">%(i_check)s</td></tr>
-        <tr><td>integration tests</td><td>12 passed</td><td>12 passed</td><td class="ok">%(i_check)s</td></tr>
-      </table></div>
-      <div class="sheet-foot">Example sheet, for illustration</div>
+<section id="flow">
+  <div class="head"><span class="tag"><b># issue flow</b></span><h2>How work moves through a factory</h2>
+    <p>An issue lands from the tracker your team already uses. The foreman carries it down the line, and the line stops wherever you put a review.</p></div>
+  <div class="fig">
+    <div class="fig-bar"><span class="tag">[ fig. 1 · the line ]</span><div class="tabs" role="tablist" aria-label="Sample factory">%(tabs)s</div></div>
+    <div class="fig-body">
+      <div class="carry" id="carry"><div class="what"><span class="f">F</span><b>%(source)s</b>%(ref)s &middot; %(title)s</div>
+        <div class="eg">example issue &middot; the foreman carries it down the line</div></div>
+      <div class="track" id="track" style="--n:%(n)s">%(track)s</div>
+      <div class="caption"><b>the foreman moves the work</b> &middot; it stops only where you decide &middot; <b>merge is always yours</b></div>
     </div>
   </div>
-</div></section>
+</section>
 
-<section class="band" id="create"><div class="wrap">
-  <div class="head"><span class="label">Create yours</span><h2>Three commands to a running factory</h2></div>
+<section id="config">
+  <div class="head"><span class="tag"><b># configuration</b></span><h2>Your line, defined in code</h2></div>
+  <div class="split">
+    <div class="notes">
+      <div class="note-row"><span class="n">01</span><h3>One file per repository</h3><p>The stages, in order, and where a person reviews. Versioned in git, reviewed like code.</p></div>
+      <div class="note-row"><span class="n">02</span><h3>A skill for every stage</h3><p>Each stage follows a short skill written for that one job. Swap in your own.</p></div>
+      <div class="note-row"><span class="n">03</span><h3>Start from where work lives</h3><p>GitHub, GitLab, Jira, or a file. Changing source is three lines.</p></div>
+      <div class="note-row"><span class="n">04</span><h3>Move the reviews</h3><p>Add a review before a stage you want to see. Remove one to let work flow.</p></div>
+    </div>
+    <div class="side">
+      <pre class="code"><span class="c"># targets/shop/factory.json</span>
+<span class="k">"source"</span>: { "type": "github", "repo": "acme/shop" },
+<span class="k">"stages"</span>: [
+  { "id": "requirements", "skill": "write-requirements" },
+  { "id": "approve-requirements", "by": "human" },
+  { "id": "design", "skill": "write-design", "optional": true },
+  { "id": "tasks", "skill": "write-tasks" },
+  { "id": "build", "skill": "build-tasks" },
+  { "id": "verify", "skill": "verify" }
+]</pre>
+      <pre class="tree">targets/shop/
+├── factory.json     the line
+├── AGENTS.md        your engineering rules
+├── presubmit        your build and tests
+└── skills/          one folder per stage</pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="head"><span class="tag"><b># trust</b></span><h2>Done means proven</h2></div>
+  <div class="split">
+    <div class="notes">
+      <div class="note-row"><span class="n">01</span><h3>Maker and checker</h3><p>One agent builds a task. A different one, with fresh eyes, checks it.</p></div>
+      <div class="note-row"><span class="n">02</span><h3>Evidence for every gate</h3><p>Each check records what was expected and what was found.</p></div>
+      <div class="note-row"><span class="n">03</span><h3>Nothing ticked on trust</h3><p>Work without evidence goes back down the line on its own.</p></div>
+      <div class="note-row"><span class="n">04</span><h3>You read a sheet, not a log</h3><p>One page per gate, readable in a minute.</p></div>
+    </div>
+    <div class="side">
+      <div class="sheet">
+        <div class="sheet-top"><span>evidence/2-backend-gate.md</span><b>status: pass · 5/5</b></div>
+        <div class="sheet-scroll"><table>
+          <tr><th>check</th><th>expected</th><th>actual</th><th></th></tr>
+          <tr><td>build errors</td><td>0</td><td>0</td><td>&#10003;</td></tr>
+          <tr><td>POST /api/orders/export</td><td>201</td><td>201</td><td>&#10003;</td></tr>
+          <tr><td>export without permission</td><td>403</td><td>403</td><td>&#10003;</td></tr>
+          <tr><td>raw sql in controller</td><td>0</td><td>0</td><td>&#10003;</td></tr>
+          <tr><td>integration tests</td><td>12 passed</td><td>12 passed</td><td>&#10003;</td></tr>
+        </table></div>
+      </div>
+      <span class="eg">example sheet, for illustration</span>
+    </div>
+  </div>
+</section>
+
+<section id="start">
+  <div class="head"><span class="tag"><b># get started</b></span><h2>Three commands to a running line</h2></div>
   <div class="steps">
-    <div class="step"><span class="n">01</span><h3>Start from a sample</h3><p>Point it at your repository.</p>%(c1)s</div>
-    <div class="step"><span class="n">02</span><h3>Make it yours</h3><p>Set the source, your rules, and your test command. Move the human steps where you want them.</p>%(c2)s</div>
-    <div class="step"><span class="n">03</span><h3>Run one issue</h3><p>It stops at your first human step.</p>%(c3)s</div>
+    <div class="step"><span class="tag dim">01</span><h3>Start from a sample</h3><p>Pick the closest of the four and point it at your repository.</p>%(c1)s</div>
+    <div class="step"><span class="tag dim">02</span><h3>Make it yours</h3><p>Set the source, your rules and your tests. Move the reviews.</p>%(c2)s</div>
+    <div class="step"><span class="tag dim">03</span><h3>Run one issue</h3><p>It stops at your first review.</p>%(c3)s</div>
   </div>
-</div></section>
+</section>
 
-<section class="band alt"><div class="wrap">
-  <div class="head"><span class="label">Sources</span><h2>Start from where your work already lives</h2></div>
-  <div class="sources">
-    <div class="source"><b>GitHub</b><span>Uses your <code>gh</code> login</span><span class="state ok">Tested</span></div>
-    <div class="source"><b>GitLab</b><span>Uses your <code>glab</code> login. Self-hosted works.</span><span class="state ok">Tested</span></div>
-    <div class="source"><b>Jira</b><span>Uses an API token</span><span class="state pending">Written, not yet tested</span></div>
-    <div class="source"><b>A file</b><span>Any text or markdown file</span><span class="state ok">Tested</span></div>
+<section>
+  <div class="head"><span class="tag"><b># status</b></span><h2>What works today</h2></div>
+  <div class="status">
+    <div><span class="tag">working</span><ul><li>four sample factories</li><li>read from github, gitlab, or a file</li><li>review stops, approve to continue</li>
+      <li>evidence checks send work back</li><li>runs from claude code or headless</li></ul></div>
+    <div class="later"><span class="tag dim">planned</span><ul><li>open the merge request</li><li>comment and label on the issue</li><li>approve by label</li>
+      <li>scheduled, unattended runs</li><li>jira, tested against a real instance</li><li>visual editor for the line</li></ul></div>
   </div>
-</div></section>
+</section>
 
-<section class="band"><div class="wrap">
-  <div class="head"><span class="label">Roadmap</span><h2>Not built yet</h2></div>
-  <div class="road"><span>Comment and label on the issue</span><span>Open the merge request</span><span>Approve by label</span>
-    <span>Scheduled, unattended runs</span><span>Visual editor for a definition</span><span>Triage stage</span></div>
-</div></section>
-
-<div class="wrap"><footer><span>Software Factory · runs on Claude Code</span><a href="%(repo)s">%(repo_short)s</a></footer></div>
+<footer><span>software factory · runs on claude code</span><a href="%(repo)s">%(repo_short)s</a></footer>
+</div>
 """ % {
-        "repo": REPO_URL, "repo_short": REPO_URL.replace("https://", ""),
-        "rail1": rail(6, "a", 3), "rail2": rail(2, "h", 7), "rail3": rail(9, "d", 0),
-        "samples": len(ORDER), "skills": skills, "scripted": scripted,
-        "cards": "".join(sample_card(n) for n in ORDER),
-        "i_script": ICONS["script"], "i_agent": ICONS["agent"], "i_human": ICONS["human"], "i_check": ICONS["check"],
-        "c1": cmd("python3 factory/flow.py init shop \\\n  --sample backend-api --repo ~/code/shop"),
+        "repo": REPO_URL, "repo_short": REPO_URL.replace("https://", ""), "tabs": tabs,
+        "source": first["source"], "ref": first["ref"], "title": first["title"],
+        "n": len(first["nodes"]), "track": static_track(first),
+        "c1": cmd("python3 factory/flow.py init shop \\\n  --sample backend-api \\\n  --repo ~/code/shop"),
         "c2": cmd("python3 factory/flow.py --target shop show\npython3 factory/flow.py --target shop validate"),
         "c3": cmd("python3 factory/flow.py --target shop \\\n  start --issue 42\npython3 factory/flow.py --target shop run"),
     }
 
 
 def main():
+    lines = [line(name) for name in ORDER]
     head = "<title>Software Factory</title>{}<style>{}</style>".format(FONTS, STYLE)
-    content = body() + SCRIPT
+    content = body(lines) + SCRIPT % json.dumps(lines)
     docs = HOME / "docs"
     docs.mkdir(exist_ok=True)
     (docs / "index.html").write_text(
