@@ -36,7 +36,7 @@ from pathlib import Path
 
 HOME = Path(__file__).resolve().parent.parent
 SKILLS = HOME / ".agents" / "skills"
-TARGETS = HOME / "targets"
+TARGETS = Path(os.environ.get("FACTORY_TARGETS_DIR", HOME / "targets"))
 DEFAULT_TARGET = "tasklite"
 MAX_REVIEW_ROUNDS = 3
 BUDGET_USD = os.environ.get("FACTORY_MAX_BUDGET_USD", "3")

@@ -59,6 +59,26 @@ wrote. It stops at every maintainer gate and waits for you.
 This is the same loop with `claude -p` in place of subagents. `FACTORY_MODEL`
 picks the model. `FACTORY_MAX_BUDGET_USD` caps one agent run (default 3).
 
+## Other repositories, and defining your own factory
+
+The factory can work on a repository elsewhere on disk. Each one is a folder
+under `targets/` holding its guidance, labels, presubmit and skills, so
+nothing is added to that repository except `factory/*` branches.
+
+    python3 factory/factory.py targets
+
+A target may also define its own factory in `targets/<name>/factory.json`:
+the stages a piece of work goes through, in order, and whether each is done
+by a script, by an agent following a skill, or by a human. `factory/flow.py`
+runs that definition. `targets/infra-management/factory.json` is one:
+requirement, `requirements.md`, human approval, optional `design.md`,
+`tasks.md`, a script that checks every task names a skill, the repository's
+own maker-checker build loop, a script that checks the evidence, and an
+optional merge request.
+
+Scripts in `factory/scripts/` do every step that needs no judgment: reading
+a GitLab issue, linting `tasks.md`, and re-checking evidence.
+
 ## Maintainer commands
 
     python3 factory/factory.py status

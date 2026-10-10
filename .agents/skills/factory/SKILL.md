@@ -70,3 +70,20 @@ comment in `issues/GH<n>.md`, the specs in
     python3 factory/factory.py new "title" --body "..."     file an issue
     python3 factory/factory.py comment GH<n> "text"         reply on an issue
     python3 factory/factory.py run [GH<n>]                  headless: the same loop with `claude -p`
+
+## Repositories that define their own factory
+
+A target with a `targets/<name>/factory.json` defines its own stages: which
+are scripts, which are agent work, and where a human approves. Drive those
+with `factory/flow.py`, not `factory/factory.py`. The loop is the same.
+
+    python3 factory/flow.py --target <name> status
+    python3 factory/flow.py --target <name> start --issue <GitLab issue number>
+    python3 factory/flow.py --target <name> next [ITEM]     scripts run; prints the next agent task
+    python3 factory/flow.py --target <name> done ITEM       after the subagent finishes
+
+Start the subagent named in the task's `agent` with the task's `prompt`,
+unchanged. If `done` rejects the work, start the same task once more.
+
+`approve ITEM` and `retry ITEM` are the maintainer's decisions. Run them only
+when the user asks for that exact action in this conversation.
