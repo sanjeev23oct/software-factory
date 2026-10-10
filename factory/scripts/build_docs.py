@@ -62,7 +62,7 @@ def route_map():
             if kind == "you":
                 g.append('<circle class="you" cx="{}" cy="{}" r="12"/>'.format(x, y))
                 g.append('<path class="person" d="M{0} {1}a3 3 0 1 0 0.01 0M{2} {3}c1-4 9-4 10 0" />'.format(x, y - 7, x - 5, y + 6))
-                g.append('<text class="slabel strong" x="{}" y="{}">You approve</text>'.format(x, y + 31))
+                g.append('<text class="slabel strong" x="{}" y="{}">Gate</text>'.format(x, y + 31))
                 g.append('<text class="slabel" x="{}" y="{}">{}</text>'.format(x, y + 45, html.escape(label)))
             elif kind == "planned":
                 g.append('<rect class="end" x="{}" y="{}" width="14" height="14" rx="2"/>'.format(x - 7, y - 7))
@@ -75,7 +75,18 @@ def route_map():
                     g.append('<text class="slabel faint" x="{}" y="{}">optional</text>'.format(x, y + 45))
         g.append("</g>")
         parts.append("".join(g))
-    height = Y0 + (len(ROUTES) - 1) * ROW + 62
+    y = Y0 + len(ROUTES) * ROW
+    mine = ['<g class="route mine" data-route="yours">', '<text class="rname" x="0" y="{}">Your route</text>'.format(y - 2),
+            '<text class="rfrom" x="0" y="{}">from any tracker</text>'.format(y + 15),
+            '<path class="rail later" d="M{} {}H{}"/>'.format(X0, y, X0 + 10 * STEP)]
+    for col in (0, 1, 3, 5, 6, 7, 10):
+        mine.append('<circle class="stop opt" cx="{}" cy="{}" r="7"/>'.format(X0 + col * STEP, y))
+    for col in (2, 9):
+        mine.append('<circle class="you opt" cx="{}" cy="{}" r="12"/>'.format(X0 + col * STEP, y))
+    for col, text, strong in ((2, "your gates", True), (5, "any stops, in any order", False), (10, "any kind of work", False)):
+        mine.append('<text class="slabel{}" x="{}" y="{}">{}</text>'.format(" strong" if strong else "", X0 + col * STEP, y + 31, text))
+    parts.append("".join(mine) + "</g>")
+    height = Y0 + len(ROUTES) * ROW + 62
     return ('<svg class="map" viewBox="0 0 1124 {}" role="img" aria-label="Route map of the four sample factories, '
             'showing each stage as a stop and each human approval as a ringed stop">{}</svg>').format(height, "".join(parts))
 
@@ -88,8 +99,8 @@ def route_cards():
         work = sum(1 for _, _, kind in stops if kind in ("stop", "optional")) - 1
         cards.append(
             '<button type="button" class="rcard {}" data-route="{}" aria-pressed="false"><span class="swatch"></span>'
-            '<b>{}</b><span>{}</span><span class="meta">from {} · {} stops · you approve {}</span></button>'.format(
-                colour, sample, name, purpose, STARTS[definition["source"]["type"]], work, " and ".join(yours)))
+            '<b>{}</b><span>{}</span><span class="meta">from {} · {} stops · gates: {}</span></button>'.format(
+                colour, sample, name, purpose, STARTS[definition["source"]["type"]], work, ", ".join(yours)))
     return "".join(cards)
 
 
@@ -156,6 +167,7 @@ nav .links a { text-decoration: none; color: var(--muted); } nav .links a:hover 
 .stop.opt { stroke-dasharray: 3 3; stroke-width: 3; }
 .you { fill: var(--paper); stroke: var(--ink); stroke-width: 4; }
 .person { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; }
+.mine { --c: var(--muted); } .you.opt { stroke: var(--muted); stroke-dasharray: 4 4; stroke-width: 3; }
 .end { fill: var(--paper); stroke: var(--c); stroke-width: 3; stroke-dasharray: 3 3; }
 .slabel { font-size: 12px; text-anchor: middle; }
 .slabel.strong { font-weight: 600; } .slabel.faint { fill: var(--muted) !important; font-size: 11px; }
@@ -173,6 +185,12 @@ nav .links a { text-decoration: none; color: var(--muted); } nav .links a:hover 
 .hint { font-size: 13px; color: var(--muted); }
 
 section { padding-block: 64px 0; display: grid; gap: 24px; }
+.pillars { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.pillar { background: var(--paper); border: 1px solid var(--line); border-top: 6px solid var(--c); border-radius: 14px; padding: 18px 20px 20px; display: grid; gap: 6px; align-content: start; }
+.pillar span { font: 700 15px var(--display); color: var(--c); letter-spacing: 0.06em; }
+.pillar h3 { font: 700 26px/1.05 var(--display); text-transform: uppercase; }
+.pillar p { color: var(--muted); font-size: 16px; }
+.eyebrow { display: inline-block; font: 600 14px var(--body); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
 .duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px 44px; align-items: center; }
 .points { display: grid; gap: 18px; }
 .point { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 2px 14px; }
@@ -211,7 +229,7 @@ footer { margin-top: 64px; padding-block: 26px; border-top: 1px solid var(--line
 
 @media (max-width: 880px) {
   nav .links a:not(.keep) { display: none; }
-  .hero, .duo, .steps, .now { grid-template-columns: minmax(0, 1fr); }
+  .hero, .duo, .steps, .now, .pillars { grid-template-columns: minmax(0, 1fr); }
   .rcards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   section { padding-top: 48px; }
   .board { padding: 16px; border-radius: 14px; }
@@ -251,9 +269,9 @@ SCRIPT = """
 
 KEY = (
     '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
-    '<circle cx="13" cy="13" r="6" fill="var(--paper)" stroke="var(--muted)" stroke-width="3.5"/></svg>A stage agents complete</span>'
+    '<circle cx="13" cy="13" r="6" fill="var(--paper)" stroke="var(--muted)" stroke-width="3.5"/></svg>Stop: a stage agents complete</span>'
     '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
-    '<circle cx="13" cy="13" r="10" fill="var(--paper)" stroke="var(--ink)" stroke-width="3.5"/></svg>You approve here</span>'
+    '<circle cx="13" cy="13" r="10" fill="var(--paper)" stroke="var(--ink)" stroke-width="3.5"/></svg>Gate: a person approves</span>'
     '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
     '<circle cx="13" cy="13" r="6" fill="var(--paper)" stroke="var(--muted)" stroke-width="3" stroke-dasharray="3 3"/></svg>Optional</span>'
 )
@@ -267,27 +285,39 @@ def body():
     return """
 <div class="wrap">
 <nav><a class="brand" href="#top"><i><b></b><b></b><b></b><b></b></i>Software Factory</a>
-  <div class="links"><a href="#routes">Routes</a><a href="#proof">Proof</a><a href="#start">Get started</a><a class="keep" href="%(repo)s">GitHub</a></div></nav>
+  <div class="links"><a href="#routes">Routes</a><a href="#pillars">Pillars</a><a href="#proof">Proof</a><a href="#start">Get started</a><a class="keep" href="%(repo)s">GitHub</a></div></nav>
 
 <header class="hero" id="top">
-  <h1>Map the route. Claude drives it.</h1>
-  <div><p>Choose the stops between an issue and a merge. Step in only where you want a say.</p>
+  <div><span class="eyebrow">A software factory for any team</span><h1>Map the route. Agents drive it.</h1></div>
+  <div><p>Lay out the stops between a request and a merge. Set gates where a person must approve. The factory runs the rest.</p>
     <div class="cta"><a class="btn solid" href="#start">Get started</a><a class="btn" href="%(repo)s">GitHub</a></div></div>
 </header>
 
 <div class="board" id="routes">
-  <div class="board-top"><h2>Four routes, ready to ride</h2><div class="key">%(key)s</div></div>
+  <div class="board-top"><h2>Example routes</h2><div class="key">%(key)s</div></div>
   <div class="scroll">%(map)s</div>
   <div class="rcards">%(cards)s</div>
-  <span class="hint">Select a route to trace it on the map.</span>
+  <span class="hint">These four are examples. The factory is not tied to UI, backend, or any stack: a route is whatever stops and gates your work needs. Select one to trace it.</span>
 </div>
+
+<section id="pillars">
+  <h2>What makes it a factory</h2>
+  <div class="pillars">
+    <div class="pillar r1"><span>01</span><h3>One line</h3><p>Every request travels the same defined route. No improvising.</p></div>
+    <div class="pillar r2"><span>02</span><h3>Gates</h3><p>The line stops at named points until a person approves.</p></div>
+    <div class="pillar r3"><span>03</span><h3>Standard work</h3><p>Each stop follows a written skill, so the work is done the same way each time.</p></div>
+    <div class="pillar r4"><span>04</span><h3>Proof at every stop</h3><p>Work moves on only with evidence that it passed its checks.</p></div>
+    <div class="pillar r1"><span>05</span><h3>A full record</h3><p>Every move is logged: what ran, what passed, when each gate opened.</p></div>
+    <div class="pillar r2"><span>06</span><h3>Open by design</h3><p>Any tracker, any stack, any coding agent. Routes and skills are plain files.</p></div>
+  </div>
+</section>
 
 <section id="yours">
   <div class="duo">
     <div class="points">
       <h2>Draw your own route</h2>
       <div class="point r1"><i></i><h3>Add, remove or reorder stops</h3><p>A route is a short list in one file.</p></div>
-      <div class="point r2"><i></i><h3>Put approvals where you want them</h3><p>Before design, after the build, or only at the end.</p></div>
+      <div class="point r2"><i></i><h3>Put gates where you want them</h3><p>Before design, after the build, or only at the end.</p></div>
       <div class="point r3"><i></i><h3>Start from your tracker</h3><p>GitHub, GitLab, Jira, or a plain file.</p></div>
       <div class="point r4"><i></i><h3>Teach each stop your way</h3><p>Every stop follows a skill you can rewrite.</p></div>
     </div>
@@ -331,22 +361,22 @@ def body():
   <h2>On the road in three commands</h2>
   <div class="steps">
     <div class="step r1"><span class="n">1</span><h3>Pick a route</h3><p>Copy the nearest sample and point it at your repository.</p>%(c1)s</div>
-    <div class="step r3"><span class="n">2</span><h3>Redraw it</h3><p>Set your tracker, your rules and your tests. Move the approvals.</p>%(c2)s</div>
-    <div class="step r4"><span class="n">3</span><h3>Send one issue</h3><p>It runs until your first approval stop.</p>%(c3)s</div>
+    <div class="step r3"><span class="n">2</span><h3>Redraw it</h3><p>Set your tracker, your rules and your tests. Move the gates.</p>%(c2)s</div>
+    <div class="step r4"><span class="n">3</span><h3>Send one issue</h3><p>It runs until it reaches your first gate.</p>%(c3)s</div>
   </div>
 </section>
 
 <section>
   <h2>Where it stands</h2>
   <div class="now">
-    <div><h3>Running today</h3><ul><li>Four sample routes</li><li>Issues from GitHub, GitLab, or a file</li><li>Stops for your approval, then carries on</li>
-      <li>Unproven work sent back automatically</li><li>Runs inside Claude Code, or unattended from a terminal</li></ul></div>
+    <div><h3>Running today</h3><ul><li>Four sample routes</li><li>Issues from GitHub, GitLab, or a file</li><li>Gates that hold the line until you approve</li>
+      <li>Unproven work sent back automatically</li><li>Built-in runner for Claude Code; any agent can take a stop by hand-off</li></ul></div>
     <div class="later"><h3>Not built yet</h3><ul><li>Opening the merge request</li><li>Commenting and labelling on the issue</li><li>Approving from the tracker</li>
-      <li>Scheduled runs</li><li>Jira, tested against a real instance</li><li>A visual route editor</li></ul></div>
+      <li>Scheduled runs</li><li>Jira, tested against a real instance</li><li>Built-in runners for other coding agents</li><li>A visual route editor</li></ul></div>
   </div>
 </section>
 
-<footer><span>Software Factory · runs on Claude Code</span><a href="%(repo)s">%(repo_short)s</a></footer>
+<footer><span>Software Factory · any tracker, any stack, any agent</span><a href="%(repo)s">%(repo_short)s</a></footer>
 </div>
 """ % {
         "repo": REPO_URL, "repo_short": REPO_URL.replace("https://", ""), "key": KEY,
