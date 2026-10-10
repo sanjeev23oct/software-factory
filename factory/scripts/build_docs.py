@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Render docs/index.html, the product page for the factory.
 
-The line shown for each sample factory is drawn from factories/*/factory.json,
-so the page cannot drift from the definitions. Run it after changing a sample:
+The route map is drawn from factories/*/factory.json, so the page cannot
+drift from the sample definitions. Run it after changing a sample:
 
     python3 factory/scripts/build_docs.py
 """
@@ -13,237 +13,234 @@ from pathlib import Path
 
 HOME = Path(__file__).resolve().parent.parent.parent
 REPO_URL = "https://github.com/sanjeev23oct/software-factory"
-ORDER = ["spec-driven", "backend-api", "ui-app", "bugfix"]
-TAB = {"spec-driven": "spec-driven", "backend-api": "backend api", "ui-app": "ui app", "bugfix": "bug fix"}
-ISSUE = {"spec-driven": ("FILE", "export-orders.md", "export orders as csv"),
-         "backend-api": ("GITHUB", "#42", "rate-limit headers on the public api"),
-         "ui-app": ("GITLAB", "#118", "bulk-edit drawer for equipment"),
-         "bugfix": ("JIRA", "SHOP-311", "order total rounds the wrong way")}
-NAMES = {"requirements": "Requirements", "design": "Design", "visual-spec": "Visual spec", "tasks": "Tasks",
-         "build": "Build", "verify": "Verify", "reproduce": "Reproduce", "fix": "Fix", "review": "Review"}
-NOTES = {"requirements": "what to build, as testable criteria", "design": "data, api and screens, spelled out",
-         "visual-spec": "every screen and state pinned down", "tasks": "small tasks, a skill named on each",
-         "build": "maker builds, checker proves it", "verify": "build, lint and tests", "reproduce": "a failing test first",
-         "fix": "the root cause, nothing more", "review": "an independent read of the diff"}
-GATES = {"approve-requirements": "review the requirements", "approve-design": "review the design",
-         "approve-screens": "review the screens", "approve-fix": "review the fix"}
+ROUTES = [  # sample, display name, what it is for, colour token
+    ("spec-driven", "Spec-driven", "Full-stack features", "r1"),
+    ("backend-api", "Backend API", "APIs and databases", "r2"),
+    ("ui-app", "UI app", "Screens and forms", "r3"),
+    ("bugfix", "Bug fix", "Bug reports", "r4"),
+]
+STARTS = {"file": "a file", "github": "GitHub", "gitlab": "GitLab", "jira": "Jira"}
+# Where each stop sits on the map, so the same stop lines up across routes.
+COLUMN = {"requirements": 1, "reproduce": 1, "approve-requirements": 2, "design": 3, "visual-spec": 3,
+          "approve-design": 4, "tasks": 5, "build": 6, "fix": 6, "verify": 7, "review": 8,
+          "approve-screens": 9, "approve-fix": 9, "merge-request": 10}
+LABEL = {"requirements": "Requirements", "reproduce": "Reproduce", "design": "Design", "visual-spec": "Visual spec",
+         "tasks": "Tasks", "build": "Build", "fix": "Fix", "verify": "Verify", "review": "Review",
+         "merge-request": "Merge request"}
+X0, STEP, Y0, ROW = 214, 86, 64, 96
 
 
-def line(name):
-    """The stages a person cares about, with the points where the line stops for them."""
-    definition = json.loads((HOME / "factories" / name / "factory.json").read_text())
-    source, ref, title = ISSUE[name]
-    nodes = [{"name": "Intake", "note": "from " + source.lower()}]
+def route(sample):
+    """The stops of one sample factory: (column, label, kind) with kind in stop, optional, you, planned."""
+    definition = json.loads((HOME / "factories" / sample / "factory.json").read_text())
+    stops = [(0, "Intake", "stop")]
     for stage in definition["stages"]:
-        if stage.get("intake"):
-            continue
+        name = stage["id"]
         if stage["by"] == "human":
-            nodes[-1]["gate"] = GATES[stage["id"]]
-        elif stage["id"] == "merge-request":
-            nodes.append({"name": "Merge request", "note": "opened for you", "planned": True, "gate": "merge is yours"})
-        elif stage["id"] in NAMES:
-            nodes.append({"name": NAMES[stage["id"]], "note": NOTES[stage["id"]], "optional": bool(stage.get("optional"))})
-    return {"id": name, "tab": TAB[name], "source": source, "ref": ref, "title": title, "nodes": nodes}
+            stops.append((COLUMN[name], name.replace("approve-", ""), "you"))
+        elif name == "merge-request":
+            stops.append((COLUMN[name], LABEL[name], "planned"))
+        elif name in LABEL:
+            stops.append((COLUMN[name], LABEL[name], "optional" if stage.get("optional") else "stop"))
+    return definition, stops
+
+
+def route_map():
+    parts = []
+    for row, (sample, name, purpose, colour) in enumerate(ROUTES):
+        definition, stops = route(sample)
+        y = Y0 + row * ROW
+        xs = [X0 + col * STEP for col, _, _ in stops]
+        solid_end = max(x for x, (_, _, kind) in zip(xs, stops) if kind != "planned")
+        g = ['<g class="route {}" data-route="{}">'.format(colour, sample),
+             '<text class="rname" x="0" y="{}">{}</text>'.format(y - 2, html.escape(name)),
+             '<text class="rfrom" x="0" y="{}">from {}</text>'.format(y + 15, STARTS[definition["source"]["type"]]),
+             '<path class="rail" d="M{} {}H{}"/>'.format(xs[0], y, solid_end)]
+        if xs[-1] > solid_end:
+            g.append('<path class="rail later" d="M{} {}H{}"/>'.format(solid_end, y, xs[-1]))
+        for x, (_, label, kind) in zip(xs, stops):
+            if kind == "you":
+                g.append('<circle class="you" cx="{}" cy="{}" r="12"/>'.format(x, y))
+                g.append('<path class="person" d="M{0} {1}a3 3 0 1 0 0.01 0M{2} {3}c1-4 9-4 10 0" />'.format(x, y - 7, x - 5, y + 6))
+                g.append('<text class="slabel strong" x="{}" y="{}">You approve</text>'.format(x, y + 31))
+                g.append('<text class="slabel" x="{}" y="{}">{}</text>'.format(x, y + 45, html.escape(label)))
+            elif kind == "planned":
+                g.append('<rect class="end" x="{}" y="{}" width="14" height="14" rx="2"/>'.format(x - 7, y - 7))
+                g.append('<text class="slabel" x="{}" y="{}">{}</text>'.format(x, y + 31, html.escape(label)))
+                g.append('<text class="slabel faint" x="{}" y="{}">planned</text>'.format(x, y + 45))
+            else:
+                g.append('<circle class="{}" cx="{}" cy="{}" r="7"/>'.format("stop opt" if kind == "optional" else "stop", x, y))
+                g.append('<text class="slabel" x="{}" y="{}">{}</text>'.format(x, y + 31, html.escape(label)))
+                if kind == "optional":
+                    g.append('<text class="slabel faint" x="{}" y="{}">optional</text>'.format(x, y + 45))
+        g.append("</g>")
+        parts.append("".join(g))
+    height = Y0 + (len(ROUTES) - 1) * ROW + 62
+    return ('<svg class="map" viewBox="0 0 1124 {}" role="img" aria-label="Route map of the four sample factories, '
+            'showing each stage as a stop and each human approval as a ringed stop">{}</svg>').format(height, "".join(parts))
+
+
+def route_cards():
+    cards = []
+    for sample, name, purpose, colour in ROUTES:
+        definition, stops = route(sample)
+        yours = [label for _, label, kind in stops if kind == "you"]
+        work = sum(1 for _, _, kind in stops if kind in ("stop", "optional")) - 1
+        cards.append(
+            '<button type="button" class="rcard {}" data-route="{}" aria-pressed="false"><span class="swatch"></span>'
+            '<b>{}</b><span>{}</span><span class="meta">from {} · {} stops · you approve {}</span></button>'.format(
+                colour, sample, name, purpose, STARTS[definition["source"]["type"]], work, " and ".join(yours)))
+    return "".join(cards)
 
 
 STYLE = """
-/* Layout: a technical drawing. One figure, the line, carries the page; everything else is a short numbered note beside a figure. */
+/* Layout: the route map is the page. A short headline above it, a row of route cards under it, then three compact bands. */
 :root {
-  --bg: #fafbf9; --dot: #dfe3de; --surface: #ffffff; --ink: #14181b; --muted: #6a7378; --line: #cfd5d1; --rule: #14181b;
-  --accent: #d9481c; --accent-soft: #fbe6dd; --ok: #1f7a55; --code: #14181b; --code-ink: #e8ece9; --code-dim: #8b979d;
-  --display: "Schibsted Grotesk", "Helvetica Neue", Arial, sans-serif;
-  --mono: "JetBrains Mono", ui-monospace, Menlo, Consolas, monospace;
+  --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5;
+  --r1: #1f5fd0; --r2: #12905a; --r3: #b3348c; --r4: #d96a12; --ok: #12905a; --code: #0f1b2d; --code-ink: #e6ecf5;
+  --display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
-    --bg: #0e1113; --dot: #20262a; --surface: #14181b; --ink: #e9edea; --muted: #8b979d; --line: #2b3338; --rule: #e9edea;
-    --accent: #ff7a4d; --accent-soft: #3a1c10; --ok: #5fc898; --code: #080a0b;
+    --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a;
+    --r1: #6aa0ff; --r2: #4fd09a; --r3: #ef7cc9; --r4: #ffa154; --ok: #4fd09a; --code: #070c13;
     color-scheme: dark;
   }
 }
 :root[data-theme="dark"] {
-  --bg: #0e1113; --dot: #20262a; --surface: #14181b; --ink: #e9edea; --muted: #8b979d; --line: #2b3338; --rule: #e9edea;
-  --accent: #ff7a4d; --accent-soft: #3a1c10; --ok: #5fc898; --code: #080a0b;
+  --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a;
+  --r1: #6aa0ff; --r2: #4fd09a; --r3: #ef7cc9; --r4: #ffa154; --ok: #4fd09a; --code: #070c13;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
-body { margin: 0; color: var(--ink); font: 14px/1.6 var(--mono);
-  background: radial-gradient(var(--dot) 1px, transparent 1px) 0 0 / 22px 22px, var(--bg); }
-.wrap { max-width: 1140px; margin: 0 auto; padding-inline: 20px; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 17px/1.5 var(--body); }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; }
 h1, h2, h3, p { margin: 0; }
-h1 { font: 600 clamp(36px, 6.6vw, 68px)/1.02 var(--display); letter-spacing: -0.03em; text-wrap: balance; max-width: 15ch; }
-h2 { font: 600 clamp(26px, 4vw, 38px)/1.1 var(--display); letter-spacing: -0.02em; text-wrap: balance; }
-h3 { font: 600 19px/1.25 var(--display); letter-spacing: -0.01em; }
+h1 { font: 700 clamp(44px, 8.4vw, 92px)/0.94 var(--display); letter-spacing: -0.01em; text-transform: uppercase; text-wrap: balance; }
+h2 { font: 700 clamp(30px, 4.6vw, 46px)/1 var(--display); text-transform: uppercase; text-wrap: balance; }
+h3 { font: 600 19px/1.25 var(--body); }
 a { color: inherit; }
-a:focus-visible, button:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
-.tag { font: 500 11px/1.3 var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
-.tag b { font-weight: 700; } .tag i { font-style: normal; color: var(--muted); }
-.dim { color: var(--muted); }
+a:focus-visible, button:focus-visible { outline: 3px solid var(--r1); outline-offset: 3px; }
+.r1 { --c: var(--r1); } .r2 { --c: var(--r2); } .r3 { --c: var(--r3); } .r4 { --c: var(--r4); }
 
-nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 18px; border-bottom: 1px solid var(--line); }
-.brand { font: 600 17px var(--display); text-decoration: none; display: flex; align-items: center; gap: 9px; }
-.brand span { width: 20px; height: 20px; border: 1.5px solid var(--ink); display: grid; place-items: center; font: 700 11px var(--mono); border-radius: 50%; }
-nav div { display: flex; gap: 22px; }
-nav div a { text-decoration: none; font-size: 13px; color: var(--muted); } nav div a:hover { color: var(--ink); }
+nav { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding-block: 20px; }
+.brand { font: 700 22px var(--display); text-transform: uppercase; letter-spacing: 0.02em; text-decoration: none; display: flex; align-items: center; gap: 10px; }
+.brand i { display: flex; gap: 3px; } .brand i b { width: 5px; height: 18px; border-radius: 3px; }
+.brand i b:nth-child(1) { background: var(--r1); } .brand i b:nth-child(2) { background: var(--r2); }
+.brand i b:nth-child(3) { background: var(--r3); } .brand i b:nth-child(4) { background: var(--r4); }
+nav .links { display: flex; gap: 24px; font-size: 16px; }
+nav .links a { text-decoration: none; color: var(--muted); } nav .links a:hover { color: var(--ink); }
 
-.hero { padding-block: 72px 56px; display: grid; gap: 22px; }
-.hero p { font-size: 15px; color: var(--muted); max-width: 62ch; }
-.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
-.btn { font: 500 13px var(--mono); padding: 11px 16px; text-decoration: none; border: 1.5px solid var(--ink); }
+.hero { padding-block: 36px 28px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 20px 40px; align-items: end; }
+.hero p { font-size: 20px; color: var(--muted); max-width: 30ch; }
+.cta { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 18px; }
+.btn { font: 600 16px var(--body); padding: 12px 20px; border-radius: 99px; text-decoration: none; border: 2px solid var(--ink); }
 .btn.solid { background: var(--ink); color: var(--bg); }
 
-section { padding-block: 56px; border-top: 1px solid var(--line); }
-.head { display: grid; gap: 12px; margin-bottom: 28px; }
-.head p { color: var(--muted); max-width: 70ch; }
+.board { background: var(--paper); border-radius: 18px; border: 1px solid var(--line); padding: 22px 22px 18px; display: grid; gap: 16px; }
+.board-top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px 24px; }
+.board-top h2 { font-size: 26px; }
+.key { display: flex; flex-wrap: wrap; gap: 8px 20px; font-size: 14px; color: var(--muted); }
+.key span { display: flex; align-items: center; gap: 7px; }
+.key svg { width: 26px; height: 26px; }
+.scroll { overflow-x: auto; }
+.map { display: block; width: 100%; min-width: 940px; height: auto; }
+.map text { font-family: var(--body); fill: var(--ink); }
+.rname { font: 700 21px var(--display); text-transform: uppercase; fill: var(--c) !important; }
+.rfrom { font-size: 12px; fill: var(--muted) !important; }
+.rail { fill: none; stroke: var(--c); stroke-width: 7; stroke-linecap: round; }
+.rail.later { stroke-width: 4; stroke-dasharray: 2 9; }
+.stop { fill: var(--paper); stroke: var(--c); stroke-width: 4; }
+.stop.opt { stroke-dasharray: 3 3; stroke-width: 3; }
+.you { fill: var(--paper); stroke: var(--ink); stroke-width: 4; }
+.person { fill: none; stroke: var(--ink); stroke-width: 1.8; stroke-linecap: round; }
+.end { fill: var(--paper); stroke: var(--c); stroke-width: 3; stroke-dasharray: 3 3; }
+.slabel { font-size: 12px; text-anchor: middle; }
+.slabel.strong { font-weight: 600; } .slabel.faint { fill: var(--muted) !important; font-size: 11px; }
+.route { transition: opacity .2s; }
+.map[data-pick] .route { opacity: 0.16; }
+.map[data-pick="spec-driven"] .route[data-route="spec-driven"], .map[data-pick="backend-api"] .route[data-route="backend-api"],
+.map[data-pick="ui-app"] .route[data-route="ui-app"], .map[data-pick="bugfix"] .route[data-route="bugfix"] { opacity: 1; }
+.rcards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.rcard { text-align: left; font: inherit; color: inherit; cursor: pointer; background: var(--bg); border: 2px solid transparent; border-radius: 12px;
+  padding: 14px 14px 14px 18px; display: grid; gap: 2px; position: relative; min-width: 0; }
+.rcard .swatch { position: absolute; left: 0; top: 14px; bottom: 14px; width: 6px; border-radius: 0 4px 4px 0; background: var(--c); }
+.rcard b { font: 700 22px/1.1 var(--display); text-transform: uppercase; color: var(--c); }
+.rcard span { font-size: 15px; } .rcard .meta { font-size: 13px; color: var(--muted); margin-top: 4px; }
+.rcard[aria-pressed="true"] { border-color: var(--c); background: var(--paper); }
+.hint { font-size: 13px; color: var(--muted); }
 
-/* the figure */
-.fig { border: 1.5px solid var(--rule); background: var(--surface); }
-.fig-bar { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; padding: 10px 14px; border-bottom: 1.5px solid var(--rule); }
-.tabs { display: flex; flex-wrap: wrap; gap: 6px; }
-.tabs button { font: 500 11px var(--mono); letter-spacing: 0.08em; text-transform: uppercase; padding: 7px 10px; cursor: pointer;
-  background: transparent; color: var(--muted); border: 1px solid var(--line); }
-.tabs button[aria-selected="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
-.fig-body { padding: 26px 22px 22px; display: grid; gap: 26px; }
-.carry { text-align: center; display: grid; gap: 6px; }
-.carry .what { font-size: 13px; letter-spacing: 0.06em; text-transform: uppercase; }
-.carry .what b { color: var(--accent); margin-right: 8px; }
-.f { display: inline-grid; place-items: center; width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--accent);
-  color: var(--accent); font: 700 10px var(--mono); vertical-align: -3px; margin-right: 6px; }
-.track { display: grid; grid-template-columns: repeat(var(--n), minmax(0, 1fr)); gap: 0 22px; align-items: start; min-height: 200px; }
-.cell { display: grid; gap: 0; position: relative; min-width: 0; }
-.node { border: 1px solid var(--line); background: var(--bg); padding: 16px 8px 14px; min-height: 138px; display: grid; gap: 6px;
-  align-content: start; text-align: center; position: relative; transition: border-color .25s, background .25s; }
-.cell:not(:last-child) .node::after { content: "\\2192"; position: absolute; right: -18px; top: 50%; transform: translateY(-50%); color: var(--muted); font-size: 13px; }
-.node .num { font-size: 11px; letter-spacing: 0.1em; color: var(--muted); }
-.node .name { font: 600 13px/1.2 var(--display); text-transform: uppercase; letter-spacing: 0.04em; overflow-wrap: anywhere; }
-.node .note { font-size: 11px; line-height: 1.4; color: var(--muted); }
-.node .opt { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.node.planned { border-style: dashed; }
-.node .badge { position: absolute; top: -10px; left: 50%; transform: translateX(-50%); opacity: 0; transition: opacity .2s; background: var(--surface); margin: 0; }
-.cell.here .node { border-color: var(--accent); background: var(--accent-soft); }
-.cell.here .badge { opacity: 1; }
-.cell.past .node { border-color: var(--ok); }
-.cell.past .num::after { content: " \\2713"; color: var(--ok); }
-.gate { position: relative; z-index: 1; justify-self: end; margin-right: -11px; transform: translateX(50%); display: grid; justify-items: center; gap: 4px; width: max-content; max-width: 150px; text-align: center; }
-.gate::before { content: ""; width: 1.5px; height: 18px; background: var(--muted); }
-.gate span { font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
-.gate small { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); opacity: 0; transition: opacity .2s; }
-.cell.held .gate span { color: var(--accent); } .cell.held .gate::before { background: var(--accent); }
-.cell.held .gate small { opacity: 1; color: var(--accent); }
-.cell:last-child .gate { justify-self: center; margin: 0; transform: none; }
-.caption { border: 1px solid var(--line); padding: 12px; text-align: center; font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.caption b { color: var(--ink); font-weight: 500; }
+section { padding-block: 64px 0; display: grid; gap: 24px; }
+.duo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 28px 44px; align-items: center; }
+.points { display: grid; gap: 18px; }
+.point { display: grid; grid-template-columns: 14px minmax(0, 1fr); gap: 2px 14px; }
+.point i { grid-row: span 2; width: 14px; height: 14px; border-radius: 50%; border: 4px solid var(--c); margin-top: 5px; }
+.point p { grid-column: 2; color: var(--muted); font-size: 16px; }
 
-/* rows: numbered notes beside a figure */
-.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); border: 1.5px solid var(--rule); background: var(--surface); }
-.notes { display: grid; }
-.note-row { display: grid; grid-template-columns: 34px minmax(0, 1fr); gap: 4px 10px; padding: 22px; border-bottom: 1px solid var(--line); }
-.note-row:last-child { border-bottom: 0; }
-.note-row .n { font-size: 11px; color: var(--muted); padding-top: 5px; }
-.note-row p { grid-column: 2; color: var(--muted); font-size: 13px; }
-.side { border-left: 1.5px solid var(--rule); padding: 22px; display: grid; gap: 14px; align-content: center; min-width: 0;
-  background: radial-gradient(var(--dot) 1px, transparent 1px) 0 0 / 14px 14px; }
-.code { background: var(--code); color: var(--code-ink); font: 12px/1.65 var(--mono); padding: 16px; overflow-x: auto; margin: 0; }
-.code .k { color: #ff9a76; } .code .c { color: var(--code-dim); }
-.tree { background: var(--surface); border: 1px solid var(--line); padding: 14px 16px; font: 12px/1.8 var(--mono); white-space: pre; overflow-x: auto; margin: 0; }
-.sheet { background: var(--surface); border: 1px solid var(--line); font-size: 12px; min-width: 0; }
-.sheet-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 8px; padding: 10px 12px; border-bottom: 1px solid var(--line); }
-.sheet-top b { color: var(--ok); font-weight: 500; }
-.sheet-scroll { overflow-x: auto; }
-.sheet table { width: 100%; border-collapse: collapse; }
-.sheet th, .sheet td { text-align: left; padding: 7px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; }
-.sheet th { font-weight: 500; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
-.sheet tr:last-child td { border-bottom: 0; } .sheet td:last-child { color: var(--ok); }
-.eg { font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+/* evidence, drawn as a ticket */
+.ticket { background: var(--paper); border-radius: 14px; border: 1px solid var(--line); font: 13px var(--mono); min-width: 0; overflow: hidden; }
+.ticket-top { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 14px; padding: 14px 18px; border-bottom: 2px dashed var(--line); }
+.ticket-top b { color: var(--ok); }
+.ticket-scroll { overflow-x: auto; }
+.ticket table { width: 100%; border-collapse: collapse; }
+.ticket td, .ticket th { padding: 8px 18px; text-align: left; white-space: nowrap; }
+.ticket th { font-weight: 500; font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.ticket td:last-child { color: var(--ok); font-weight: 600; }
+.ticket-foot { padding: 12px 18px; border-top: 2px dashed var(--line); color: var(--muted); font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
 
-.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); border: 1.5px solid var(--rule); background: var(--surface); }
-.step { padding: 22px; display: grid; gap: 10px; align-content: start; border-right: 1px solid var(--line); min-width: 0; }
-.step:last-child { border-right: 0; }
-.step p { color: var(--muted); font-size: 13px; }
+.code { background: var(--code); color: var(--code-ink); border-radius: 14px; padding: 20px; font: 13px/1.7 var(--mono); overflow-x: auto; margin: 0; }
+.code .k1 { color: #8db4ff; } .code .k2 { color: #ffb37a; } .code .c { color: #7f8da3; }
+
+.steps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.step { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 10px; align-content: start; min-width: 0; }
+.step .n { font: 700 34px/1 var(--display); color: var(--c); }
+.step p { color: var(--muted); font-size: 15px; }
 .cmd { position: relative; min-width: 0; }
-.cmd pre { margin: 0; background: var(--code); color: var(--code-ink); padding: 34px 14px 14px; font: 12px/1.65 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
-.cmd button { position: absolute; top: 8px; right: 8px; font: 500 10px var(--mono); letter-spacing: 0.08em; text-transform: uppercase;
-  background: transparent; color: var(--code-dim); border: 1px solid #3a4348; padding: 4px 7px; cursor: pointer; }
-.status { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); border: 1.5px solid var(--rule); background: var(--surface); }
-.status div { padding: 22px; display: grid; gap: 10px; align-content: start; }
-.status div + div { border-left: 1px solid var(--line); }
-.status ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 7px; font-size: 13px; }
-.status li::before { content: "\\2713"; color: var(--ok); margin-right: 10px; }
-.status .later li::before { content: "\\25CB"; color: var(--muted); }
-footer { padding-block: 28px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; font-size: 12px; color: var(--muted); }
+.cmd pre { margin: 0; background: var(--code); color: var(--code-ink); border-radius: 10px; padding: 36px 14px 14px; font: 12.5px/1.65 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; }
+.cmd button { position: absolute; top: 8px; right: 8px; font: 600 11px var(--body); background: #24334a; color: #e6ecf5; border: 0; border-radius: 99px; padding: 5px 10px; cursor: pointer; }
+.now { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.now div { background: var(--paper); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 10px; align-content: start; }
+.now h3 { font: 700 22px var(--display); text-transform: uppercase; }
+.now ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 6px; font-size: 16px; }
+.now li { display: flex; gap: 10px; align-items: baseline; }
+.now li::before { content: ""; flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--ok); }
+.now .later li::before { background: transparent; border: 2px dashed var(--muted); }
+footer { margin-top: 64px; padding-block: 26px; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px 20px; font-size: 15px; color: var(--muted); }
 
-@media (max-width: 860px) {
-  nav div a:not(.keep) { display: none; }
-  .hero { padding-block: 48px 40px; }
-  .split, .steps, .status { grid-template-columns: minmax(0, 1fr); }
-  .side { border-left: 0; border-top: 1.5px solid var(--rule); }
-  .step { border-right: 0; border-bottom: 1px solid var(--line); } .step:last-child { border-bottom: 0; }
-  .status div + div { border-left: 0; border-top: 1px solid var(--line); }
-  .track { grid-template-columns: minmax(0, 1fr); gap: 0; min-height: 0; }
-  .node { min-height: 0; grid-template-columns: 34px minmax(0, 1fr); text-align: left; column-gap: 10px; padding: 12px 14px; }
-  .node .num { grid-row: span 3; padding-top: 2px; } .node .note, .node .opt { grid-column: 2; }
-  .cell:not(:last-child) .node::after { content: none; }
-  .cell { padding-bottom: 16px; }
-  .cell:not(:last-child)::after { content: "\\2193"; position: absolute; bottom: -3px; left: 26px; color: var(--muted); font-size: 12px; }
-  .node .badge { left: auto; right: 10px; top: 12px; transform: none; background: transparent; }
-  .gate, .cell:last-child .gate { justify-self: start; margin: 0 0 0 44px; transform: none; max-width: none; justify-items: start; grid-auto-flow: column; align-items: center; gap: 8px; padding-top: 8px; }
-  .gate::before { width: 14px; height: 1.5px; }
+@media (max-width: 880px) {
+  nav .links a:not(.keep) { display: none; }
+  .hero, .duo, .steps, .now { grid-template-columns: minmax(0, 1fr); }
+  .rcards { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  section { padding-top: 48px; }
+  .board { padding: 16px; border-radius: 14px; }
 }
-@media (prefers-reduced-motion: reduce) { .node, .gate small, .node .badge { transition: none; } }
+@media (max-width: 460px) { .rcards { grid-template-columns: minmax(0, 1fr); } }
+@media (prefers-reduced-motion: reduce) { .route { transition: none; } }
 """
 
-FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700'
-         '&family=Schibsted+Grotesk:wght@500;600&display=swap">')
+FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600'
+         '&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">')
 
 SCRIPT = """
 <script>
 (function () {
-  var lines = %s;
-  var track = document.getElementById('track'), carry = document.getElementById('carry');
-  var tabs = document.querySelectorAll('.tabs button'), timer = null;
-  var still = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
-  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-  function draw(line) {
-    track.style.setProperty('--n', line.nodes.length);
-    track.innerHTML = line.nodes.map(function (n, i) {
-      return '<div class="cell"><div class="node' + (n.planned ? ' planned' : '') + '"><span class="f badge">F</span>' +
-        '<span class="num">0' + (i + 1) + '</span><span class="name">' + esc(n.name) + '</span>' +
-        '<span class="note">' + esc(n.note) + '</span>' +
-        (n.optional ? '<span class="opt">optional</span>' : '') + (n.planned ? '<span class="opt">planned</span>' : '') + '</div>' +
-        (n.gate ? '<div class="gate"><span>[' + esc(n.gate) + ']</span><small>waiting for you</small></div>' : '') + '</div>';
-    }).join('');
-    carry.innerHTML = '<div class="what"><span class="f">F</span><b>' + esc(line.source) + '</b>' + esc(line.ref) + ' &middot; ' + esc(line.title) + '</div>' +
-      '<div class="eg">example issue &middot; the foreman carries it down the line</div>';
-  }
-  function play(line) {
-    clearInterval(timer);
-    var cells = track.children, i = 1, hold = 0;
-    function show() {
-      for (var k = 0; k < cells.length; k++) {
-        cells[k].classList.toggle('past', k < i);
-        cells[k].classList.toggle('here', k === i);
-        cells[k].classList.toggle('held', k === i && hold > 0);
-      }
-    }
-    hold = line.nodes[i].gate ? 1 : 0;
-    show();
-    if (still) { return; }
-    timer = setInterval(function () {
-      if (line.nodes[i].gate && hold < 2) { hold++; show(); return; }
-      hold = 0; i = (i + 1) %% cells.length; show();
-    }, 1300);
-  }
+  var map = document.querySelector('.map'), cards = document.querySelectorAll('.rcard');
   function pick(id) {
-    var line = lines.filter(function (l) { return l.id === id; })[0];
-    tabs.forEach(function (t) { t.setAttribute('aria-selected', t.dataset.id === id ? 'true' : 'false'); });
-    draw(line); play(line);
+    var same = map.getAttribute('data-pick') === id;
+    if (same) { map.removeAttribute('data-pick'); } else { map.setAttribute('data-pick', id); }
+    cards.forEach(function (c) { c.setAttribute('aria-pressed', !same && c.dataset.route === id ? 'true' : 'false'); });
   }
-  tabs.forEach(function (t) { t.addEventListener('click', function () { pick(t.dataset.id); }); });
-  pick(lines[0].id);
+  cards.forEach(function (c) { c.addEventListener('click', function () { pick(c.dataset.route); }); });
+  map.querySelectorAll('.route').forEach(function (g) {
+    g.style.cursor = 'pointer';
+    g.addEventListener('click', function () { pick(g.getAttribute('data-route')); });
+  });
   document.querySelectorAll('.cmd button').forEach(function (button) {
     button.addEventListener('click', function () {
       var pre = button.parentNode.querySelector('pre');
-      var done = function () { button.textContent = 'copied'; setTimeout(function () { button.textContent = 'copy'; }, 1400); };
+      var done = function () { button.textContent = 'Copied'; setTimeout(function () { button.textContent = 'Copy'; }, 1400); };
       var select = function () { var r = document.createRange(); r.selectNodeContents(pre); var s = getSelection(); s.removeAllRanges(); s.addRange(r); };
       try { navigator.clipboard.writeText(pre.textContent).then(done, select); } catch (e) { select(); }
     });
@@ -252,134 +249,108 @@ SCRIPT = """
 </script>
 """
 
-
-def static_track(line_data):
-    """The first line, drawn without script so the page is complete before it runs."""
-    cells = []
-    for i, node in enumerate(line_data["nodes"]):
-        extra = ('<span class="opt">optional</span>' if node.get("optional") else "") + \
-                ('<span class="opt">planned</span>' if node.get("planned") else "")
-        gate = '<div class="gate"><span>[{}]</span><small>waiting for you</small></div>'.format(node["gate"]) if node.get("gate") else ""
-        cells.append('<div class="cell"><div class="node{}"><span class="f badge">F</span><span class="num">0{}</span>'
-                     '<span class="name">{}</span><span class="note">{}</span>{}</div>{}</div>'.format(
-                         " planned" if node.get("planned") else "", i + 1, node["name"], node["note"], extra, gate))
-    return "".join(cells)
+KEY = (
+    '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
+    '<circle cx="13" cy="13" r="6" fill="var(--paper)" stroke="var(--muted)" stroke-width="3.5"/></svg>A stage agents complete</span>'
+    '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
+    '<circle cx="13" cy="13" r="10" fill="var(--paper)" stroke="var(--ink)" stroke-width="3.5"/></svg>You approve here</span>'
+    '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
+    '<circle cx="13" cy="13" r="6" fill="var(--paper)" stroke="var(--muted)" stroke-width="3" stroke-dasharray="3 3"/></svg>Optional</span>'
+)
 
 
 def cmd(text):
-    return '<div class="cmd"><pre>{}</pre><button type="button">copy</button></div>'.format(html.escape(text))
+    return '<div class="cmd"><pre>{}</pre><button type="button">Copy</button></div>'.format(html.escape(text))
 
 
-def body(lines):
-    first = lines[0]
-    tabs = "".join('<button type="button" role="tab" data-id="{}" aria-selected="{}">{}</button>'.format(
-        l["id"], "true" if l is first else "false", l["tab"]) for l in lines)
+def body():
     return """
 <div class="wrap">
-<nav><a class="brand" href="#top"><span>F</span>Software Factory</a>
-  <div><a href="#flow">flow</a><a href="#config">config</a><a href="#start">get started</a><a class="keep" href="%(repo)s">github</a></div></nav>
+<nav><a class="brand" href="#top"><i><b></b><b></b><b></b><b></b></i>Software Factory</a>
+  <div class="links"><a href="#routes">Routes</a><a href="#proof">Proof</a><a href="#start">Get started</a><a class="keep" href="%(repo)s">GitHub</a></div></nav>
 
 <header class="hero" id="top">
-  <span class="tag"><b># software factory</b> <i>[runs on claude code]</i></span>
-  <h1>Your development process, run as a line.</h1>
-  <p>define the line once. agents work each stage. it stops only where you decide.</p>
-  <div class="cta"><a class="btn solid" href="#start">get started</a><a class="btn" href="%(repo)s">view on github</a></div>
+  <h1>Every issue takes a route.</h1>
+  <div><p>You choose the stops. Claude does the driving. You step on only where you want a say.</p>
+    <div class="cta"><a class="btn solid" href="#start">Get started</a><a class="btn" href="%(repo)s">GitHub</a></div></div>
 </header>
 
-<section id="flow">
-  <div class="head"><span class="tag"><b># issue flow</b></span><h2>How work moves through a factory</h2>
-    <p>An issue lands from the tracker your team already uses. The foreman carries it down the line, and the line stops wherever you put a review.</p></div>
-  <div class="fig">
-    <div class="fig-bar"><span class="tag">[ fig. 1 · the line ]</span><div class="tabs" role="tablist" aria-label="Sample factory">%(tabs)s</div></div>
-    <div class="fig-body">
-      <div class="carry" id="carry"><div class="what"><span class="f">F</span><b>%(source)s</b>%(ref)s &middot; %(title)s</div>
-        <div class="eg">example issue &middot; the foreman carries it down the line</div></div>
-      <div class="track" id="track" style="--n:%(n)s">%(track)s</div>
-      <div class="caption"><b>the foreman moves the work</b> &middot; it stops only where you decide &middot; <b>merge is always yours</b></div>
-    </div>
-  </div>
-</section>
+<div class="board" id="routes">
+  <div class="board-top"><h2>Four routes, ready to ride</h2><div class="key">%(key)s</div></div>
+  <div class="scroll">%(map)s</div>
+  <div class="rcards">%(cards)s</div>
+  <span class="hint">Select a route to trace it on the map.</span>
+</div>
 
-<section id="config">
-  <div class="head"><span class="tag"><b># configuration</b></span><h2>Your line, defined in code</h2></div>
-  <div class="split">
-    <div class="notes">
-      <div class="note-row"><span class="n">01</span><h3>One file per repository</h3><p>The stages, in order, and where a person reviews. Versioned in git, reviewed like code.</p></div>
-      <div class="note-row"><span class="n">02</span><h3>A skill for every stage</h3><p>Each stage follows a short skill written for that one job. Swap in your own.</p></div>
-      <div class="note-row"><span class="n">03</span><h3>Start from where work lives</h3><p>GitHub, GitLab, Jira, or a file. Changing source is three lines.</p></div>
-      <div class="note-row"><span class="n">04</span><h3>Move the reviews</h3><p>Add a review before a stage you want to see. Remove one to let work flow.</p></div>
+<section id="yours">
+  <div class="duo">
+    <div class="points">
+      <h2>Draw your own route</h2>
+      <div class="point r1"><i></i><h3>Add, remove or reorder stops</h3><p>A route is a short list in one file.</p></div>
+      <div class="point r2"><i></i><h3>Put approvals where you want them</h3><p>Before design, after the build, or only at the end.</p></div>
+      <div class="point r3"><i></i><h3>Start from your tracker</h3><p>GitHub, GitLab, Jira, or a plain file.</p></div>
+      <div class="point r4"><i></i><h3>Teach each stop your way</h3><p>Every stop follows a skill you can rewrite.</p></div>
     </div>
-    <div class="side">
-      <pre class="code"><span class="c"># targets/shop/factory.json</span>
-<span class="k">"source"</span>: { "type": "github", "repo": "acme/shop" },
-<span class="k">"stages"</span>: [
-  { "id": "requirements", "skill": "write-requirements" },
-  { "id": "approve-requirements", "by": "human" },
-  { "id": "design", "skill": "write-design", "optional": true },
-  { "id": "tasks", "skill": "write-tasks" },
-  { "id": "build", "skill": "build-tasks" },
-  { "id": "verify", "skill": "verify" }
+    <pre class="code"><span class="c">// targets/shop/factory.json</span>
+<span class="k1">"source"</span>: { "type": "github", "repo": "acme/shop" },
+<span class="k1">"stages"</span>: [
+  { "id": "requirements" },
+  { "id": <span class="k2">"approve-requirements"</span>, "by": <span class="k2">"human"</span> },
+  { "id": "design", "optional": true },
+  { "id": "tasks" },
+  { "id": "build" },
+  { "id": "verify" }
 ]</pre>
-      <pre class="tree">targets/shop/
-├── factory.json     the line
-├── AGENTS.md        your engineering rules
-├── presubmit        your build and tests
-└── skills/          one folder per stage</pre>
-    </div>
   </div>
 </section>
 
-<section>
-  <div class="head"><span class="tag"><b># trust</b></span><h2>Done means proven</h2></div>
-  <div class="split">
-    <div class="notes">
-      <div class="note-row"><span class="n">01</span><h3>Maker and checker</h3><p>One agent builds a task. A different one, with fresh eyes, checks it.</p></div>
-      <div class="note-row"><span class="n">02</span><h3>Evidence for every gate</h3><p>Each check records what was expected and what was found.</p></div>
-      <div class="note-row"><span class="n">03</span><h3>Nothing ticked on trust</h3><p>Work without evidence goes back down the line on its own.</p></div>
-      <div class="note-row"><span class="n">04</span><h3>You read a sheet, not a log</h3><p>One page per gate, readable in a minute.</p></div>
+<section id="proof">
+  <div class="duo">
+    <div class="ticket">
+      <div class="ticket-top"><span>BUILD · backend gate</span><b>PASS 5/5</b></div>
+      <div class="ticket-scroll"><table>
+        <tr><th>Check</th><th>Expected</th><th>Found</th><th></th></tr>
+        <tr><td>build errors</td><td>0</td><td>0</td><td>&#10003;</td></tr>
+        <tr><td>POST /api/orders/export</td><td>201</td><td>201</td><td>&#10003;</td></tr>
+        <tr><td>export without permission</td><td>403</td><td>403</td><td>&#10003;</td></tr>
+        <tr><td>raw SQL in controllers</td><td>0</td><td>0</td><td>&#10003;</td></tr>
+        <tr><td>integration tests</td><td>12 passed</td><td>12 passed</td><td>&#10003;</td></tr>
+      </table></div>
+      <div class="ticket-foot">Example ticket, for illustration</div>
     </div>
-    <div class="side">
-      <div class="sheet">
-        <div class="sheet-top"><span>evidence/2-backend-gate.md</span><b>status: pass · 5/5</b></div>
-        <div class="sheet-scroll"><table>
-          <tr><th>check</th><th>expected</th><th>actual</th><th></th></tr>
-          <tr><td>build errors</td><td>0</td><td>0</td><td>&#10003;</td></tr>
-          <tr><td>POST /api/orders/export</td><td>201</td><td>201</td><td>&#10003;</td></tr>
-          <tr><td>export without permission</td><td>403</td><td>403</td><td>&#10003;</td></tr>
-          <tr><td>raw sql in controller</td><td>0</td><td>0</td><td>&#10003;</td></tr>
-          <tr><td>integration tests</td><td>12 passed</td><td>12 passed</td><td>&#10003;</td></tr>
-        </table></div>
-      </div>
-      <span class="eg">example sheet, for illustration</span>
+    <div class="points">
+      <h2>Every stop stamps a ticket</h2>
+      <div class="point r2"><i></i><h3>One builds, another checks</h3><p>The agent that did the work never marks its own homework.</p></div>
+      <div class="point r2"><i></i><h3>Expected against found</h3><p>Each check is written down with its result.</p></div>
+      <div class="point r2"><i></i><h3>No ticket, no progress</h3><p>Unproven work is sent back to the stop that did it.</p></div>
     </div>
   </div>
 </section>
 
 <section id="start">
-  <div class="head"><span class="tag"><b># get started</b></span><h2>Three commands to a running line</h2></div>
+  <h2>On the road in three commands</h2>
   <div class="steps">
-    <div class="step"><span class="tag dim">01</span><h3>Start from a sample</h3><p>Pick the closest of the four and point it at your repository.</p>%(c1)s</div>
-    <div class="step"><span class="tag dim">02</span><h3>Make it yours</h3><p>Set the source, your rules and your tests. Move the reviews.</p>%(c2)s</div>
-    <div class="step"><span class="tag dim">03</span><h3>Run one issue</h3><p>It stops at your first review.</p>%(c3)s</div>
+    <div class="step r1"><span class="n">1</span><h3>Pick a route</h3><p>Copy the nearest sample and point it at your repository.</p>%(c1)s</div>
+    <div class="step r3"><span class="n">2</span><h3>Redraw it</h3><p>Set your tracker, your rules and your tests. Move the approvals.</p>%(c2)s</div>
+    <div class="step r4"><span class="n">3</span><h3>Send one issue</h3><p>It runs until your first approval stop.</p>%(c3)s</div>
   </div>
 </section>
 
 <section>
-  <div class="head"><span class="tag"><b># status</b></span><h2>What works today</h2></div>
-  <div class="status">
-    <div><span class="tag">working</span><ul><li>four sample factories</li><li>read from github, gitlab, or a file</li><li>review stops, approve to continue</li>
-      <li>evidence checks send work back</li><li>runs from claude code or headless</li></ul></div>
-    <div class="later"><span class="tag dim">planned</span><ul><li>open the merge request</li><li>comment and label on the issue</li><li>approve by label</li>
-      <li>scheduled, unattended runs</li><li>jira, tested against a real instance</li><li>visual editor for the line</li></ul></div>
+  <h2>Where it stands</h2>
+  <div class="now">
+    <div><h3>Running today</h3><ul><li>Four sample routes</li><li>Issues from GitHub, GitLab, or a file</li><li>Stops for your approval, then carries on</li>
+      <li>Unproven work sent back automatically</li><li>Runs inside Claude Code, or unattended from a terminal</li></ul></div>
+    <div class="later"><h3>Not built yet</h3><ul><li>Opening the merge request</li><li>Commenting and labelling on the issue</li><li>Approving from the tracker</li>
+      <li>Scheduled runs</li><li>Jira, tested against a real instance</li><li>A visual route editor</li></ul></div>
   </div>
 </section>
 
-<footer><span>software factory · runs on claude code</span><a href="%(repo)s">%(repo_short)s</a></footer>
+<footer><span>Software Factory · runs on Claude Code</span><a href="%(repo)s">%(repo_short)s</a></footer>
 </div>
 """ % {
-        "repo": REPO_URL, "repo_short": REPO_URL.replace("https://", ""), "tabs": tabs,
-        "source": first["source"], "ref": first["ref"], "title": first["title"],
-        "n": len(first["nodes"]), "track": static_track(first),
+        "repo": REPO_URL, "repo_short": REPO_URL.replace("https://", ""), "key": KEY,
+        "map": route_map(), "cards": route_cards(),
         "c1": cmd("python3 factory/flow.py init shop \\\n  --sample backend-api \\\n  --repo ~/code/shop"),
         "c2": cmd("python3 factory/flow.py --target shop show\npython3 factory/flow.py --target shop validate"),
         "c3": cmd("python3 factory/flow.py --target shop \\\n  start --issue 42\npython3 factory/flow.py --target shop run"),
@@ -387,15 +358,13 @@ def body(lines):
 
 
 def main():
-    lines = [line(name) for name in ORDER]
     head = "<title>Software Factory</title>{}<style>{}</style>".format(FONTS, STYLE)
-    content = body(lines) + SCRIPT % json.dumps(lines)
     docs = HOME / "docs"
     docs.mkdir(exist_ok=True)
     (docs / "index.html").write_text(
         '<!doctype html><html lang="en"><head><meta charset="utf-8">'
-        '<meta name="viewport" content="width=device-width, initial-scale=1">{}</head><body>{}</body></html>\n'.format(
-            head, content))
+        '<meta name="viewport" content="width=device-width, initial-scale=1">{}</head><body>{}{}</body></html>\n'.format(
+            head, body(), SCRIPT))
     print(docs / "index.html")
 
 
