@@ -1,0 +1,123 @@
+{
+  "description": "UI work from GitLab issues. A visual spec pins every screen and state; a human looks at the result before it goes further.",
+  "source": {
+    "type": "gitlab",
+    "host": "gitlab.com",
+    "project": "<group>/<project>",
+    "label": "factory"
+  },
+  "spec_dir": "specs/{n}-{slug}",
+  "limits": {
+    "max_attempts": 3
+  },
+  "build_skills": [
+    "build-ui",
+    "build-tests"
+  ],
+  "stages": [
+    {
+      "id": "read-issue",
+      "by": "script",
+      "skill": "read-issue",
+      "intake": true
+    },
+    {
+      "id": "requirements",
+      "by": "agent",
+      "skill": "write-requirements",
+      "agent": "spec",
+      "writes": [
+        "{spec}/requirements.md"
+      ],
+      "produces": [
+        "{spec}/requirements.md"
+      ]
+    },
+    {
+      "id": "approve-requirements",
+      "by": "human"
+    },
+    {
+      "id": "visual-spec",
+      "by": "agent",
+      "skill": "write-visual-spec",
+      "agent": "spec",
+      "optional": true,
+      "writes": [
+        "{spec}/visual-spec.md"
+      ],
+      "produces": [
+        "{spec}/visual-spec.md"
+      ]
+    },
+    {
+      "id": "tasks",
+      "by": "agent",
+      "skill": "write-tasks",
+      "agent": "spec",
+      "writes": [
+        "{spec}/"
+      ],
+      "produces": [
+        "{spec}/tasks.md"
+      ]
+    },
+    {
+      "id": "lint-tasks",
+      "by": "script",
+      "skill": "lint-tasks",
+      "on_fail": "tasks",
+      "run": [
+        "python3",
+        "{scripts}/lint_tasks.py",
+        "{checkout}/{spec}/tasks.md",
+        "--skills-dir",
+        "{skills}",
+        "--skills-dir",
+        "{checkout}/.claude/skills"
+      ]
+    },
+    {
+      "id": "build",
+      "by": "agent",
+      "skill": "build-tasks",
+      "agent": "builder",
+      "until": "all-tasks-ticked"
+    },
+    {
+      "id": "check-evidence",
+      "by": "script",
+      "skill": "check-evidence",
+      "on_fail": "build",
+      "run": [
+        "python3",
+        "{scripts}/check_evidence.py",
+        "--spec",
+        "{checkout}/{spec}",
+        "--repo",
+        "{checkout}",
+        "--cat1"
+      ]
+    },
+    {
+      "id": "verify",
+      "by": "script",
+      "skill": "verify",
+      "on_fail": "build",
+      "run": [
+        "{presubmit}"
+      ]
+    },
+    {
+      "id": "approve-screens",
+      "by": "human"
+    },
+    {
+      "id": "merge-request",
+      "by": "script",
+      "skill": "open-merge-request",
+      "optional": true,
+      "enabled": false
+    }
+  ]
+}

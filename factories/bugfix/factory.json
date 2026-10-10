@@ -1,0 +1,79 @@
+{
+  "description": "Bug reports from Jira. No spec: reproduce with a failing test, fix, verify, review, then one human approval.",
+  "source": {
+    "type": "jira",
+    "project": "<KEY>",
+    "label": "factory"
+  },
+  "spec_dir": "factory-work/{n}-{slug}",
+  "limits": {
+    "max_attempts": 3
+  },
+  "build_skills": [],
+  "stages": [
+    {
+      "id": "read-issue",
+      "by": "script",
+      "skill": "read-issue",
+      "intake": true
+    },
+    {
+      "id": "reproduce",
+      "by": "agent",
+      "skill": "reproduce-bug",
+      "agent": "implementation",
+      "produces": [
+        "{spec}/reproduction.md"
+      ]
+    },
+    {
+      "id": "fix",
+      "by": "agent",
+      "skill": "fix-bug",
+      "agent": "implementation"
+    },
+    {
+      "id": "verify",
+      "by": "script",
+      "skill": "verify",
+      "on_fail": "fix",
+      "run": [
+        "{presubmit}"
+      ]
+    },
+    {
+      "id": "review",
+      "by": "agent",
+      "skill": "review-change",
+      "agent": "review",
+      "writes": [
+        "{spec}/review.md"
+      ],
+      "produces": [
+        "{spec}/review.md"
+      ]
+    },
+    {
+      "id": "check-review",
+      "by": "script",
+      "skill": "check-review",
+      "on_fail": "fix",
+      "run": [
+        "python3",
+        "{scripts}/check_verdict.py",
+        "{checkout}/{spec}/review.md"
+      ]
+    },
+    {
+      "id": "approve-fix",
+      "by": "human"
+    },
+    {
+      "id": "merge-request",
+      "by": "script",
+      "skill": "open-merge-request",
+      "optional": true,
+      "enabled": false
+    }
+  ]
+}

@@ -7,9 +7,12 @@ skill, or a human. This script walks an item through that list. It runs the
 script stages itself, hands agent stages out as tasks, and stops at human
 stages until someone approves.
 
-    flow.py --target NAME start --issue IID       take a GitLab issue
+    flow.py init NAME --sample S --repo PATH      create a factory for a repository from a sample in factories/
+    flow.py --target NAME show                    print the stages
+    flow.py --target NAME validate                check the definition
+    flow.py --target NAME start --issue REF       take an issue (GitLab or GitHub number, or Jira key)
     flow.py --target NAME start --file F --title T    take a requirement from a file
-    flow.py --target NAME poll                    start every open GitLab issue carrying the factory label
+    flow.py --target NAME poll                    start every open issue carrying the factory label
     flow.py --target NAME status
     flow.py --target NAME next [ITEM]             run scripts, then print the next agent task as JSON
     flow.py --target NAME done ITEM               an agent finished: check its work, commit, move on
@@ -34,6 +37,7 @@ sys.path.insert(0, str(Path(__file__).parent / "scripts"))
 import lint_tasks  # noqa: E402
 
 SCRIPTS = Path(__file__).resolve().parent / "scripts"
+FACTORIES = core.HOME / "factories"
 FEEDBACK = "factory_feedback.md"
 SCRATCH = ["issue_context.md", FEEDBACK]
 DEFINITION = STATE = None
@@ -46,6 +50,9 @@ def setup(target):
     if not path.exists():
         raise core.FactoryError("{} has no factory definition at {}".format(target, path))
     DEFINITION = json.loads(path.read_text())
+    problems = validate(DEFINITION, core.TARGETS / target / "skills")
+    if problems:
+        raise core.FactoryError("{} is not a sound factory definition:\n- {}".format(path, "\n- ".join(problems)))
     STATE = core.RUNS.parent
     (STATE / "items").mkdir(parents=True, exist_ok=True)
 
@@ -116,7 +123,8 @@ def checkout(item):
 
 def fill(item, text):
     values = {"spec": item["spec"], "checkout": str(checkout(item)), "scripts": str(SCRIPTS),
-              "skills": str(core.TARGETS / core.NAME / "skills"), "item": item["id"]}
+              "skills": str(core.TARGETS / core.NAME / "skills"), "item": item["id"],
+              "presubmit": core.PRESUBMIT[0]}
     return re.sub(r"\{(\w+)\}", lambda m: values.get(m.group(1), m.group(0)), text)
 
 
@@ -135,10 +143,8 @@ def unchecked_tasks(item):
 def run_script(item, stage):
     wt = checkout(item)
     if stage.get("intake"):
-        source = ["--iid", str(item["iid"]), "--project", DEFINITION["source"]["project"],
-                  "--host", DEFINITION["source"]["host"]] if item.get("iid") \
-            else ["--file", item["file"]]
-        cmd = ["python3", str(SCRIPTS / "read_issue.py"), "--out", str(wt / "issue_context.md")] + source
+        where = ["--source", "file", "--ref", item["ref"]] if item["source"] == "file" else source_args(item["ref"])
+        cmd = ["python3", str(SCRIPTS / "read_issue.py"), "--out", str(wt / "issue_context.md")] + where
     else:
         cmd = [fill(item, part) for part in stage["run"]]
     proc = subprocess.run(cmd, cwd=str(wt), text=True, capture_output=True)
@@ -272,40 +278,131 @@ def start(item_id, title, **source):
     return item
 
 
-def gitlab(path):
-    proc = subprocess.run(["glab", "api", "--hostname", DEFINITION["source"]["host"], path],
-                          text=True, capture_output=True)
+def source_args(ref=None):
+    """Arguments that tell read_issue.py where this factory's work comes from."""
+    source = DEFINITION["source"]
+    args = ["--source", source["type"]]
+    for key in ("project", "host", "repo"):
+        if source.get(key):
+            args += ["--" + key, source[key]]
+    return args + (["--ref", str(ref)] if ref else [])
+
+
+def read_issue(extra):
+    proc = subprocess.run(["python3", str(SCRIPTS / "read_issue.py")] + extra, text=True, capture_output=True)
     if proc.returncode:
-        raise core.FactoryError("glab api {} failed: {}".format(path, (proc.stderr or proc.stdout).strip()[:300]))
-    return json.loads(proc.stdout)
+        raise core.FactoryError((proc.stderr or proc.stdout).strip())
+    return proc.stdout.strip()
 
 
-def project_path():
-    from urllib.parse import quote
-    return "projects/" + quote(DEFINITION["source"]["project"], safe="")
+PREFIX = {"gitlab": "GL", "github": "GH", "jira": "", "file": "L"}
 
 
 def cmd_start(args):
-    if args.issue:
-        issue = gitlab("{}/issues/{}".format(project_path(), args.issue))
-        item = start("GL{}".format(args.issue), issue["title"], iid=int(args.issue))
-    elif args.file and args.title:
+    kind = DEFINITION["source"]["type"]
+    if args.file:
+        if not args.title:
+            raise core.FactoryError("give --title with --file")
         number = len([i for i in all_items() if i["id"].startswith("L")]) + 1
-        item = start("L{}".format(number), args.title, file=str(Path(args.file).resolve()))
+        item = start("L{}".format(number), args.title, ref=str(Path(args.file).resolve()), source="file")
+    elif args.issue and kind != "file":
+        scratch = STATE / "items" / "incoming.md"
+        title = read_issue(source_args(args.issue) + ["--out", str(scratch)]).splitlines()[-1]
+        scratch.unlink()
+        item = start(PREFIX[kind] + str(args.issue), title, ref=str(args.issue), source=kind)
     else:
-        raise core.FactoryError("give --issue IID, or --file with --title")
+        raise core.FactoryError("give --issue REF, or --file with --title")
     print("{}  spec folder: {}".format(item["id"], item["spec"]))
 
 
 def cmd_poll(args):
-    label = DEFINITION["source"].get("label", "factory")
-    started = {i.get("iid") for i in all_items()}
-    issues = gitlab("{}/issues?state=opened&labels={}&per_page=100".format(project_path(), label))
-    new = [i for i in issues if i["iid"] not in started]
+    kind, label = DEFINITION["source"]["type"], DEFINITION["source"].get("label", "factory")
+    if kind == "file":
+        raise core.FactoryError("this factory takes requirements from files; there is nothing to poll")
+    started = {i["ref"] for i in all_items()}
+    issues = json.loads(read_issue(source_args() + ["--list", "--label", label]))
+    new = [i for i in issues if i["ref"] not in started]
     for issue in new:
-        start("GL{}".format(issue["iid"]), issue["title"], iid=issue["iid"])
-        print("started GL{}: {}".format(issue["iid"], issue["title"]))
+        start(PREFIX[kind] + issue["ref"], issue["title"], ref=issue["ref"], source=kind)
+        print("started {}{}: {}".format(PREFIX[kind], issue["ref"], issue["title"]))
     print("{} open issue(s) labelled `{}`, {} new".format(len(issues), label, len(new)))
+
+
+def cmd_init(args):
+    """Create a new target from a sample factory."""
+    sample, home = FACTORIES / args.sample, core.TARGETS / args.name
+    if not (sample / "factory.json").exists():
+        names = sorted(p.parent.name for p in FACTORIES.glob("*/factory.json"))
+        raise core.FactoryError("no sample factory `{}`. Choose from: {}".format(args.sample, ", ".join(names)))
+    repo = Path(args.repo).resolve()
+    if not (repo / ".git").exists():
+        raise core.FactoryError("{} is not a git checkout".format(repo))
+    if home.exists():
+        raise core.FactoryError("target {} already exists".format(args.name))
+    (home / "skills").mkdir(parents=True)
+    definition = json.loads((sample / "factory.json").read_text())
+    for stage in definition["stages"]:
+        if stage.get("skill"):
+            shutil.copytree(FACTORIES / "skills" / stage["skill"], home / "skills" / stage["skill"], dirs_exist_ok=True)
+    for extra in definition.pop("build_skills", []):
+        shutil.copytree(FACTORIES / "skills" / extra, home / "skills" / extra, dirs_exist_ok=True)
+    (home / "factory.json").write_text(json.dumps(definition, indent=2) + "\n")
+    branch = core.sh(["git", "symbolic-ref", "--short", "HEAD"], cwd=repo, check=False).stdout.strip() or "main"
+    (home / "target.json").write_text(json.dumps(
+        {"repo": str(repo), "main": branch, "merge": False, "protected": [".claude/", ".github/", ".gitlab-ci.yml"],
+         "allowed_tools": []}, indent=2) + "\n")
+    shutil.copy(core.HOME / ".github" / "issue-triage" / "config.json", home / "labels.json")
+    for name in ("AGENTS.md", "presubmit"):
+        shutil.copy(FACTORIES / "starter" / name, home / name)
+    (home / "presubmit").chmod(0o755)
+    print("Created {}".format(home))
+    print("Edit before the first run: factory.json (source), AGENTS.md (your rules), presubmit (your checks).")
+
+
+def validate(definition, skills_dir):
+    """Problems that would make a definition unrunnable. An empty list means it is sound."""
+    problems, seen = [], []
+    source = definition.get("source", {})
+    if source.get("type") not in PREFIX:
+        problems.append("source.type must be one of {}".format(", ".join(PREFIX)))
+    need = {"gitlab": ["project"], "github": ["repo"], "jira": ["project"]}.get(source.get("type"), [])
+    problems += ["source.{} is not set".format(k) for k in need if not source.get(k) or "<" in source[k]]
+    if "{n}" not in definition.get("spec_dir", "") and "{slug}" not in definition.get("spec_dir", ""):
+        problems.append("spec_dir needs {n} or {slug} so each item gets its own folder")
+    stage_list = definition.get("stages", [])
+    if not stage_list or not stage_list[0].get("intake"):
+        problems.append("the first stage must be the intake stage that reads the requirement")
+    for stage in stage_list:
+        name = stage.get("id", "?")
+        if name in seen:
+            problems.append("stage id `{}` is used twice".format(name))
+        if stage.get("by") not in ("script", "agent", "human"):
+            problems.append("stage `{}`: `by` must be script, agent or human".format(name))
+        if stage.get("by") == "script" and not stage.get("intake") and not stage.get("run") and stage.get("enabled", True):
+            problems.append("stage `{}` is a script but has no `run` command".format(name))
+        if stage.get("by") != "human" and not stage.get("skill"):
+            problems.append("stage `{}` names no skill".format(name))
+        elif stage.get("skill") and not (skills_dir / stage["skill"] / "SKILL.md").exists():
+            problems.append("stage `{}`: skill `{}` does not exist in {}".format(name, stage["skill"], skills_dir))
+        if stage.get("on_fail") and stage["on_fail"] not in seen:
+            problems.append("stage `{}`: on_fail must name an earlier stage".format(name))
+        seen.append(name)
+    if not any(s.get("by") == "human" for s in stage_list):
+        problems.append("no stage is done by a human; a factory needs at least one human gate")
+    return problems
+
+
+def cmd_validate(args):
+    print("OK: {} stages, source {}".format(len(DEFINITION["stages"]), DEFINITION["source"]["type"]))
+
+
+def cmd_show(args):
+    width = max(len(s["id"]) for s in DEFINITION["stages"])
+    for stage in DEFINITION["stages"]:
+        notes = [n for n, on in (("optional", stage.get("optional")), ("off", not stage.get("enabled", True)),
+                                 ("on failure -> " + stage.get("on_fail", ""), stage.get("on_fail"))) if on]
+        print("{}  {:<6}  {}  {}".format(stage["id"].ljust(width), stage["by"], stage.get("skill", "-"),
+                                         ("(" + ", ".join(notes) + ")") if notes else ""))
 
 
 def cmd_status(args):
@@ -349,7 +446,7 @@ def cmd_approve(args):
     log(item, "approved by human", "skipping: {}".format(", ".join(args.skip or []) or "nothing"))
     move(item)
     log(item, "moved on")
-    print("{}: approved. Next stage: {}".format(item["id"], item["stage"]))
+    print("{}: approved. {}".format(item["id"], "Finished." if item["status"] == "done" else "Next stage: " + item["stage"]))
 
 
 def cmd_retry(args):
@@ -377,12 +474,14 @@ def cmd_run(args):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    parser.add_argument("--target", default=os.environ.get("FACTORY_TARGET"), required="FACTORY_TARGET" not in os.environ)
+    parser.add_argument("--target", default=os.environ.get("FACTORY_TARGET"))
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("start"); p.add_argument("--issue"); p.add_argument("--file"); p.add_argument("--title")
     p.set_defaults(fn=cmd_start)
-    sub.add_parser("poll").set_defaults(fn=cmd_poll)
-    sub.add_parser("status").set_defaults(fn=cmd_status)
+    for name, fn in (("poll", cmd_poll), ("status", cmd_status), ("validate", cmd_validate), ("show", cmd_show)):
+        sub.add_parser(name).set_defaults(fn=fn)
+    p = sub.add_parser("init"); p.add_argument("name"); p.add_argument("--sample", required=True)
+    p.add_argument("--repo", required=True); p.set_defaults(fn=cmd_init)
     for name, fn in (("next", cmd_next), ("run", cmd_run)):
         p = sub.add_parser(name); p.add_argument("item", nargs="?"); p.set_defaults(fn=fn)
     for name, fn in (("done", cmd_done), ("retry", cmd_retry)):
@@ -391,6 +490,10 @@ def main():
     p.set_defaults(fn=cmd_approve)
     args = parser.parse_args()
     try:
+        if args.fn is cmd_init:
+            return cmd_init(args)
+        if not args.target:
+            raise core.FactoryError("say which factory: --target NAME (see `factory.py targets`)")
         setup(args.target)
         args.fn(args)
     except core.FactoryError as e:

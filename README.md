@@ -79,7 +79,34 @@ own maker-checker build loop, a script that checks the evidence, and an
 optional merge request.
 
 Scripts in `factory/scripts/` do every step that needs no judgment: reading
-a GitLab issue, linting `tasks.md`, and re-checking evidence.
+an issue from GitHub, GitLab or Jira, linting `tasks.md`, re-checking
+evidence, and reading a review verdict.
+
+### Sample factories
+
+[factories/](factories/) holds four definitions to start from, with the
+skills they use in [factories/skills/](factories/skills/).
+
+| Sample | For | Starts from | Human decisions |
+| --- | --- | --- | --- |
+| [spec-driven](factories/spec-driven/) | Full-stack features | A file | Requirements |
+| [backend-api](factories/backend-api/) | API and database work | GitHub issues | Requirements, then design |
+| [ui-app](factories/ui-app/) | UI work | GitLab issues | Requirements, then the finished screens |
+| [bugfix](factories/bugfix/) | Bug reports | Jira issues | The reviewed fix |
+
+Create your own from one:
+
+    python3 factory/flow.py init shop --sample backend-api --repo ~/code/shop
+    python3 factory/flow.py --target shop show
+    python3 factory/flow.py --target shop validate
+
+Then edit `targets/shop/factory.json`, `AGENTS.md` and `presubmit`.
+[docs/index.html](docs/index.html) explains the concept and walks through
+creating a factory. `python3 factory/scripts/build_docs.py` regenerates it
+from the samples.
+
+Jira reading is written but has not been run against a real Jira. Nothing
+writes back to GitHub, GitLab or Jira.
 
 ## Maintainer commands
 

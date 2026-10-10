@@ -1,0 +1,6 @@
+#!/bin/sh
+# Verification gate. Run from the root of a checkout; exit 0 only when the change is sound.
+# Replace the lines below with your build, lint and test commands.
+set -e
+echo "presubmit: not configured. Edit targets/<name>/presubmit with your build and test commands." >&2
+exit 1

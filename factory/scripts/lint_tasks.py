@@ -49,7 +49,7 @@ def parse(text):
     return [s for s in sections if s["tasks"]]
 
 
-def lint(text, skills_dir):
+def lint(text, skills_dirs):
     errors = []
     for section in parse(text):
         where = 'section "{}"'.format(section["title"][:50])
@@ -57,7 +57,7 @@ def lint(text, skills_dir):
             skill = RUN.search(line)
             if not skill:
                 errors.append("task {} names no skill (expected: → run: `/skill`)".format(task_id))
-            elif skills_dir and not (Path(skills_dir) / skill.group(1) / "SKILL.md").exists():
+            elif skills_dirs and not any((Path(d) / skill.group(1) / "SKILL.md").exists() for d in skills_dirs):
                 errors.append("task {} names skill /{} which does not exist".format(task_id, skill.group(1)))
         gate = section["gate"]
         # A section built by hand, or one that is itself the tests, has no gate of its own.
@@ -77,7 +77,7 @@ def lint(text, skills_dir):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("tasks")
-    p.add_argument("--skills-dir")
+    p.add_argument("--skills-dir", action="append", help="may be given more than once")
     args = p.parse_args()
     errors = lint(Path(args.tasks).read_text(), args.skills_dir)
     if errors:
