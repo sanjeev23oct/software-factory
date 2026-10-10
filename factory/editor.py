@@ -61,7 +61,42 @@ def library(home, definition):
     return stops
 
 
-def save_route(name, definition):
+def samples():
+    out = []
+    for path in sorted(LIBRARY.glob("*/factory.json")):
+        d = json.loads(path.read_text())
+        live = [s for s in d["stages"] if s.get("enabled", True)]
+        out.append({"name": path.parent.name, "description": d["description"], "source": d["source"]["type"],
+                    "stops": len(live), "gates": [s["id"].replace("approve-", "") for s in live if s["by"] == "human"]})
+    return out
+
+
+def create(data):
+    """Add a repository: clone it if asked, then start its factory from a sample."""
+    name = "".join(c if c.isalnum() or c == "-" else "-" for c in data.get("name", "").strip().lower()).strip("-")
+    if not name:
+        raise ValueError("give the factory a name")
+    repo = Path(data.get("repo", "").strip()).expanduser()
+    if not str(repo) or str(repo) == ".":
+        raise ValueError("say which folder the repository is in")
+    if not (repo / ".git").exists():
+        url = data.get("clone_url", "").strip()
+        if not url:
+            raise ValueError("{} is not a git repository. Give a clone address to fetch it there.".format(repo))
+        if repo.exists() and any(repo.iterdir()):
+            raise ValueError("{} exists and is not empty, so nothing was cloned into it".format(repo))
+        proc = subprocess.run(["git", "clone", "-q", url, str(repo)], text=True, capture_output=True,
+                              env=dict(__import__("os").environ, GIT_TERMINAL_PROMPT="0"))
+        if proc.returncode:
+            raise ValueError("could not clone: " + proc.stderr.strip()[-300:])
+    try:
+        flow.cmd_init(argparse.Namespace(name=name, sample=data.get("sample", ""), repo=str(repo)))
+    except flow.core.FactoryError as e:
+        raise ValueError(str(e))
+    return name
+
+
+def save_route(name, definition, guide=None, presubmit=None):
     home = route_dir(name)
     for stage in definition.get("stages", []):
         skill = stage.get("skill")
@@ -73,6 +108,11 @@ def save_route(name, definition):
     path = home / "factory.json"
     shutil.copy(path, path.with_suffix(".json.bak"))
     path.write_text(json.dumps(definition, indent=2) + "\n")
+    if guide is not None:
+        (home / "AGENTS.md").write_text(guide.rstrip() + "\n")
+    if presubmit is not None:
+        (home / "presubmit").write_text(presubmit.rstrip() + "\n")
+        (home / "presubmit").chmod(0o755)
     return []
 
 
@@ -138,8 +178,12 @@ class Handler(BaseHTTPRequestHandler):
                 home = route_dir(parse_qs(url.query)["target"][0])
                 definition = json.loads((home / "factory.json").read_text())
                 skills = {p.parent.name: about(p.parent) for p in sorted((home / "skills").glob("*/SKILL.md"))}
+                read = lambda f: (home / f).read_text() if (home / f).exists() else ""
                 self.send({"definition": definition, "skills": skills, "library": library(home, definition),
-                           "has_rules": (home / "process.json").exists()})
+                           "has_rules": (home / "process.json").exists(), "guide": read("AGENTS.md"),
+                           "presubmit": read("presubmit"), "repo": json.loads(read("target.json") or "{}").get("repo", "")})
+            elif url.path == "/api/samples":
+                self.send({"samples": samples()})
             elif url.path == "/api/state":
                 names = sorted(p.parent.name for p in TARGETS.glob("*/process.json"))
                 self.send({"targets": names, "checks": process.CHECKS, "rule_types": process.RULE_TYPES})
@@ -159,8 +203,10 @@ class Handler(BaseHTTPRequestHandler):
         try:
             data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
             if self.path == "/api/route/save":
-                problems = save_route(data["target"], data["definition"])
+                problems = save_route(data["target"], data["definition"], data.get("guide"), data.get("presubmit"))
                 return self.send({"problems": problems} if problems else {"saved": True})
+            if self.path == "/api/route/create":
+                return self.send({"created": create(data)})
             problems = process.validate(data["config"])
             if problems:
                 return self.send({"problems": problems})

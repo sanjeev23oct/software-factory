@@ -99,6 +99,14 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
 .add { border: 1.5px dashed var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 8px; align-content: start; }
 .add b { font-weight: 600; } .add span { font-size: 14px; color: var(--muted); }
 .add .rowf { display: flex; gap: 8px; flex-wrap: wrap; } .add .rowf > :first-child { flex: 1 1 140px; min-width: 0; }
+textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); font: 15px/1.5 var(--body); color: inherit; resize: vertical; }
+textarea.mono { font: 13px/1.6 var(--mono); }
+.switch { display: flex; gap: 10px; align-items: flex-start; } .switch input { margin-top: 5px; } .switch small { color: var(--muted); font-size: 13px; }
+.samples { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 200px), 1fr)); gap: 10px; }
+.sample { display: grid; gap: 4px; padding: 12px; border: 2px solid var(--line); border-radius: 12px; cursor: pointer; align-content: start; }
+.sample:has(input:checked) { border-color: var(--route); }
+.sample input { position: absolute; opacity: 0; }
+.sample b { font: 700 20px/1.1 var(--display); text-transform: uppercase; } .sample span { font-size: 13px; color: var(--muted); }
 @media (max-width: 640px) { .stop { grid-template-columns: auto minmax(0, 1fr); } .side { grid-column: 2; justify-items: start; grid-auto-flow: column; justify-content: start; gap: 14px; } }
 </style>
 </head>
@@ -107,12 +115,25 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   <h1>Factory</h1>
   <nav class="tabs"><a href="/" aria-current="page">Route</a><a href="/rules">Review rules</a></nav>
   <select id="target" aria-label="Factory"></select>
+  <button class="btn ghost" id="new">Add a repository</button>
   <span class="grow" id="state" role="status"></span>
   <button class="btn" id="save" disabled>Save</button>
 </div></div>
 
 <div class="wrap"><main>
   <div id="problems" class="problems" hidden></div>
+
+  <section class="panel" id="newpanel" hidden>
+    <header><h2>Add a repository</h2><p>Each repository gets its own factory. Start from the sample closest to how that team works; you can change every stop afterwards.</p></header>
+    <div class="grid">
+      <div class="field"><label for="n_name">Name for this factory</label><input type="text" id="n_name" placeholder="e.g. billing-api"></div>
+      <div class="field"><label for="n_repo">Folder the repository is in</label><input type="text" id="n_repo" placeholder="~/code/billing-api"></div>
+      <div class="field"><label for="n_url">Clone address</label><input type="text" id="n_url" placeholder="only if the folder does not exist yet"><small>Leave empty when the repository is already on this machine.</small></div>
+    </div>
+    <div class="field"><label>Start from</label><div class="samples" id="samples"></div></div>
+    <div id="newerror" class="problems" hidden></div>
+    <div class="rowf" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="create">Create the factory</button><button class="btn ghost" id="cancel">Cancel</button></div>
+  </section>
 
   <section class="panel">
     <header><h2>The route</h2><p id="about"></p></header>
@@ -123,6 +144,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   <section class="panel">
     <header><h2>Where work comes from</h2></header>
     <div class="grid" id="source"></div>
+    <label class="switch"><input type="checkbox" id="auto"><span><b>Pick up work automatically</b><br><small>The scheduled job checks this source every few minutes. Leave off until the repository below is set up.</small></span></label>
   </section>
 
   <section class="panel">
@@ -137,6 +159,14 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   </section>
 
   <section class="panel">
+    <header><h2>This repository</h2><p id="repo"></p></header>
+    <div class="field"><label for="guide">Engineering rules agents must follow</label>
+      <textarea id="guide" rows="10" spellcheck="false"></textarea><small>What the product is, where its standards live, and what must never be done. Agents read this before every task.</small></div>
+    <div class="field"><label for="presubmit">Commands that prove a change is sound</label>
+      <textarea id="presubmit" rows="7" spellcheck="false" class="mono"></textarea><small>A shell script run from the repository root: your build, lint and tests. It must exit with an error when something fails.</small></div>
+  </section>
+
+  <section class="panel">
     <header><h2>Limits</h2><p>What stops an unattended factory from running away.</p></header>
     <div class="grid">
       <div class="field"><label for="max_attempts">Tries per stop</label><input type="number" id="max_attempts" min="1" max="10"><small>After this many failed tries the item waits for a person.</small></div>
@@ -148,7 +178,8 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var def = null, skills = {}, lib = [], saved = '';
+  var def = null, skills = {}, lib = [], saved = '', extra = { guide: '', presubmit: '' };
+  function snapshot() { return JSON.stringify([def, extra]); }
   var SOURCES = {
     'gitlab': { name: 'GitLab issues', fields: [['host', 'GitLab host', 'gitlab.com'], ['project', 'Project', 'group/project'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
     'gitlab-mr': { name: 'GitLab merge requests', fields: [['host', 'GitLab host', 'gitlab.com'], ['project', 'Project', 'group/project'], ['label', 'Pick up requests labelled', 'factory-review'], ['assignee', 'Only when this person is a reviewer', 'username, or leave empty']] },
@@ -166,7 +197,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   }
   function on(stage) { return stage.enabled !== false; }
   function setState() {
-    var dirty = JSON.stringify(def) !== saved;
+    var dirty = snapshot() !== saved;
     $('save').disabled = !dirty;
     $('state').className = dirty ? 'dirty' : '';
     $('state').textContent = dirty ? 'Unsaved changes' : '';
@@ -238,7 +269,10 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   function load(name) {
     call('/api/route?target=' + encodeURIComponent(name)).then(function (data) {
       if (data.error) { $('state').className = 'bad'; $('state').textContent = data.error; return; }
-      def = data.definition; skills = data.skills; lib = data.library; saved = JSON.stringify(def);
+      def = data.definition; skills = data.skills; lib = data.library;
+      extra = { guide: data.guide, presubmit: data.presubmit }; saved = snapshot();
+      $('guide').value = data.guide; $('presubmit').value = data.presubmit; $('auto').checked = !!def.auto;
+      $('repo').textContent = data.repo;
       lib.forEach(function (l) { if (l.stage.skill && !skills[l.stage.skill]) { skills[l.stage.skill] = l.about; } });
       showProblems(null); draw();
     });
@@ -275,6 +309,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   document.addEventListener('change', function (e) {
     var t = e.target; if (!def) { return; }
     if (t.id === 'target') { load(t.value); return; }
+    if (t.id === 'auto') { def.auto = t.checked; setState(); return; }
     if (t.id === 'lib') { libAbout(); return; }
     if (t.id === 'stype') { def.source = { type: t.value, label: def.source.label }; drawSource(); drawRoute(); setState(); return; }
     if (t.dataset.k) {
@@ -289,23 +324,46 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   document.addEventListener('input', function (e) {
     var t = e.target; if (!def) { return; }
     if (t.dataset.source) { if (t.value.trim()) { def.source[t.dataset.source] = t.value.trim(); } else { delete def.source[t.dataset.source]; } setState(); }
+    else if (t.id === 'guide') { extra.guide = t.value; setState(); }
+    else if (t.id === 'presubmit') { extra.presubmit = t.value; setState(); }
     else if (t.id === 'max_attempts') { def.limits.max_attempts = +t.value || 3; setState(); }
     else if (t.id === 'daily_usd') { def.limits.daily_usd = +t.value || 20; setState(); }
   });
   $('save').addEventListener('click', function () {
-    call('/api/route/save', { target: $('target').value, definition: def }).then(function (data) {
+    call('/api/route/save', { target: $('target').value, definition: def, guide: extra.guide, presubmit: extra.presubmit }).then(function (data) {
       showProblems(data.problems);
-      if (data.saved) { saved = JSON.stringify(def); setState(); $('state').className = 'good'; $('state').textContent = 'Saved'; }
+      if (data.saved) { saved = snapshot(); setState(); $('state').className = 'good'; $('state').textContent = 'Saved'; }
       else if (data.error) { $('state').className = 'bad'; $('state').textContent = data.error; }
     });
   });
-  window.addEventListener('beforeunload', function (e) { if (def && JSON.stringify(def) !== saved) { e.preventDefault(); e.returnValue = ''; } });
+  window.addEventListener('beforeunload', function (e) { if (def && snapshot() !== saved) { e.preventDefault(); e.returnValue = ''; } });
 
-  call('/api/routes').then(function (data) {
-    $('target').innerHTML = data.targets.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('');
-    if (data.targets.length) { load(data.targets[0]); }
-    else { $('state').className = 'bad'; $('state').textContent = 'No factory yet. Create one with: flow.py init'; }
+  function listFactories(pick) {
+    return call('/api/routes').then(function (data) {
+      $('target').innerHTML = data.targets.map(function (t) { return '<option' + (t === pick ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
+      if (data.targets.length) { load(pick || data.targets[0]); }
+      else { $('newpanel').hidden = false; $('state').textContent = 'No factory yet. Add a repository to start.'; }
+    });
+  }
+  $('new').addEventListener('click', function () { $('newpanel').hidden = false; $('newerror').hidden = true; $('n_name').focus(); window.scrollTo(0, 0); });
+  $('cancel').addEventListener('click', function () { $('newpanel').hidden = true; });
+  $('create').addEventListener('click', function () {
+    var sample = document.querySelector('input[name=sample]:checked');
+    $('create').disabled = true; $('newerror').hidden = true;
+    call('/api/route/create', { name: $('n_name').value, repo: $('n_repo').value, clone_url: $('n_url').value, sample: sample ? sample.value : '' }).then(function (data) {
+      $('create').disabled = false;
+      if (data.error) { $('newerror').hidden = false; $('newerror').textContent = data.error; return; }
+      $('newpanel').hidden = true; $('n_name').value = $('n_repo').value = $('n_url').value = '';
+      listFactories(data.created).then(function () { $('state').className = 'good'; $('state').textContent = 'Created. Set the source, the rules and the commands, then switch on automatic pickup.'; });
+    });
   });
+  call('/api/samples').then(function (data) {
+    $('samples').innerHTML = data.samples.map(function (s, i) {
+      return '<label class="sample"><input type="radio" name="sample" value="' + esc(s.name) + '"' + (i === 0 ? ' checked' : '') + '><b>' + esc(s.name.replace(/-/g, ' ')) + '</b>' +
+        '<span>' + esc(s.description) + '</span><span>' + s.stops + ' stops · gates: ' + esc(s.gates.join(', ')) + '</span></label>';
+    }).join('');
+  });
+  listFactories();
 })();
 </script>
 </body>

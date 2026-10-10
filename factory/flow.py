@@ -8,6 +8,7 @@ script stages itself, hands agent stages out as tasks, and stops at human
 stages until someone approves.
 
     flow.py init NAME --sample S --repo PATH      create a factory for a repository from a sample in factories/
+    flow.py scheduled                             list the factories that pick up work automatically
     flow.py --target NAME show                    print the stages
     flow.py --target NAME validate                check the definition
     flow.py --target NAME start --issue REF       take an issue (GitLab or GitHub number, or Jira key)
@@ -402,6 +403,7 @@ def cmd_init(args):
             shutil.copytree(FACTORIES / "skills" / stage["skill"], home / "skills" / stage["skill"], dirs_exist_ok=True)
     for extra in definition.pop("build_skills", []):
         shutil.copytree(FACTORIES / "skills" / extra, home / "skills" / extra, dirs_exist_ok=True)
+    definition["auto"] = False
     (home / "factory.json").write_text(json.dumps(definition, indent=2) + "\n")
     branch = core.sh(["git", "symbolic-ref", "--short", "HEAD"], cwd=repo, check=False).stdout.strip() or "main"
     (home / "target.json").write_text(json.dumps(
@@ -447,6 +449,13 @@ def validate(definition, skills_dir):
     if not any(s.get("by") == "human" for s in stage_list) and not definition.get("gate_outside"):
         problems.append("no stage is done by a human; a factory needs at least one human gate")
     return problems
+
+
+def cmd_scheduled(args):
+    """Names of the factories that pick up work automatically. Used by the scheduled job."""
+    for path in sorted(core.TARGETS.glob("*/factory.json")):
+        if json.loads(path.read_text()).get("auto"):
+            print(path.parent.name)
 
 
 def cmd_validate(args):
@@ -557,6 +566,7 @@ def main():
     p.set_defaults(fn=cmd_start)
     for name, fn in (("poll", cmd_poll), ("status", cmd_status), ("validate", cmd_validate), ("show", cmd_show)):
         sub.add_parser(name).set_defaults(fn=fn)
+    sub.add_parser("scheduled").set_defaults(fn=cmd_scheduled)
     p = sub.add_parser("init"); p.add_argument("name"); p.add_argument("--sample", required=True)
     p.add_argument("--repo", required=True); p.set_defaults(fn=cmd_init)
     for name, fn in (("next", cmd_next), ("run", cmd_run)):
@@ -567,8 +577,8 @@ def main():
     p.set_defaults(fn=cmd_approve)
     args = parser.parse_args()
     try:
-        if args.fn is cmd_init:
-            return cmd_init(args)
+        if args.fn in (cmd_init, cmd_scheduled):
+            return args.fn(args)
         if not args.target:
             raise core.FactoryError("say which factory: --target NAME (see `factory.py targets`)")
         setup(args.target)

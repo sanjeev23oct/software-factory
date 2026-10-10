@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Install, remove, or inspect the scheduled job that runs the factory unattended (macOS).
 
-    schedule.py install --every 10 TARGET [TARGET ...]    run a pass every 10 minutes
+    schedule.py install --every 10 [TARGET ...]    run a pass every 10 minutes; no targets = every automatic factory
     schedule.py status
     schedule.py remove
 
@@ -31,7 +31,7 @@ def main():
     sub = p.add_subparsers(dest="command", required=True)
     install = sub.add_parser("install")
     install.add_argument("--every", type=int, default=10, help="minutes between passes")
-    install.add_argument("targets", nargs="+")
+    install.add_argument("targets", nargs="*", help="default: every factory switched to pick up work automatically")
     sub.add_parser("status")
     sub.add_parser("remove")
     args = p.parse_args()
@@ -53,7 +53,8 @@ def main():
         result = launchctl("bootstrap", DOMAIN, str(PLIST))
         if result.returncode:
             sys.exit("schedule: could not load the job: {}".format(result.stderr.strip()))
-        print("Installed. Every {} minutes: {}".format(args.every, ", ".join(args.targets)))
+        print("Installed. Every {} minutes: {}".format(
+            args.every, ", ".join(args.targets) or "every factory switched to pick up work automatically"))
         print("Log: {}".format(logs / "tick.log"))
     elif args.command == "remove":
         launchctl("bootout", DOMAIN + "/" + LABEL)
@@ -68,7 +69,7 @@ def main():
         keep = ("state =", "run interval", "last exit code", "runs =")
         print("\n".join(line.strip() for line in result.stdout.splitlines() if any(k in line for k in keep)))
         with open(PLIST, "rb") as f:
-            print("targets: {}".format(", ".join(plistlib.load(f)["ProgramArguments"][2:])))
+            print("targets: {}".format(", ".join(plistlib.load(f)["ProgramArguments"][2:]) or "every automatic factory"))
 
 
 if __name__ == "__main__":

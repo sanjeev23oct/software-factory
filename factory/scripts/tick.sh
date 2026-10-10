@@ -2,7 +2,7 @@
 # One pass of the factory over the named targets: pick up new work, then advance
 # everything as far as it can go without a person. Meant to be run on a schedule.
 #
-#   tick.sh TARGET [TARGET ...]
+#   tick.sh [TARGET ...]     with no targets: every factory switched to pick up work automatically
 #
 # Only one pass runs at a time. Output goes to .factory/logs/tick.log.
 HOME_DIR="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -20,6 +20,9 @@ fi
 trap 'rmdir "$LOCK"' EXIT
 
 {
+  if [ $# -eq 0 ]; then
+    set -- $(python3 factory/flow.py scheduled)
+  fi
   for target in "$@"; do
     echo "== $(date '+%Y-%m-%d %H:%M:%S') $target"
     python3 factory/flow.py --target "$target" poll
