@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Process Rules</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sticky bar with the target and Save; then four stacked panels: built-in checks, your rules, try it, where things live. */
+:root {
+  --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5;
+  --fail: #c2362b; --fail-bg: #fbe4e1; --warn: #a66300; --warn-bg: #fbecd0; --off: #5d6b7e; --off-bg: #e6eaf0;
+  --ok: #12905a; --accent: #1f5fd0; --field: #ffffff;
+  --display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a;
+    --fail: #ff8a80; --fail-bg: #3d1714; --warn: #ffb84d; --warn-bg: #3a2a0c; --off: #92a0b3; --off-bg: #1c2838;
+    --ok: #4fd09a; --accent: #6aa0ff; --field: #0b121c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a;
+  --fail: #ff8a80; --fail-bg: #3d1714; --warn: #ffb84d; --warn-bg: #3a2a0c; --off: #92a0b3; --off-bg: #1c2838;
+  --ok: #4fd09a; --accent: #6aa0ff; --field: #0b121c; color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { max-width: 960px; margin: 0 auto; padding-inline: 20px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font: 700 26px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+h2 { font: 700 30px/1 var(--display); text-transform: uppercase; }
+button, input, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 14px; }
+.bar .grow { flex: 1; min-width: 0; }
+.bar select { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); max-width: 100%; }
+#state { font-size: 14px; color: var(--muted); }
+#state.dirty { color: var(--warn); } #state.bad { color: var(--fail); } #state.good { color: var(--ok); }
+.btn { padding: 10px 18px; border-radius: 99px; border: 2px solid var(--ink); background: var(--ink); color: var(--bg); font-weight: 600; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn.ghost { background: transparent; color: var(--ink); }
+
+main { display: grid; gap: 18px; padding-block: 22px 60px; }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 16px; min-width: 0; }
+.panel > header { display: grid; gap: 4px; }
+.panel > header p { color: var(--muted); font-size: 15px; }
+
+.row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px 16px; align-items: center; padding-block: 12px; border-top: 1px solid var(--line); }
+.row:first-of-type { border-top: 0; padding-top: 0; }
+.row b { font-weight: 600; } .row span { display: block; color: var(--muted); font-size: 14px; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 99px; padding: 3px; background: var(--bg); }
+.seg button { border: 0; background: transparent; padding: 5px 13px; border-radius: 99px; font-size: 14px; font-weight: 600; color: var(--muted); }
+.seg button[aria-pressed="true"][data-v="fail"] { background: var(--fail-bg); color: var(--fail); }
+.seg button[aria-pressed="true"][data-v="warn"] { background: var(--warn-bg); color: var(--warn); }
+.seg button[aria-pressed="true"][data-v="off"] { background: var(--off-bg); color: var(--off); }
+
+.rule { border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: grid; gap: 12px; background: var(--bg); }
+.rule-top { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.rule-top input { flex: 1; min-width: 180px; font-weight: 600; }
+.sentence { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 15px; }
+.sentence input { flex: 1 1 200px; min-width: 0; }
+input[type=text], input[type=number] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); min-width: 0; }
+input.mono { font: 14px var(--mono); }
+.sentence select { padding: 8px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); }
+.x { border: 0; background: transparent; color: var(--muted); font-size: 14px; text-decoration: underline; padding: 4px; }
+.adds { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 230px), 1fr)); gap: 10px; }
+.add { text-align: left; border: 1.5px dashed var(--line); background: transparent; border-radius: 12px; padding: 14px; display: grid; gap: 2px; }
+.add:hover { border-color: var(--accent); }
+.add b { font-weight: 600; } .add span { font-size: 14px; color: var(--muted); }
+.empty { color: var(--muted); font-size: 15px; }
+
+.try { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.try input { width: 130px; }
+#result { display: grid; gap: 10px; }
+#result h3 { font: 600 17px var(--body); }
+.scroll { overflow-x: auto; }
+table { border-collapse: collapse; width: 100%; font-size: 15px; }
+td { padding: 8px 12px 8px 0; border-top: 1px solid var(--line); vertical-align: top; }
+td:first-child { white-space: nowrap; font-weight: 600; width: 1%; }
+td.FAIL { color: var(--fail); } td.WARN { color: var(--warn); } td.PASS { color: var(--ok); }
+td small { color: var(--muted); font-size: 14px; overflow-wrap: anywhere; }
+
+details summary { cursor: pointer; font-weight: 600; }
+.fields { display: grid; gap: 12px; padding-top: 14px; }
+.field { display: grid; gap: 4px; }
+.field label { font-size: 14px; font-weight: 600; } .field small { color: var(--muted); font-size: 13px; }
+.layers { display: grid; gap: 8px; }
+.layer { display: grid; grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1fr) auto; gap: 8px; align-items: center; }
+.layer label { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; white-space: nowrap; }
+.problems { background: var(--fail-bg); color: var(--fail); border-radius: 10px; padding: 12px 14px; font-size: 15px; }
+.problems ul { margin: 6px 0 0; padding-left: 18px; }
+@media (max-width: 640px) { .row { grid-template-columns: minmax(0, 1fr); } .layer { grid-template-columns: minmax(0, 1fr); } }
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <h1>Process rules</h1>
+  <select id="target" aria-label="Factory"></select>
+  <span class="grow" id="state" role="status"></span>
+  <button class="btn" id="save" disabled>Save</button>
+</div></div>
+
+<div class="wrap"><main>
+  <div id="problems" class="problems" hidden></div>
+
+  <section class="panel">
+    <header><h2>Built-in checks</h2><p>Fail blocks the code review until it is fixed. Warn is reported and the review goes ahead. Off is not checked.</p></header>
+    <div id="checks"></div>
+  </section>
+
+  <section class="panel">
+    <header><h2>Your rules</h2><p>Rules your team adds. Each one is a sentence you fill in.</p></header>
+    <div id="rules" style="display:grid;gap:12px"></div>
+    <div class="adds">
+      <button class="add" data-add="forbid-pattern"><b>Ban something in new code</b><span>New lines in a folder must not contain a word or phrase.</span></button>
+      <button class="add" data-add="require-companion"><b>Require a companion change</b><span>If one folder changes, another must change too.</span></button>
+      <button class="add" data-add="forbid-change"><b>Lock a folder</b><span>Files in a folder must not be changed.</span></button>
+    </div>
+  </section>
+
+  <section class="panel">
+    <header><h2>Try it</h2><p>Run these rules, saved or not, against a real merge request. Nothing is posted.</p></header>
+    <div class="try"><label for="ref">Merge request number</label><input type="number" id="ref" min="1" placeholder="e.g. 6">
+      <button class="btn ghost" id="run">Run the check</button></div>
+    <div id="result"></div>
+  </section>
+
+  <section class="panel">
+    <details><summary>Where things live in the repository</summary>
+      <div class="fields">
+        <div class="field"><label for="spec_root">Spec folder</label><input type="text" class="mono" id="spec_root" list="folders"><small>Each feature has a subfolder here.</small></div>
+        <div class="field"><label for="required_spec_files">Files every spec must have</label><input type="text" class="mono" id="required_spec_files"><small>Comma separated.</small></div>
+        <div class="field"><label>Code and its tests</label><div class="layers" id="layers"></div>
+          <button class="x" id="addlayer" style="justify-self:start">Add a layer</button></div>
+        <div class="field"><label for="mig_changes">Migrations folder</label><input type="text" class="mono" id="mig_changes" list="folders"></div>
+        <div class="field"><label for="mig_log">Migrations changelog file</label><input type="text" class="mono" id="mig_log"></div>
+        <div class="field"><label for="protected">Shared configuration</label><input type="text" class="mono" id="protected"><small>Comma separated files and folders.</small></div>
+        <div class="field"><label for="max_added_lines">Most lines of code one request may add</label><input type="number" id="max_added_lines" min="1" style="width:140px"></div>
+      </div>
+    </details>
+  </section>
+</main></div>
+<datalist id="folders"></datalist>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var meta = null, cfg = null, saved = '';
+  var MARK = { PASS: 'Pass', WARN: 'Warn', FAIL: 'Fail' };
+  var STARTERS = {
+    'forbid-pattern': { type: 'forbid-pattern', name: '', level: 'fail', match: 'text', paths: [], pattern: '' },
+    'require-companion': { type: 'require-companion', name: '', level: 'fail', when: [], then: [] },
+    'forbid-change': { type: 'forbid-change', name: '', level: 'warn', paths: [] }
+  };
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML.replace(/"/g, '&quot;'); }
+  function list(text) { return text.split(',').map(function (s) { return s.trim(); }).filter(Boolean); }
+  function call(path, body) {
+    return fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Factory-Editor': '1' }, body: JSON.stringify(body) } : undefined)
+      .then(function (r) { return r.json(); });
+  }
+  function seg(value, attrs) {
+    return '<span class="seg" ' + attrs + '>' + ['fail', 'warn', 'off'].map(function (v) {
+      return '<button type="button" data-v="' + v + '" aria-pressed="' + (v === value) + '">' + v.charAt(0).toUpperCase() + v.slice(1) + '</button>';
+    }).join('') + '</span>';
+  }
+  function setState() {
+    var dirty = JSON.stringify(cfg) !== saved;
+    $('save').disabled = !dirty;
+    $('state').className = dirty ? 'dirty' : '';
+    $('state').textContent = dirty ? 'Unsaved changes' : '';
+  }
+  function showProblems(problems) {
+    $('problems').hidden = !problems || !problems.length;
+    if (problems && problems.length) {
+      $('problems').innerHTML = 'Fix these first:<ul>' + problems.map(function (p) { return '<li>' + esc(p.replace(/`/g, '')) + '</li>'; }).join('') + '</ul>';
+      window.scrollTo(0, 0);
+    }
+  }
+
+  function drawChecks() {
+    $('checks').innerHTML = meta.checks.map(function (c) {
+      var level = (cfg.checks || {})[c[0]] || c[3];
+      return '<div class="row"><div><b>' + esc(c[1]) + '</b><span>' + esc(c[2]) + '</span></div>' + seg(level, 'data-check="' + c[0] + '"') + '</div>';
+    }).join('');
+  }
+  function field(rule, i, key, kind) {
+    var value = kind === 'paths' ? (rule[key] || []).join(', ') : (rule[key] || '');
+    var hint = kind === 'paths' ? 'folder, e.g. backend/' : (rule.match === 'text' ? 'word or phrase' : 'regular expression');
+    return '<input type="text" class="mono" data-rule="' + i + '" data-key="' + key + '" data-kind="' + kind + '" value="' + esc(value) + '" placeholder="' + hint + '"' +
+      (kind === 'paths' ? ' list="folders"' : '') + ' aria-label="' + key + '">';
+  }
+  function sentence(rule, i) {
+    if (rule.type === 'forbid-pattern') {
+      return 'New lines under ' + field(rule, i, 'paths', 'paths') + ' must not ' +
+        '<select data-rule="' + i + '" data-key="match" aria-label="how to match"><option value="text"' + (rule.match === 'text' ? ' selected' : '') + '>contain</option>' +
+        '<option value="regex"' + (rule.match !== 'text' ? ' selected' : '') + '>match the pattern</option></select>' + field(rule, i, 'pattern', 'pattern');
+    }
+    if (rule.type === 'require-companion') {
+      return 'When files under ' + field(rule, i, 'when', 'paths') + ' change, a file under ' + field(rule, i, 'then', 'paths') + ' must change too';
+    }
+    return 'Files under ' + field(rule, i, 'paths', 'paths') + ' must not change';
+  }
+  function drawRules() {
+    var rules = cfg.rules || [];
+    $('rules').innerHTML = rules.length ? rules.map(function (rule, i) {
+      return '<div class="rule"><div class="rule-top"><input type="text" data-rule="' + i + '" data-key="name" data-kind="text" value="' + esc(rule.name) +
+        '" placeholder="Name shown in the report" aria-label="Rule name">' + seg(rule.level, 'data-rulelevel="' + i + '"') +
+        '<button type="button" class="x" data-remove="' + i + '">Remove</button></div><div class="sentence">' + sentence(rule, i) + '</div></div>';
+    }).join('') : '<p class="empty">No rules of your own yet. Add one below.</p>';
+  }
+  function drawLayers() {
+    var names = Object.keys(cfg.code || {});
+    $('layers').innerHTML = names.map(function (name) {
+      var soft = (cfg.tests_warn_only || []).indexOf(name) >= 0;
+      return '<div class="layer"><input type="text" data-layer="' + esc(name) + '" data-part="name" value="' + esc(name) + '" aria-label="Layer name">' +
+        '<input type="text" class="mono" list="folders" data-layer="' + esc(name) + '" data-part="code" value="' + esc((cfg.code[name] || []).join(', ')) + '" placeholder="code folders" aria-label="Code folders">' +
+        '<input type="text" class="mono" list="folders" data-layer="' + esc(name) + '" data-part="tests" value="' + esc(((cfg.tests || {})[name] || []).join(', ')) + '" placeholder="test folders" aria-label="Test folders">' +
+        '<label><input type="checkbox" data-layer="' + esc(name) + '" data-part="soft"' + (soft ? ' checked' : '') + '>warn only</label></div>';
+    }).join('');
+  }
+  function drawPaths() {
+    $('spec_root').value = cfg.spec_root || '';
+    $('required_spec_files').value = (cfg.required_spec_files || []).join(', ');
+    $('mig_changes').value = (cfg.migrations || {}).changes || '';
+    $('mig_log').value = (cfg.migrations || {}).changelog || '';
+    $('protected').value = (cfg.protected || []).join(', ');
+    $('max_added_lines').value = cfg.max_added_lines || 800;
+    drawLayers();
+  }
+  function draw() { drawChecks(); drawRules(); drawPaths(); setState(); }
+
+  function load(name) {
+    call('/api/config?target=' + encodeURIComponent(name)).then(function (data) {
+      if (data.error) { $('state').className = 'bad'; $('state').textContent = data.error; return; }
+      cfg = data.config; cfg.checks = cfg.checks || {}; cfg.rules = cfg.rules || [];
+      saved = JSON.stringify(cfg);
+      $('folders').innerHTML = data.folders.map(function (f) { return '<option value="' + esc(f) + '">'; }).join('');
+      $('result').innerHTML = ''; showProblems(null); draw();
+    });
+  }
+
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || !cfg) { return; }
+    var group = b.parentNode;
+    if (group.dataset.check) { cfg.checks[group.dataset.check] = b.dataset.v; drawChecks(); setState(); }
+    else if (group.dataset.rulelevel) { cfg.rules[+group.dataset.rulelevel].level = b.dataset.v; drawRules(); setState(); }
+    else if (b.dataset.remove) { cfg.rules.splice(+b.dataset.remove, 1); drawRules(); setState(); }
+    else if (b.dataset.add) { cfg.rules.push(JSON.parse(JSON.stringify(STARTERS[b.dataset.add]))); drawRules(); setState();
+      var inputs = $('rules').querySelectorAll('.rule:last-child input'); if (inputs[0]) { inputs[0].focus(); } }
+  });
+  document.addEventListener('input', function (e) {
+    var t = e.target; if (!cfg) { return; }
+    if (t.dataset.rule) {
+      var rule = cfg.rules[+t.dataset.rule];
+      rule[t.dataset.key] = t.dataset.kind === 'paths' ? list(t.value) : t.value;
+    } else if (t.dataset.layer) {
+      var name = t.dataset.layer;
+      if (t.dataset.part === 'code') { cfg.code[name] = list(t.value); }
+      if (t.dataset.part === 'tests') { cfg.tests = cfg.tests || {}; cfg.tests[name] = list(t.value); }
+      if (t.dataset.part === 'soft') { cfg.tests_warn_only = (cfg.tests_warn_only || []).filter(function (n) { return n !== name; }); if (t.checked) { cfg.tests_warn_only.push(name); } }
+    } else if (t.id === 'spec_root') { cfg.spec_root = t.value.trim(); }
+    else if (t.id === 'required_spec_files') { cfg.required_spec_files = list(t.value); }
+    else if (t.id === 'mig_changes' || t.id === 'mig_log') { cfg.migrations = { changes: $('mig_changes').value.trim(), changelog: $('mig_log').value.trim() }; }
+    else if (t.id === 'protected') { cfg.protected = list(t.value); }
+    else if (t.id === 'max_added_lines') { cfg.max_added_lines = +t.value || 800; }
+    else { return; }
+    setState();
+  });
+  document.addEventListener('change', function (e) {
+    var t = e.target; if (!cfg) { return; }
+    if (t.tagName === 'SELECT' && t.dataset.rule) { cfg.rules[+t.dataset.rule].match = t.value; drawRules(); setState(); }
+    if (t.dataset.layer && t.dataset.part === 'name' && t.value.trim() && t.value.trim() !== t.dataset.layer) {
+      var from = t.dataset.layer, to = t.value.trim();
+      cfg.code[to] = cfg.code[from]; delete cfg.code[from];
+      if (cfg.tests && cfg.tests[from]) { cfg.tests[to] = cfg.tests[from]; delete cfg.tests[from]; }
+      cfg.tests_warn_only = (cfg.tests_warn_only || []).map(function (n) { return n === from ? to : n; });
+      drawLayers(); setState();
+    }
+  });
+  $('addlayer').addEventListener('click', function () {
+    var n = 1; while (cfg.code['layer' + n]) { n++; }
+    cfg.code['layer' + n] = []; drawLayers(); setState();
+  });
+  $('target').addEventListener('change', function () { load($('target').value); });
+  $('save').addEventListener('click', function () {
+    call('/api/save', { target: $('target').value, config: cfg }).then(function (data) {
+      showProblems(data.problems);
+      if (data.saved) { saved = JSON.stringify(cfg); setState(); $('state').className = 'good'; $('state').textContent = 'Saved'; }
+      else if (data.error) { $('state').className = 'bad'; $('state').textContent = data.error; }
+    });
+  });
+  $('run').addEventListener('click', function () {
+    var ref = $('ref').value.trim();
+    if (!ref) { $('result').innerHTML = '<p class="empty">Enter a merge request number first.</p>'; return; }
+    $('run').disabled = true; $('result').innerHTML = '<p class="empty">Checking merge request ' + esc(ref) + '…</p>';
+    call('/api/try', { target: $('target').value, config: cfg, ref: ref }).then(function (data) {
+      $('run').disabled = false;
+      showProblems(data.problems);
+      if (data.problems) { $('result').innerHTML = ''; return; }
+      if (data.error) { $('result').innerHTML = '<p class="problems">' + esc(data.error) + '</p>'; return; }
+      var fails = data.rows.filter(function (r) { return r[0] === 'FAIL'; }).length;
+      var warns = data.rows.filter(function (r) { return r[0] === 'WARN'; }).length;
+      $('result').innerHTML = '<h3>' + esc(data.title) + '</h3><p class="empty">' + fails + ' failed, ' + warns + ' to look at, ' + (data.rows.length - fails - warns) +
+        ' passed. ' + (fails ? 'The code review would not run.' : 'The code review would run.') + '</p><div class="scroll"><table>' +
+        data.rows.map(function (r) { return '<tr><td class="' + r[0] + '">' + MARK[r[0]] + '</td><td>' + esc(r[1]) + (r[2] ? '<br><small>' + esc(r[2].replace(/`/g, '')) + '</small>' : '') + '</td></tr>'; }).join('') +
+        '</table></div>';
+    });
+  });
+  window.addEventListener('beforeunload', function (e) { if (cfg && JSON.stringify(cfg) !== saved) { e.preventDefault(); e.returnValue = ''; } });
+
+  call('/api/state').then(function (data) {
+    meta = data;
+    $('target').innerHTML = data.targets.map(function (t) { return '<option>' + esc(t) + '</option>'; }).join('');
+    if (data.targets.length) { load(data.targets[0]); }
+    else { $('state').className = 'bad'; $('state').textContent = 'No factory has process rules yet.'; }
+  });
+})();
+</script>
+</body>
+</html>
