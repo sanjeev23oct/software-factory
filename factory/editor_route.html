@@ -107,6 +107,8 @@ textarea.mono { font: 13px/1.6 var(--mono); }
 .sample:has(input:checked) { border-color: var(--route); }
 .sample input { position: absolute; opacity: 0; }
 .sample b { font: 700 20px/1.1 var(--display); text-transform: uppercase; } .sample span { font-size: 13px; color: var(--muted); }
+.sample em { font: 600 11px var(--body); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.sample.blank { border-style: dashed; } .sample.blank em { color: var(--route); }
 @media (max-width: 640px) { .stop { grid-template-columns: auto minmax(0, 1fr); } .side { grid-column: 2; justify-items: start; grid-auto-flow: column; justify-content: start; gap: 14px; } }
 </style>
 </head>
@@ -124,13 +126,15 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   <div id="problems" class="problems" hidden></div>
 
   <section class="panel" id="newpanel" hidden>
-    <header><h2>Add a repository</h2><p>Each repository gets its own factory. Start from the sample closest to how that team works; you can change every stop afterwards.</p></header>
+    <header><h2>Add a repository</h2><p>Each repository gets its own factory, with whatever stops and gates its work needs.</p></header>
     <div class="grid">
       <div class="field"><label for="n_name">Name for this factory</label><input type="text" id="n_name" placeholder="e.g. billing-api"></div>
       <div class="field"><label for="n_repo">Folder the repository is in</label><input type="text" id="n_repo" placeholder="~/code/billing-api"></div>
       <div class="field"><label for="n_url">Clone address</label><input type="text" id="n_url" placeholder="only if the folder does not exist yet"><small>Leave empty when the repository is already on this machine.</small></div>
     </div>
-    <div class="field"><label>Start from</label><div class="samples" id="samples"></div></div>
+    <div class="field"><label>Starting point</label>
+      <small>A starting point only saves typing. The examples are not project types: the factory works the same for any kind of work, and every stop and gate can be changed, removed or added afterwards.</small>
+      <div class="samples" id="samples"></div></div>
     <div id="newerror" class="problems" hidden></div>
     <div class="rowf" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="create">Create the factory</button><button class="btn ghost" id="cancel">Cancel</button></div>
   </section>
@@ -359,7 +363,8 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   });
   call('/api/samples').then(function (data) {
     $('samples').innerHTML = data.samples.map(function (s, i) {
-      return '<label class="sample"><input type="radio" name="sample" value="' + esc(s.name) + '"' + (i === 0 ? ' checked' : '') + '><b>' + esc(s.name.replace(/-/g, ' ')) + '</b>' +
+      return '<label class="sample' + (s.example ? '' : ' blank') + '"><input type="radio" name="sample" value="' + esc(s.name) + '"' + (i === 0 ? ' checked' : '') + '>' +
+        '<em>' + (s.example ? 'Example route' : 'Start empty') + '</em><b>' + esc(s.example ? s.name.replace(/-/g, ' ') : 'Blank route') + '</b>' +
         '<span>' + esc(s.description) + '</span><span>' + s.stops + ' stops · gates: ' + esc(s.gates.join(', ')) + '</span></label>';
     }).join('');
   });

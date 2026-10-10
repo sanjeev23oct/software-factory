@@ -1,0 +1,23 @@
+{
+  "description": "An empty route: intake and one gate. Add the stops your work needs.",
+  "source": {
+    "type": "file"
+  },
+  "spec_dir": "specs/{n}-{slug}",
+  "limits": {
+    "max_attempts": 3
+  },
+  "build_skills": [],
+  "stages": [
+    {
+      "id": "read-issue",
+      "by": "script",
+      "skill": "read-issue",
+      "intake": true
+    },
+    {
+      "id": "approve-work",
+      "by": "human"
+    }
+  ]
+}

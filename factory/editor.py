@@ -53,7 +53,7 @@ def library(home, definition):
     stops, seen = [], {s["id"] for s in definition["stages"]}
     for path in sorted(LIBRARY.glob("*/factory.json")):
         for stage in json.loads(path.read_text())["stages"]:
-            if stage["id"] in seen or stage.get("intake") or stage["by"] == "human":
+            if path.parent.name == "blank" or stage["id"] in seen or stage.get("intake") or stage["by"] == "human":
                 continue
             seen.add(stage["id"])
             stage = dict(stage, enabled=True)
@@ -67,8 +67,9 @@ def samples():
         d = json.loads(path.read_text())
         live = [s for s in d["stages"] if s.get("enabled", True)]
         out.append({"name": path.parent.name, "description": d["description"], "source": d["source"]["type"],
+                    "example": path.parent.name != "blank",
                     "stops": len(live), "gates": [s["id"].replace("approve-", "") for s in live if s["by"] == "human"]})
-    return out
+    return sorted(out, key=lambda s: s["example"])  # the blank route first
 
 
 def create(data):
@@ -102,6 +103,11 @@ def save_route(name, definition, guide=None, presubmit=None):
         skill = stage.get("skill")
         if skill and not (home / "skills" / skill).exists() and (LIBRARY / "skills" / skill).exists():
             shutil.copytree(LIBRARY / "skills" / skill, home / "skills" / skill)
+    if any(stage.get("skill") == "build-tasks" for stage in definition.get("stages", [])):
+        # The generic build stop hands each task to one of these maker skills.
+        for maker in ("build-backend", "build-db", "build-ui", "build-tests"):
+            if not (home / "skills" / maker).exists() and (LIBRARY / "skills" / maker).exists():
+                shutil.copytree(LIBRARY / "skills" / maker, home / "skills" / maker)
     problems = flow.validate(definition, home / "skills")
     if problems:
         return problems
