@@ -116,7 +116,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
 <body>
 <div class="bar"><div class="wrap">
   <h1>Factory</h1>
-  <nav class="tabs"><a href="/" aria-current="page">Route</a><a href="/rules">Review rules</a></nav>
+  <nav class="tabs"><a href="/" aria-current="page">Route</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
   <select id="target" aria-label="Factory"></select>
   <button class="btn ghost" id="new">Add a repository</button>
   <span class="grow" id="state" role="status"></span>
@@ -374,6 +374,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
     }).join('');
   });
   listFactories();
+  window.addEventListener('hashchange', function () { listFactories(); });
 })();
 </script>
 </body>

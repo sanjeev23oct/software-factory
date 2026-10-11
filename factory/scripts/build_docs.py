@@ -39,7 +39,9 @@ def route(sample):
         if stage["by"] == "human":
             stops.append((COLUMN[name], name.replace("approve-", ""), "you"))
         elif name == "merge-request":
-            stops.append((COLUMN[name], LABEL[name], "planned"))
+            continue
+        elif name == "pull-request":
+            stops.append((COLUMN["merge-request"], "Pull request", "optional"))
         elif name in LABEL:
             stops.append((COLUMN[name], LABEL[name], "optional" if stage.get("optional") else "stop"))
     return definition, stops
@@ -369,10 +371,12 @@ def body():
 <section>
   <h2>Where it stands</h2>
   <div class="now">
-    <div><h3>Running today</h3><ul><li>Four sample routes</li><li>Issues from GitHub, GitLab, or a file</li><li>Gates that hold the line until you approve</li>
-      <li>Unproven work sent back automatically</li><li>Built-in runner for Claude Code; any agent can take a stop by hand-off</li></ul></div>
-    <div class="later"><h3>Not built yet</h3><ul><li>Opening the merge request</li><li>Commenting and labelling on the issue</li><li>Approving from the tracker</li>
-      <li>Scheduled runs</li><li>Jira, tested against a real instance</li><li>Built-in runners for other coding agents</li><li>A visual route editor</li></ul></div>
+    <div><h3>Running today</h3><ul><li>Example routes to start from, or a blank one</li><li>Issues from GitHub, GitLab, or a file</li>
+      <li>A background job that picks up work unattended</li><li>Gates you approve from a page</li><li>Unproven work sent back automatically</li>
+      <li>Pull and merge requests opened for you to merge</li><li>Pull requests reviewed: process first, then code</li>
+      <li>An editor for routes and review rules</li><li>Built-in runner for Claude Code; any agent can take a stop by hand-off</li></ul></div>
+    <div class="later"><h3>Not built yet</h3><ul><li>Approving a gate from the tracker itself</li><li>Commenting progress on the issue</li>
+      <li>Jira, tested against a real instance</li><li>Built-in runners for other coding agents</li><li>A host that is always on: a laptop that sleeps stops the line</li></ul></div>
   </div>
 </section>
 

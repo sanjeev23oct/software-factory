@@ -52,8 +52,23 @@ html, body { margin: 0; width: 1280px; height: 720px; overflow: hidden; backgrou
 .doc code { font: 14.5px "IBM Plex Mono", Menlo, monospace; background: #e9edf3; padding: 1px 5px; border-radius: 4px; }
 .doc pre { font: 14px/1.5 "IBM Plex Mono", Menlo, monospace; background: #0f1b2d; color: #e6ecf5; padding: 10px 14px; border-radius: 8px; margin: 6px 0; white-space: pre-wrap; }
 .doc table { border-collapse: collapse; font-size: 15px; margin: 6px 0; } .doc td, .doc th { border: 1px solid #d6dce5; padding: 4px 10px; text-align: left; }
-.shot { height: 100%; border-radius: 12px; overflow: hidden; border: 1px solid var(--line); background: #f2f4f7; }
+.shot { height: 100%; border-radius: 12px; overflow: hidden; outline: 1px solid var(--line); background: #f2f4f7; position: relative; }
 .shot img { width: 100%; display: block; }
+.dim { position: absolute; left: 0; top: 0; }
+.mark { position: absolute; border: 4px solid #ff6a1a; border-radius: 10px; box-shadow: 0 0 0 4px rgba(255, 106, 26, .25); }
+.note { position: absolute; background: #ff6a1a; color: #fff; font: 600 17px/1.2 "Barlow", Arial, sans-serif; padding: 6px 12px; border-radius: 8px; white-space: nowrap;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, .35); }
+.hl { background: #ffe9a8; box-shadow: -6px 0 0 #ffe9a8, 6px 0 0 #ffe9a8; border-radius: 2px; }
+.term .hl { background: #3a2a0c; box-shadow: -8px 0 0 #3a2a0c, 8px 0 0 #3a2a0c; color: #ffd27a; font-weight: 600; }
+.card.wide { padding: 0 70px; gap: 16px; } .card.wide h1 { font-size: 64px; }
+.points { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 28px; margin-top: 8px; }
+.points div { display: grid; grid-template-columns: 170px 1fr; gap: 14px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 10px; }
+.points b { font: 700 28px/1 "Barlow Condensed", Arial, sans-serif; text-transform: uppercase; color: var(--c2, var(--r1)); }
+.points span { font-size: 21px; color: var(--ink); line-height: 1.3; }
+.define { font-size: 34px !important; line-height: 1.3; color: var(--ink) !important; max-width: 30em !important; }
+.define b { color: var(--r4); font-weight: 600; }
+.badge { display: inline-flex; align-items: center; gap: 10px; font: 600 18px "Barlow", Arial, sans-serif; color: var(--r2); margin-left: auto; white-space: nowrap; }
+.badge i { width: 12px; height: 12px; border-radius: 50%; background: var(--r2); box-shadow: 0 0 0 5px rgba(79, 208, 154, .25); }
 """
 FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600'
          '&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">')
@@ -66,10 +81,11 @@ def inline(text):
     return re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
 
 
-def markdown(text):
+def markdown(text, highlight=()):
     """Enough markdown for specs and reports: headings, bullets, code blocks, tables, paragraphs."""
     out, in_code, in_list, in_table = [], False, False, False
     for line in text.splitlines():
+        hot = ' class="hl"' if any(re.search(h, line) for h in highlight) else ""
         if line.strip().startswith("```"):
             out.append("</pre>" if in_code else "<pre>")
             in_code = not in_code
@@ -93,7 +109,7 @@ def markdown(text):
             if not in_list:
                 out.append("<ul>")
                 in_list = True
-            out.append("<li>{}</li>".format(inline(bullet.group(1))))
+            out.append("<li><span{}>{}</span></li>".format(hot, inline(bullet.group(1))))
         elif row:
             cells = [c.strip() for c in line.strip().strip("|").split("|")]
             if all(re.fullmatch(r":?-+:?", c) for c in cells):
@@ -101,17 +117,19 @@ def markdown(text):
             if not in_table:
                 out.append("<table>")
                 in_table = True
-            out.append("<tr>{}</tr>".format("".join("<td>{}</td>".format(inline(c)) for c in cells)))
+            out.append("<tr{}>{}</tr>".format(hot, "".join("<td>{}</td>".format(inline(c)) for c in cells)))
         elif line.strip():
-            out.append("<p>{}</p>".format(inline(line)))
+            out.append("<p><span{}>{}</span></p>".format(hot, inline(line)))
     return "\n".join(out + (["</ul>"] if in_list else []) + (["</table>"] if in_table else []) + (["</pre>"] if in_code else []))
 
 
-def terminal(text):
+def terminal(text, highlight=()):
     lines = []
     for line in text.splitlines():
         escaped = html.escape(line)
-        if line.startswith("$ "):
+        if any(re.search(h, line) for h in highlight):
+            escaped = '<span class="hl">{}</span>'.format(escaped)
+        elif line.startswith(("$ ", "# ")):
             escaped = '<span class="cmd">{}</span>'.format(escaped)
         elif re.search(r"waiting|Waiting for|gate", line):
             escaped = '<span class="hold">{}</span>'.format(escaped)
@@ -132,23 +150,65 @@ def excerpt(name, start=None, end=None, lines=None):
     return "\n".join(text.splitlines()[:lines]) if lines else text
 
 
+def marks_for(scene):
+    """Highlight boxes for a picture taken by drive.mjs, which records where each element is.
+    Everything outside the boxes is dimmed once, and labels are moved apart when they would collide."""
+    path = SHOTS / (Path(scene["image"]).stem + ".json")
+    if not path.exists() or scene.get("marks") is False:
+        return ""
+    boxes, notes, placed = [], [], []
+    for mark in json.loads(path.read_text()):
+        x, y, w, h = mark["box"]
+        x, y, w, h = max(x - 6, 2), max(y - 6, 2), min(w + 12, 1204), h + 12
+        if y > 590 or y + h < 6:
+            continue
+        h = min(h, 592 - y)
+        boxes.append((x, y, w, h))
+        width, height = len(mark["label"]) * 9.2 + 26, 34
+        left = min(max(x, 4), 1204 - width)
+        for top in (y - 42, y + h + 8, y - 84, y + h + 50):
+            if 2 <= top <= 596 - height and not any(left < px + pw and px < left + width and top < py + height and py < top + height
+                                                     for px, py, pw in placed):
+                break
+        placed.append((left, top, width))
+        notes.append('<div class="note" style="left:{}px;top:{}px">{}</div>'.format(left, top, html.escape(mark["label"])))
+    if not boxes:
+        return ""
+    holes = "".join('<rect x="{}" y="{}" width="{}" height="{}" rx="10" fill="black"/>'.format(*box) for box in boxes)
+    dim = ('<svg class="dim" width="1208" height="596"><defs><mask id="holes"><rect width="1208" height="596" fill="white"/>{}</mask></defs>'
+           '<rect width="1208" height="596" fill="rgba(8,14,24,.42)" mask="url(#holes)"/></svg>').format(holes)
+    frames = "".join('<div class="mark" style="left:{}px;top:{}px;width:{}px;height:{}px"></div>'.format(*box) for box in boxes)
+    return dim + frames + "".join(notes)
+
+
 def body_of(scene):
     kind = scene["kind"]
     colour = COLOURS.get(scene.get("part_kind", "route"), "var(--r1)")
+    if kind == "card" and scene.get("points"):
+        rows = "".join('<div style="--c2:{}"><b>{}</b><span>{}</span></div>'.format(c, html.escape(t), html.escape(m)) for t, m, c in scene["points"])
+        return ('<div class="card wide"><div class="kicker">{}</div><h1>{}</h1><div class="points">{}</div></div>').format(
+            html.escape(scene.get("kicker", "")), html.escape(scene["title"]), rows)
     if kind == "card":
+        if scene.get("define"):
+            return ('<div class="card" style="--c:{}"><div class="bars"><i style="background:var(--r1)"></i><i style="background:var(--r2)"></i>'
+                    '<i style="background:var(--r3)"></i><i style="background:var(--r4)"></i></div>'
+                    '<div class="kicker">{}</div><h1>{}</h1><p class="define">{}</p></div>').format(
+                        colour, html.escape(scene.get("kicker", "")), html.escape(scene["title"]), scene["define"])
         return ('<div class="card" style="--c:{}"><div class="bars"><i style="background:var(--r1)"></i><i style="background:var(--r2)"></i>'
                 '<i style="background:var(--r3)"></i><i style="background:var(--r4)"></i></div>'
                 '<div class="kicker">{}</div><h1>{}</h1><p>{}</p></div>').format(
                     colour, html.escape(scene.get("kicker", "")), html.escape(scene["title"]), html.escape(scene.get("say", "")))
-    bar = '<div class="bar" style="--c:{}"><span class="part">{}</span><span class="say">{}</span></div>'.format(
-        colour, html.escape(scene["part"]), html.escape(scene["say"]))
+    badge = '<span class="badge"><i></i>running in the background</span>' if scene.get("background") else ""
+    bar = '<div class="bar" style="--c:{}"><span class="part">{}</span><span class="say">{}</span>{}</div>'.format(
+        colour, html.escape(scene["part"]), html.escape(scene["say"]), badge)
     if kind == "terminal":
         inner = '<div class="term"><div class="top"><s></s><s></s><s></s><span>{}</span></div><pre>{}</pre></div>'.format(
-            html.escape(scene.get("where", "terminal")), terminal(scene["text"]))
+            html.escape(scene.get("where", "terminal")), terminal(scene["text"], scene.get("highlight", ())))
     elif kind == "doc":
-        inner = '<div class="doc">{}</div>'.format(markdown(scene["text"]))
+        inner = '<div class="doc">{}</div>'.format(markdown(scene["text"], scene.get("highlight", ())))
     else:
-        inner = '<div class="shot"><img src="../shots/{}" style="margin-top:-{}px"></div>'.format(scene["image"], scene.get("offset", 0))
+        inner = '<div class="shot"><img src="../shots/{}" style="margin-top:-{}px">{}</div>'.format(
+            scene["image"], scene.get("offset", 0), marks_for(scene))
     return bar + '<div class="stage">{}</div>'.format(inner)
 
 
@@ -216,7 +276,7 @@ def page(scenes, facts, links):
     parts, current = [], None
     for scene in scenes:
         if scene["kind"] == "card":
-            current = {"title": scene["title"], "kicker": scene.get("kicker", ""), "text": scene.get("explain", scene.get("say", "")),
+            current = {"title": scene["title"], "kicker": scene.get("kicker", ""), "text": scene.get("explain", scene.get("define", scene.get("say", ""))),
                        "how": scene.get("how"), "figures": []}
             parts.append(current)
         elif current is not None:
@@ -232,9 +292,9 @@ def page(scenes, facts, links):
     link_html = "".join('<li><a href="{}">{}</a></li>'.format(html.escape(u), html.escape(t)) for t, u in links)
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
             "<title>Factory Demo</title>{}<style>{}</style></head><body><div class=\"wrap\">"
-            "<header><span class=\"part\">Software factory · a real run, start to finish</span><h1>Two repositories, two routes, one factory</h1>"
-            "<p>Two GitHub issues went in. Agents wrote the requirements, stopped at each gate for approval, built the change with a maker and a checker, "
-            "proved it with evidence, and opened pull requests. Everything below is from that run.</p>"
+            "<header><span class=\"part\">Software factory · a real run, start to finish</span><h1>A software factory, built and run</h1>"
+            "<p>A software factory is a written route that every piece of work follows. Agents do each stop the same way every time, scripts check the result, "
+            "and people approve at the gates. This page shows one being created, running in the background, and stopping for a person, on real repositories.</p>"
             '<video src="factory-demo.mp4" controls preload="metadata" poster="frames/{}"></video></header>'
             '<div class="facts">{}</div>{}'
             "<section><h2>See it for yourself</h2><ul>{}</ul></section>"

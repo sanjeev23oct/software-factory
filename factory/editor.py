@@ -5,6 +5,7 @@
 
   /        the route: where work comes from, the stops, the gates, the limits
   /rules   the process rules a merge request is checked against
+  /activity   what the factory is doing now, and the gates waiting for a person
 
 It serves on 127.0.0.1 only. It reads and writes targets/<name>/factory.json
 and process.json, keeping the previous version of each as a .bak file.
@@ -12,10 +13,14 @@ and process.json, keeping the previous version of each as a .bak file.
 
 import argparse
 import json
+import os
+import plistlib
+import re
 import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
@@ -28,7 +33,81 @@ import check_mr_process as process  # noqa: E402
 import flow  # noqa: E402
 
 TARGETS = HOME / "targets"
-PAGES = {"/": HOME / "factory" / "editor_route.html", "/rules": HOME / "factory" / "editor_rules.html"}
+PAGES = {"/": HOME / "factory" / "editor_route.html", "/rules": HOME / "factory" / "editor_rules.html",
+         "/activity": HOME / "factory" / "editor_activity.html"}
+JOB = "com.software-factory.tick"
+# flow keeps the current factory in module state, so only one request may use it at a time.
+FLOW = threading.Lock()
+
+
+def scheduler():
+    """Is the background job installed, how often does it run, and when did it last pass?"""
+    plist = Path.home() / "Library" / "LaunchAgents" / (JOB + ".plist")
+    installed = subprocess.run(["launchctl", "print", "gui/{}/{}".format(os.getuid(), JOB)], capture_output=True).returncode == 0
+    every = None
+    if plist.exists():
+        with open(plist, "rb") as f:
+            every = plistlib.load(f).get("StartInterval", 0) // 60
+    log, last = HOME / ".factory" / "logs" / "tick.log", None
+    if log.exists():
+        stamps = re.findall(r"^== (\d{4}-\d\d-\d\d \d\d:\d\d:\d\d)", log.read_text(), re.M)
+        last = stamps[-1] if stamps else None
+    return {"installed": installed, "every": every, "last_pass": last, "running": (HOME / ".factory" / "tick.lock").exists()}
+
+
+def activity():
+    """Every item in every factory: where it is on its route, and what a person must decide."""
+    items = []
+    with FLOW:
+        for path in sorted(TARGETS.glob("*/factory.json")):
+            name = path.parent.name
+            try:
+                flow.setup(name)
+            except flow.core.FactoryError:
+                continue
+            events = {}
+            log = flow.STATE / "events.jsonl"
+            for line in log.read_text().splitlines() if log.exists() else []:
+                record = json.loads(line)
+                events.setdefault(record["item"], []).append(record)
+            for item in flow.all_items():
+                route = flow.stages(item)
+                order = [s["id"] for s in route]
+                at = order.index(item["stage"]) if item["stage"] in order else 0
+                track = [{"id": s["id"], "by": s["by"], "state": "done" if i < at or item["status"] == "done" else "now" if i == at else "todo"}
+                         for i, s in enumerate(route)]
+                waiting = None
+                if item["status"] == "waiting":
+                    # What the person is approving: whatever the agents wrote since the previous gate.
+                    documents, wt = [], flow.checkout(item)
+                    for stage in reversed(route[:at]):
+                        if stage["by"] == "human":
+                            break
+                        for produced in stage.get("produces", []):
+                            doc = wt / flow.fill(item, produced)
+                            if doc.exists():
+                                documents.insert(0, {"name": doc.name, "text": doc.read_text()[:20000]})
+                    optional = []
+                    for stage in route[at + 1:]:
+                        if not stage.get("optional"):
+                            break
+                        optional.append(stage["id"])
+                    waiting = {"gate": item["stage"], "documents": documents, "optional": optional}
+                mine = events.get(item["id"], [])
+                link = next((m.group(0) for e in reversed(mine) for m in [re.search(r"https://\S+", e.get("detail") or "")] if m), None)
+                items.append({"factory": name, "id": item["id"], "title": item["title"], "status": item["status"], "stage": item["stage"],
+                              "track": track, "waiting": waiting, "link": link,
+                              "updated": mine[-1]["ts"] if mine else "", "cost": sum(e.get("cost_usd") or 0 for e in mine),
+                              "events": [{"ts": e["ts"], "stage": e["stage"], "event": e["event"]} for e in mine[-5:]]})
+    items.sort(key=lambda i: i["updated"], reverse=True)
+    return {"scheduler": scheduler(), "items": items}
+
+
+def approve(data):
+    with FLOW:
+        flow.setup(data["target"])
+        flow.cmd_approve(argparse.Namespace(item=data["item"], skip=data.get("skip") or None))
+
 LIBRARY = HOME / "factories"
 
 
@@ -188,6 +267,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send({"definition": definition, "skills": skills, "library": library(home, definition),
                            "has_rules": (home / "process.json").exists(), "guide": read("AGENTS.md"),
                            "presubmit": read("presubmit"), "repo": json.loads(read("target.json") or "{}").get("repo", "")})
+            elif url.path == "/api/activity":
+                self.send(activity())
             elif url.path == "/api/samples":
                 self.send({"samples": samples()})
             elif url.path == "/api/state":
@@ -213,6 +294,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send({"problems": problems} if problems else {"saved": True})
             if self.path == "/api/route/create":
                 return self.send({"created": create(data)})
+            if self.path == "/api/approve":
+                approve(data)
+                return self.send({"approved": True})
+            if self.path == "/api/pass":
+                # Ask the background job to run now instead of waiting for its next turn.
+                done = subprocess.run(["launchctl", "kickstart", "gui/{}/{}".format(os.getuid(), JOB)], capture_output=True, text=True)
+                return self.send({"started": done.returncode == 0, "error": done.stderr.strip() or None})
             problems = process.validate(data["config"])
             if problems:
                 return self.send({"problems": problems})
@@ -225,7 +313,7 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(try_rules(data["target"], data["config"], data["ref"]))
             else:
                 self.send({"error": "not found"}, 404)
-        except (ValueError, KeyError, subprocess.CalledProcessError) as e:
+        except (ValueError, KeyError, subprocess.CalledProcessError, flow.core.FactoryError) as e:
             self.send({"error": str(e)}, 400)
 
 

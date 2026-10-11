@@ -1,0 +1,8 @@
+# the scheduled job's own log — nobody typed these
+== 2026-10-11 06:24:56 factory-demo-api-bugs
+started GH4: A trailing slash on /tasks/ gives 404
+1 open issue(s) labelled `bug` and assigned to sanjeev23oct, 1 new
+GH4: reproduce (implementation agent working...)
+GH4: fix (implementation agent working...)
+GH4: review (review agent working...)
+GH4: waiting at `approve-fix`

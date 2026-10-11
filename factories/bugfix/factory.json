@@ -69,11 +69,56 @@
       "by": "human"
     },
     {
+      "id": "pull-request",
+      "by": "script",
+      "skill": "open-pull-request",
+      "optional": true,
+      "enabled": false,
+      "run": [
+        "python3",
+        "{scripts}/open_pull_request.py",
+        "--repo",
+        "{checkout}",
+        "--github",
+        "{source_repo}",
+        "--branch",
+        "{branch}",
+        "--target",
+        "{main}",
+        "--title",
+        "{title}",
+        "--spec",
+        "{checkout}/{spec}",
+        "--issue",
+        "{issue}"
+      ]
+    },
+    {
       "id": "merge-request",
       "by": "script",
       "skill": "open-merge-request",
       "optional": true,
-      "enabled": false
+      "enabled": false,
+      "run": [
+        "python3",
+        "{scripts}/open_merge_request.py",
+        "--repo",
+        "{checkout}",
+        "--host",
+        "{source_host}",
+        "--project",
+        "{source_project}",
+        "--branch",
+        "{branch}",
+        "--target",
+        "{main}",
+        "--title",
+        "{title}",
+        "--spec",
+        "{checkout}/{spec}",
+        "--issue",
+        "{issue}"
+      ]
     }
   ]
 }

@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Activity</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sticky bar; a strip saying whether the factory is running in the background; gates waiting for a person; then every item on its route. */
+:root {
+  --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5; --field: #ffffff;
+  --route: #1f5fd0; --gate: #a66300; --gate-bg: #fbecd0; --ok: #12905a; --ok-bg: #dff3e9; --bad: #c2362b; --bad-bg: #fbe4e1; --check: #7b8797;
+  --display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a; --field: #0b121c;
+    --route: #6aa0ff; --gate: #ffb84d; --gate-bg: #3a2a0c; --ok: #4fd09a; --ok-bg: #0f3324; --bad: #ff8a80; --bad-bg: #3d1714; --check: #7b8797;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a; --field: #0b121c;
+  --route: #6aa0ff; --gate: #ffb84d; --gate-bg: #3a2a0c; --ok: #4fd09a; --ok-bg: #0f3324; --bad: #ff8a80; --bad-bg: #3d1714; --check: #7b8797;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { max-width: 960px; margin: 0 auto; padding-inline: 20px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font: 700 26px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+h2 { font: 700 30px/1 var(--display); text-transform: uppercase; }
+button { font: inherit; color: inherit; cursor: pointer; }
+:focus-visible { outline: 3px solid var(--route); outline-offset: 2px; }
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 14px; }
+.tabs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 99px; padding: 3px; }
+.tabs a { text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 600; font-size: 15px; color: var(--muted); }
+.tabs a[aria-current] { background: var(--ink); color: var(--bg); }
+.btn { padding: 10px 18px; border-radius: 99px; border: 2px solid var(--ink); background: var(--ink); color: var(--bg); font-weight: 600; }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn.go { background: var(--ok); border-color: var(--ok); color: #fff; }
+
+main { display: grid; gap: 18px; padding-block: 22px 60px; }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 16px; min-width: 0; }
+.panel > header { display: grid; gap: 4px; } .panel > header p { color: var(--muted); font-size: 15px; }
+
+.pulse { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; }
+.dot { width: 14px; height: 14px; border-radius: 50%; background: var(--check); flex: none; }
+.on .dot { background: var(--ok); box-shadow: 0 0 0 0 var(--ok); animation: beat 2s infinite; }
+@keyframes beat { 70% { box-shadow: 0 0 0 10px transparent; } 100% { box-shadow: 0 0 0 0 transparent; } }
+@media (prefers-reduced-motion: reduce) { .on .dot { animation: none; } }
+.pulse b { font: 700 22px/1.1 var(--display); text-transform: uppercase; }
+.pulse .grow { flex: 1; min-width: 180px; } .pulse span { color: var(--muted); font-size: 15px; }
+
+.wait { border: 2px solid var(--gate); background: var(--gate-bg); border-radius: 14px; padding: 18px; display: grid; gap: 12px; min-width: 0; }
+.wait-top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; }
+.tag { font: 700 13px var(--display); letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; background: var(--gate); color: var(--paper); white-space: nowrap; }
+.wait h3 { font: 600 19px/1.25 var(--body); } .wait .from { color: var(--muted); font-size: 14px; }
+.doc { background: var(--paper); border: 1px solid var(--line); border-radius: 10px; min-width: 0; }
+.doc summary { cursor: pointer; padding: 10px 14px; font-weight: 600; }
+.doc pre { margin: 0; padding: 4px 14px 14px; font: 13px/1.55 var(--mono); white-space: pre-wrap; overflow-wrap: anywhere; max-height: 360px; overflow-y: auto; }
+.act { display: flex; flex-wrap: wrap; gap: 10px 18px; align-items: center; }
+.act label { display: flex; gap: 6px; align-items: center; font-size: 14px; }
+
+.item { display: grid; gap: 8px; padding-block: 14px; border-top: 1px solid var(--line); min-width: 0; }
+.item:first-of-type { border-top: 0; padding-top: 0; }
+.item-top { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: baseline; }
+.item-top b { font-weight: 600; } .item-top .id { font: 500 13px var(--mono); color: var(--muted); }
+.state { font: 700 12px var(--display); letter-spacing: 0.1em; text-transform: uppercase; padding: 2px 9px; border-radius: 99px; white-space: nowrap; }
+.state.pending { background: var(--route); color: var(--paper); } .state.waiting { background: var(--gate); color: var(--paper); }
+.state.done { background: var(--ok-bg); color: var(--ok); } .state.blocked { background: var(--bad-bg); color: var(--bad); }
+.track { display: flex; flex-wrap: wrap; gap: 4px; }
+.track span { font: 12px var(--mono); padding: 3px 8px; border-radius: 4px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+.track .done { background: var(--ok-bg); color: var(--ok); border-color: transparent; }
+.track .now { background: var(--route); color: var(--paper); border-color: transparent; font-weight: 600; }
+.track .human { border-style: dashed; } .track .human.now { background: var(--gate); }
+.meta { font-size: 13px; color: var(--muted); } .meta a { color: var(--route); }
+.empty { color: var(--muted); }
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <h1>Factory</h1>
+  <nav class="tabs"><a href="/">Route</a><a href="/rules">Review rules</a><a href="/activity" aria-current="page">Activity</a></nav>
+</div></div>
+
+<div class="wrap"><main>
+  <section class="panel">
+    <div class="pulse" id="pulse"><span class="dot"></span><div class="grow"><b id="pulse-title">Checking…</b><br><span id="pulse-detail"></span></div>
+      <button class="btn ghost" id="pass">Run a pass now</button></div>
+  </section>
+
+  <section class="panel" id="waitpanel">
+    <header><h2>Waiting for you</h2><p>The factory has stopped at these gates. Read what was produced, then approve to let the work continue.</p></header>
+    <div id="waiting" style="display:grid;gap:12px"></div>
+  </section>
+
+  <section class="panel">
+    <header><h2>On the line</h2><p>Every piece of work, and where it is on its route.</p></header>
+    <div id="items"></div>
+  </section>
+</main></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var open = {};
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML.replace(/"/g, '&quot;'); }
+  function pretty(id) { return id.replace(/^approve-/, '').replace(/-/g, ' '); }
+  function post(path, body) {
+    return fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Factory-Editor': '1' }, body: JSON.stringify(body || {}) }).then(function (r) { return r.json(); });
+  }
+  function ago(stamp) {
+    if (!stamp) { return 'never'; }
+    var then = new Date(stamp.indexOf('T') < 0 ? stamp.replace(' ', 'T') : stamp), mins = Math.round((Date.now() - then) / 60000);
+    return mins < 1 ? 'just now' : mins < 60 ? mins + ' min ago' : Math.round(mins / 60) + ' h ago';
+  }
+  var LABEL = { pending: 'Agents working', waiting: 'Waiting for you', done: 'Finished', blocked: 'Stuck: needs a person' };
+
+  function draw(data) {
+    var s = data.scheduler, factories = {};
+    data.items.forEach(function (i) { factories[i.factory] = 1; });
+    $('pulse').className = 'pulse' + (s.installed ? ' on' : '');
+    $('pulse-title').textContent = s.installed ? (s.running ? 'A pass is running right now' : 'Running in the background') : 'Not running in the background';
+    $('pulse-detail').textContent = s.installed
+      ? 'Checks for new work every ' + s.every + ' minutes, with nobody at the keyboard. Last pass ' + ago(s.last_pass) + '.'
+      : 'Nothing is picked up automatically. Start it with: python3 factory/scripts/schedule.py install';
+    $('pass').disabled = !s.installed;
+
+    var waiting = data.items.filter(function (i) { return i.waiting; });
+    $('waitpanel').hidden = false;
+    $('waiting').innerHTML = waiting.length ? waiting.map(function (i) {
+      var key = i.factory + '/' + i.id;
+      return '<div class="wait" data-key="' + esc(key) + '"><div class="wait-top"><span class="tag">Gate: ' + esc(pretty(i.waiting.gate)) + '</span>' +
+        '<h3>' + esc(i.title) + '</h3><span class="from">' + esc(i.factory) + ' · ' + esc(i.id) + '</span></div>' +
+        i.waiting.documents.map(function (d, n) {
+          var k = key + '/' + d.name;
+          return '<details class="doc" data-doc="' + esc(k) + '"' + (open[k] ? ' open' : '') + '><summary>Read ' + esc(d.name) + '</summary><pre>' + esc(d.text) + '</pre></details>';
+        }).join('') +
+        '<div class="act"><button class="btn go" data-approve="' + esc(i.id) + '" data-factory="' + esc(i.factory) + '">Approve</button>' +
+        i.waiting.optional.map(function (o) { return '<label><input type="checkbox" data-skip="' + esc(o) + '">Skip the optional ' + esc(pretty(o)) + ' stop</label>'; }).join('') +
+        '</div></div>';
+    }).join('') : '<p class="empty">Nothing is waiting for you.</p>';
+
+    $('items').innerHTML = data.items.length ? data.items.map(function (i) {
+      return '<div class="item"><div class="item-top"><span class="state ' + i.status + '">' + LABEL[i.status] + '</span><b>' + esc(i.title) + '</b>' +
+        '<span class="id">' + esc(i.factory) + ' · ' + esc(i.id) + '</span></div>' +
+        '<div class="track">' + i.track.map(function (t) { return '<span class="' + t.state + (t.by === 'human' ? ' human' : '') + '">' + esc(t.by === 'human' ? 'gate: ' + pretty(t.id) : pretty(t.id)) + '</span>'; }).join('') + '</div>' +
+        '<div class="meta">Last moved ' + ago(i.updated) + (i.cost ? ' · agent cost $' + i.cost.toFixed(2) : '') +
+        (i.link ? ' · <a href="' + esc(i.link) + '">' + esc(i.link.replace('https://', '')) + '</a>' : '') + '</div></div>';
+    }).join('') : '<p class="empty">No work has come in yet.</p>';
+  }
+  function refresh() { return fetch('/api/activity').then(function (r) { return r.json(); }).then(draw); }
+
+  document.addEventListener('toggle', function (e) { if (e.target.dataset && e.target.dataset.doc) { open[e.target.dataset.doc] = e.target.open; } }, true);
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b) { return; }
+    if (b.dataset.approve) {
+      var card = b.closest('.wait'), skip = [];
+      card.querySelectorAll('input[data-skip]:checked').forEach(function (c) { skip.push(c.dataset.skip); });
+      b.disabled = true; b.textContent = 'Approving…';
+      post('/api/approve', { target: b.dataset.factory, item: b.dataset.approve, skip: skip }).then(function (r) {
+        if (r.error) { b.disabled = false; b.textContent = 'Approve'; alert(r.error); return; }
+        post('/api/pass').then(refresh);
+      });
+    } else if (b.id === 'pass') {
+      b.disabled = true; post('/api/pass').then(function () { setTimeout(refresh, 1500); });
+    }
+  });
+  refresh();
+  setInterval(function () { if (!document.querySelector('.doc[open] pre:hover')) { refresh(); } }, 5000);
+})();
+</script>
+</body>
+</html>
