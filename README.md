@@ -15,15 +15,18 @@ This repository applies the same contracts to a small real product,
 `tasklite`. Claude Code agents stand in for Warp's Oz agents, and a local
 issue tracker stands in for GitHub.
 
-## See it run
+## See it run: Idea to Value
 
-[docs/demo/](docs/demo/) holds a recording of one real run: two repositories,
-two routes, two issues taken through to open pull requests, and two pull
-requests reviewed. [factory-demo.mp4](docs/demo/factory-demo.mp4) is the
-three-minute video; [index.html](docs/demo/index.html) is the same run as a
-page, with how to set each part up. The repositories it ran on are
-[factory-demo-api](https://github.com/sanjeev23oct/factory-demo-api) and
-[factory-demo-ui](https://github.com/sanjeev23oct/factory-demo-ui).
+[docs/demo/](docs/demo/) holds a recording of the factory being set up and
+used for real. [factory-demo.mp4](docs/demo/factory-demo.mp4) is a
+seven-minute video in 15 numbered steps: set the factory up, define a route
+for a repository, then take one idea from an issue to a pull request, with a
+person approving at two gates. [index.html](docs/demo/index.html) is the same
+walkthrough as a page, with the commands for each step.
+
+It ran on [factory-demo-ui](https://github.com/sanjeev23oct/factory-demo-ui)
+and [factory-demo-api](https://github.com/sanjeev23oct/factory-demo-api): one
+factory, two repositories, five routes.
 
 ## The pipeline
 

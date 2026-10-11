@@ -109,7 +109,9 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var open = {};
+  var open = {}, drawn = {};
+  // Redraw a block only when its content changed, so a tick or an open document is not wiped by the next refresh.
+  function put(id, markup) { if (drawn[id] !== markup) { drawn[id] = markup; $(id).innerHTML = markup; } }
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML.replace(/"/g, '&quot;'); }
   function pretty(id) { return id.replace(/^approve-/, '').replace(/-/g, ' '); }
   function post(path, body) {
@@ -128,13 +130,13 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
     $('pulse').className = 'pulse' + (s.installed ? ' on' : '');
     $('pulse-title').textContent = s.installed ? (s.running ? 'A pass is running right now' : 'Running in the background') : 'Not running in the background';
     $('pulse-detail').textContent = s.installed
-      ? 'Checks for new work every ' + s.every + ' minutes, with nobody at the keyboard. Last pass ' + ago(s.last_pass) + '.'
+      ? 'One factory, ' + Object.keys(factories).length + ' routes with work. Checks for new work every ' + s.every + ' minutes, with nobody at the keyboard. Last pass ' + ago(s.last_pass) + '.'
       : 'Nothing is picked up automatically. Start it with: python3 factory/scripts/schedule.py install';
     $('pass').disabled = !s.installed;
 
     var waiting = data.items.filter(function (i) { return i.waiting; });
     $('waitpanel').hidden = false;
-    $('waiting').innerHTML = waiting.length ? waiting.map(function (i) {
+    put('waiting', waiting.length ? waiting.map(function (i) {
       var key = i.factory + '/' + i.id;
       return '<div class="wait" data-key="' + esc(key) + '"><div class="wait-top"><span class="tag">Gate: ' + esc(pretty(i.waiting.gate)) + '</span>' +
         '<h3>' + esc(i.title) + '</h3><span class="from">' + esc(i.factory) + ' · ' + esc(i.id) + '</span></div>' +
@@ -145,15 +147,15 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
         '<div class="act"><button class="btn go" data-approve="' + esc(i.id) + '" data-factory="' + esc(i.factory) + '">Approve</button>' +
         i.waiting.optional.map(function (o) { return '<label><input type="checkbox" data-skip="' + esc(o) + '">Skip the optional ' + esc(pretty(o)) + ' stop</label>'; }).join('') +
         '</div></div>';
-    }).join('') : '<p class="empty">Nothing is waiting for you.</p>';
+    }).join('') : '<p class="empty">Nothing is waiting for you.</p>');
 
-    $('items').innerHTML = data.items.length ? data.items.map(function (i) {
+    put('items', data.items.length ? data.items.map(function (i) {
       return '<div class="item"><div class="item-top"><span class="state ' + i.status + '">' + LABEL[i.status] + '</span><b>' + esc(i.title) + '</b>' +
         '<span class="id">' + esc(i.factory) + ' · ' + esc(i.id) + '</span></div>' +
         '<div class="track">' + i.track.map(function (t) { return '<span class="' + t.state + (t.by === 'human' ? ' human' : '') + '">' + esc(t.by === 'human' ? 'gate: ' + pretty(t.id) : pretty(t.id)) + '</span>'; }).join('') + '</div>' +
         '<div class="meta">Last moved ' + ago(i.updated) + (i.cost ? ' · agent cost $' + i.cost.toFixed(2) : '') +
         (i.link ? ' · <a href="' + esc(i.link) + '">' + esc(i.link.replace('https://', '')) + '</a>' : '') + '</div></div>';
-    }).join('') : '<p class="empty">No work has come in yet.</p>';
+    }).join('') : '<p class="empty">No work has come in yet.</p>');
   }
   function refresh() { return fetch('/api/activity').then(function (r) { return r.json(); }).then(draw); }
 

@@ -44,6 +44,7 @@ button { cursor: pointer; }
 .tabs a { text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 600; font-size: 15px; color: var(--muted); }
 .tabs a[aria-current] { background: var(--ink); color: var(--bg); }
 select, input[type=text], input[type=number] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); min-width: 0; max-width: 100%; }
+.pick { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--muted); }
 #state { font-size: 14px; color: var(--muted); }
 #state.dirty { color: var(--warn); } #state.bad { color: var(--bad); } #state.good { color: var(--ok); }
 .btn { padding: 10px 18px; border-radius: 99px; border: 2px solid var(--ink); background: var(--ink); color: var(--bg); font-weight: 600; }
@@ -117,7 +118,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
 <div class="bar"><div class="wrap">
   <h1>Factory</h1>
   <nav class="tabs"><a href="/" aria-current="page">Route</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
-  <select id="target" aria-label="Factory"></select>
+  <label class="pick">Route <select id="target" aria-label="Route"></select></label>
   <button class="btn ghost" id="new">Add a repository</button>
   <span class="grow" id="state" role="status"></span>
   <button class="btn" id="save" disabled>Save</button>
@@ -127,9 +128,9 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   <div id="problems" class="problems" hidden></div>
 
   <section class="panel" id="newpanel" hidden>
-    <header><h2>Add a repository</h2><p>Each repository gets its own factory, with whatever stops and gates its work needs.</p></header>
+    <header><h2>Add a repository</h2><p>One factory serves many repositories. Each repository gets a route of its own, or several: one for features and a shorter one for bugs, say.</p></header>
     <div class="grid">
-      <div class="field"><label for="n_name">Name for this factory</label><input type="text" id="n_name" placeholder="e.g. billing-api"></div>
+      <div class="field"><label for="n_name">Name for this route</label><input type="text" id="n_name" placeholder="e.g. billing-api"></div>
       <div class="field"><label for="n_repo">Folder the repository is in</label><input type="text" id="n_repo" placeholder="~/code/billing-api"></div>
       <div class="field"><label for="n_url">Clone address</label><input type="text" id="n_url" placeholder="only if the folder does not exist yet"><small>Leave empty when the repository is already on this machine.</small></div>
     </div>
@@ -137,7 +138,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       <small>A starting point only saves typing. The examples are not project types: the factory works the same for any kind of work, and every stop and gate can be changed, removed or added afterwards.</small>
       <div class="samples" id="samples"></div></div>
     <div id="newerror" class="problems" hidden></div>
-    <div class="rowf" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="create">Create the factory</button><button class="btn ghost" id="cancel">Cancel</button></div>
+    <div class="rowf" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="create">Create the route</button><button class="btn ghost" id="cancel">Cancel</button></div>
   </section>
 
   <section class="panel">
@@ -169,6 +170,8 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       <textarea id="guide" rows="10" spellcheck="false"></textarea><small>What the product is, where its standards live, and what must never be done. Agents read this before every task.</small></div>
     <div class="field"><label for="presubmit">Commands that prove a change is sound</label>
       <textarea id="presubmit" rows="7" spellcheck="false" class="mono"></textarea><small>A shell script run from the repository root: your build, lint and tests. It must exit with an error when something fails.</small></div>
+    <div class="field"><label for="tools">Programs agents may run</label>
+      <input type="text" id="tools" class="mono" placeholder="e.g. node, npm, dotnet"><small>Comma separated. Agents can always run python3 and the commands above; anything else must be listed here.</small></div>
   </section>
 
   <section class="panel">
@@ -183,7 +186,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
 <script>
 (function () {
   var $ = function (id) { return document.getElementById(id); };
-  var def = null, skills = {}, lib = [], saved = '', extra = { guide: '', presubmit: '' };
+  var def = null, skills = {}, lib = [], saved = '', extra = { guide: '', presubmit: '', tools: '' };
   function snapshot() { return JSON.stringify([def, extra]); }
   var SOURCES = {
     'gitlab': { name: 'GitLab issues', fields: [['host', 'GitLab host', 'gitlab.com'], ['project', 'Project', 'group/project'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
@@ -276,8 +279,8 @@ textarea.mono { font: 13px/1.6 var(--mono); }
     call('/api/route?target=' + encodeURIComponent(name)).then(function (data) {
       if (data.error) { $('state').className = 'bad'; $('state').textContent = data.error; return; }
       def = data.definition; skills = data.skills; lib = data.library;
-      extra = { guide: data.guide, presubmit: data.presubmit }; saved = snapshot();
-      $('guide').value = data.guide; $('presubmit').value = data.presubmit; $('auto').checked = !!def.auto;
+      extra = { guide: data.guide, presubmit: data.presubmit, tools: data.tools }; saved = snapshot();
+      $('guide').value = data.guide; $('presubmit').value = data.presubmit; $('tools').value = data.tools; $('auto').checked = !!def.auto;
       $('repo').textContent = data.repo;
       lib.forEach(function (l) { if (l.stage.skill && !skills[l.stage.skill]) { skills[l.stage.skill] = l.about; } });
       showProblems(null); draw();
@@ -332,11 +335,12 @@ textarea.mono { font: 13px/1.6 var(--mono); }
     if (t.dataset.source) { if (t.value.trim()) { def.source[t.dataset.source] = t.value.trim(); } else { delete def.source[t.dataset.source]; } setState(); }
     else if (t.id === 'guide') { extra.guide = t.value; setState(); }
     else if (t.id === 'presubmit') { extra.presubmit = t.value; setState(); }
+    else if (t.id === 'tools') { extra.tools = t.value; setState(); }
     else if (t.id === 'max_attempts') { def.limits.max_attempts = +t.value || 3; setState(); }
     else if (t.id === 'daily_usd') { def.limits.daily_usd = +t.value || 20; setState(); }
   });
   $('save').addEventListener('click', function () {
-    call('/api/route/save', { target: $('target').value, definition: def, guide: extra.guide, presubmit: extra.presubmit }).then(function (data) {
+    call('/api/route/save', { target: $('target').value, definition: def, guide: extra.guide, presubmit: extra.presubmit, tools: extra.tools }).then(function (data) {
       showProblems(data.problems);
       if (data.saved) { saved = snapshot(); setState(); $('state').className = 'good'; $('state').textContent = 'Saved'; }
       else if (data.error) { $('state').className = 'bad'; $('state').textContent = data.error; }
@@ -363,7 +367,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       $('create').disabled = false;
       if (data.error) { $('newerror').hidden = false; $('newerror').textContent = data.error; return; }
       $('newpanel').hidden = true; $('n_name').value = $('n_repo').value = $('n_url').value = '';
-      listFactories(data.created).then(function () { $('state').className = 'good'; $('state').textContent = 'Created. Set the source, the rules and the commands, then switch on automatic pickup.'; });
+      listFactories(data.created).then(function () { $('state').className = 'good'; $('state').textContent = 'Route created. Set the source, the rules and the commands, then switch on automatic pickup.'; });
     });
   });
   call('/api/samples').then(function (data) {

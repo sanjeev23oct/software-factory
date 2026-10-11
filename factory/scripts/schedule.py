@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Install, remove, or inspect the scheduled job that runs the factory unattended (macOS).
 
-    schedule.py install --every 10 [TARGET ...]    run a pass every 10 minutes; no targets = every automatic factory
+    schedule.py install --every 10 [TARGET ...]    run a pass every 10 minutes; no targets = every route that is switched on
     schedule.py status
     schedule.py remove
 
@@ -53,8 +53,8 @@ def main():
         result = launchctl("bootstrap", DOMAIN, str(PLIST))
         if result.returncode:
             sys.exit("schedule: could not load the job: {}".format(result.stderr.strip()))
-        print("Installed. Every {} minutes: {}".format(
-            args.every, ", ".join(args.targets) or "every factory switched to pick up work automatically"))
+        print("Installed. Every {} minutes it checks: {}".format(
+            args.every, ", ".join(args.targets) or "every route that is switched on"))
         print("Log: {}".format(logs / "tick.log"))
     elif args.command == "remove":
         launchctl("bootout", DOMAIN + "/" + LABEL)
@@ -66,10 +66,15 @@ def main():
         if result.returncode:
             print("Not installed.")
             return
-        keep = ("state =", "run interval", "last exit code", "runs =")
-        print("\n".join(line.strip() for line in result.stdout.splitlines() if any(k in line for k in keep)))
+        field = lambda name: next((line.split("=", 1)[1].strip() for line in result.stdout.splitlines()
+                                   if line.strip().startswith(name + " =")), "")
         with open(PLIST, "rb") as f:
-            print("targets: {}".format(", ".join(plistlib.load(f)["ProgramArguments"][2:]) or "every automatic factory"))
+            job = plistlib.load(f)
+        print("Running in the background: yes")
+        print("Checks for new work every {} minutes".format(job["StartInterval"] // 60))
+        print("Routes: {}".format(", ".join(job["ProgramArguments"][2:]) or "every route that is switched on"))
+        print("Passes since it was installed: {}".format(field("runs") or "0"))
+        print("Right now: {}".format("a pass is running" if field("state") == "running" else "idle until the next pass"))
 
 
 if __name__ == "__main__":

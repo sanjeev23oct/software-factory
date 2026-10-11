@@ -1,0 +1,11 @@
+$ git clone https://github.com/sanjeev23oct/software-factory.git
+Cloning into 'software-factory'...
+$ cd software-factory
+
+# what it needs, already on most developer machines:
+$ python3 --version
+Python 3.9.6
+$ claude --version
+2.1.261 (Claude Code)
+$ gh auth status
+✓ Logged in to github.com account sanjeev23oct (keyring)

@@ -1,0 +1,4 @@
+$ python3 factory/editor.py
+Factory editor at http://127.0.0.1:8787/  (Ctrl-C to stop)
+
+# a page on your own machine. Nothing is uploaded anywhere.

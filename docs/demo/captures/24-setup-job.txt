@@ -1,0 +1,11 @@
+$ python3 factory/scripts/schedule.py install --every 10
+Installed. Every 10 minutes it checks: every route that is switched on
+
+$ python3 factory/scripts/schedule.py status
+Running in the background: yes
+Checks for new work every 10 minutes
+Routes: every route that is switched on
+Passes since it was installed: 0
+Right now: idle until the next pass
+
+# from now on, nobody has to start anything.

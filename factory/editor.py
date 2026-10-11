@@ -176,7 +176,13 @@ def create(data):
     return name
 
 
-def save_route(name, definition, guide=None, presubmit=None):
+def tools_of(home):
+    """The extra programs agents may run, as plain names: Bash(node:*) is shown as node."""
+    allowed = json.loads((home / "target.json").read_text()).get("allowed_tools", [])
+    return ", ".join(m.group(1) for a in allowed for m in [re.fullmatch(r"Bash\((.+?):\*\)", a)] if m)
+
+
+def save_route(name, definition, guide=None, presubmit=None, tools=None):
     home = route_dir(name)
     for stage in definition.get("stages", []):
         skill = stage.get("skill")
@@ -198,6 +204,10 @@ def save_route(name, definition, guide=None, presubmit=None):
     if presubmit is not None:
         (home / "presubmit").write_text(presubmit.rstrip() + "\n")
         (home / "presubmit").chmod(0o755)
+    if tools is not None:
+        target = json.loads((home / "target.json").read_text())
+        target["allowed_tools"] = ["Bash({}:*)".format(t) for t in re.findall(r"[\w./-]+", tools)]
+        (home / "target.json").write_text(json.dumps(target, indent=2) + "\n")
     return []
 
 
@@ -266,7 +276,7 @@ class Handler(BaseHTTPRequestHandler):
                 read = lambda f: (home / f).read_text() if (home / f).exists() else ""
                 self.send({"definition": definition, "skills": skills, "library": library(home, definition),
                            "has_rules": (home / "process.json").exists(), "guide": read("AGENTS.md"),
-                           "presubmit": read("presubmit"), "repo": json.loads(read("target.json") or "{}").get("repo", "")})
+                           "presubmit": read("presubmit"), "tools": tools_of(home), "repo": json.loads(read("target.json") or "{}").get("repo", "")})
             elif url.path == "/api/activity":
                 self.send(activity())
             elif url.path == "/api/samples":
@@ -290,7 +300,7 @@ class Handler(BaseHTTPRequestHandler):
         try:
             data = json.loads(self.rfile.read(int(self.headers.get("Content-Length", 0))))
             if self.path == "/api/route/save":
-                problems = save_route(data["target"], data["definition"], data.get("guide"), data.get("presubmit"))
+                problems = save_route(data["target"], data["definition"], data.get("guide"), data.get("presubmit"), data.get("tools"))
                 return self.send({"problems": problems} if problems else {"saved": True})
             if self.path == "/api/route/create":
                 return self.send({"created": create(data)})

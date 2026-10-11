@@ -1,0 +1,12 @@
+# the factory log for this item (times in UTC). Only the two approvals were done by a person.
+01:21:54  read-issue            started
+01:21:56  read-issue            script passed  — Find a task by typing
+01:23:38  requirements          agent stage finished
+01:23:38  approve-requirements  waiting for a human
+01:24:23  approve-requirements  approved by human  — skipping: visual-spec
+01:28:47  tasks                 agent stage finished
+01:28:47  lint-tasks            script passed  — OK
+01:37:49  build                 agent stage finished
+01:37:49  check-evidence        script passed  — Cat 1: 9 checks run by script, 9 passed, 0 left to the checker
+01:37:50  verify                script passed  — ✔ summary counts open and done (1.841416ms)
+01:37:50  approve-screens       waiting for a human
