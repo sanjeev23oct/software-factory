@@ -1,5 +1,5 @@
 {
-  "description": "An empty route: intake and one gate. Add the stops your work needs.",
+  "description": "An empty route: intake and one gate. Add the stages your work needs.",
   "source": {
     "type": "file"
   },

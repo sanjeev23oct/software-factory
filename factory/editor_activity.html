@@ -145,7 +145,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
           return '<details class="doc" data-doc="' + esc(k) + '"' + (open[k] ? ' open' : '') + '><summary>Read ' + esc(d.name) + '</summary><pre>' + esc(d.text) + '</pre></details>';
         }).join('') +
         '<div class="act"><button class="btn go" data-approve="' + esc(i.id) + '" data-factory="' + esc(i.factory) + '">Approve</button>' +
-        i.waiting.optional.map(function (o) { return '<label><input type="checkbox" data-skip="' + esc(o) + '">Skip the optional ' + esc(pretty(o)) + ' stop</label>'; }).join('') +
+        i.waiting.optional.map(function (o) { return '<label><input type="checkbox" data-skip="' + esc(o) + '">Skip the optional ' + esc(pretty(o)) + ' stage</label>'; }).join('') +
         '</div></div>';
     }).join('') : '<p class="empty">Nothing is waiting for you.</p>');
 

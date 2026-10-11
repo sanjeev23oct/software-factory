@@ -121,7 +121,7 @@ Then edit `targets/shop/factory.json`, `AGENTS.md` and `presubmit`.
 
 opens a local page with four tabs. It serves on 127.0.0.1 only.
 
-- **Route**: add a repository, then arrange its stops and gates, with a
+- **Route**: add a repository, then arrange its stages and gates, with a
   drawing of the route that updates as you edit. Set what triggers it, the
   team's rules, and the commands that prove a change.
 - **Skills**: the skills the route's agents follow. Add them from the
@@ -134,7 +134,7 @@ opens a local page with four tabs. It serves on 127.0.0.1 only.
 
 ### Maker and checker
 
-A build stop is done by two separate sessions. A maker builds one section of
+A build stage is done by two separate sessions. A maker builds one section of
 `tasks.md`, using the skill each task names. A checker, in a different
 session that never saw the maker work, runs the section's gate, writes the
 evidence, and ticks the tasks only if everything passed. `flow.py` enforces

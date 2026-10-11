@@ -1,11 +1,12 @@
-$ git log --oneline factory/GH5        # one commit per session
-f3dee2f build (maker): Show how many tasks are in each filter
-9cabf89 check (checker): Show how many tasks are in each filter
-1565e2a build (maker): Show how many tasks are in each filter
-6d09e4b check (checker): Show how many tasks are in each filter
-e604a31 build (maker): Show how many tasks are in each filter
-418b537 check (checker): Show how many tasks are in each filter
-55664bb build (maker): Show how many tasks are in each filter
-9eb855f tasks: Show how many tasks are in each filter
-0df44ad requirements: Show how many tasks are in each filter
+$ git log --oneline factory/GH7        # one commit per session
+654c215 check (checker): Show overall progress on the board
+3c4eb3f build (maker): Show overall progress on the board
+e07134b check (checker): Show overall progress on the board
+5e186b0 build (maker): Show overall progress on the board
+171a0b3 check (checker): Show overall progress on the board
+e584623 build (maker): Show overall progress on the board
+8f3bc00 check (checker): Show overall progress on the board
+431780c build (maker): Show overall progress on the board
+d0ccd4c tasks: Show overall progress on the board
+ddc7c70 requirements: Show overall progress on the board
 24fd3d8 Initial task board

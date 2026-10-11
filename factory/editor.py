@@ -3,7 +3,7 @@
 
     python3 factory/editor.py [--port 8787] [--no-open]
 
-  /        the route: where work comes from, the stops, the gates, the limits
+  /        the route: where work comes from, the stages, the gates, the limits
   /skills  the skills a route's agents follow: add, import, edit
   /rules   the process rules a merge request is checked against
   /activity   what the factory is doing now, and the gates waiting for a person
@@ -133,7 +133,7 @@ def about(skill_dir):
 
 
 def library(home, definition):
-    """Stops a person can add: every stop used by a sample factory, plus the ones this factory already has."""
+    """Stops a person can add: every stage used by a sample factory, plus the ones this factory already has."""
     stops, seen = [], {s["id"] for s in definition["stages"]}
     for path in sorted(LIBRARY.glob("*/factory.json")):
         for stage in json.loads(path.read_text())["stages"]:
@@ -219,7 +219,7 @@ def remove_skill(data):
     if not used:
         raise ValueError("no such skill: {}".format(name))
     if used["used_by"]:
-        raise ValueError("{} is used by the {} stop; remove it from the route first".format(name, ", ".join(used["used_by"])))
+        raise ValueError("{} is used by the {} stage; remove it from the route first".format(name, ", ".join(used["used_by"])))
     shutil.rmtree(home / "skills" / name)
 
 
@@ -272,7 +272,7 @@ def save_route(name, definition, guide=None, presubmit=None, tools=None):
         if skill and not (home / "skills" / skill).exists() and (LIBRARY / "skills" / skill).exists():
             shutil.copytree(LIBRARY / "skills" / skill, home / "skills" / skill)
     for stage in definition.get("stages", []):
-        # A stop built by a maker and a checker needs the checker's skill too.
+        # A stage built by a maker and a checker needs the checker's skill too.
         checker = (stage.get("checker") or {}).get("skill")
         if checker and not (home / "skills" / checker).exists() and (LIBRARY / "skills" / checker).exists():
             shutil.copytree(LIBRARY / "skills" / checker, home / "skills" / checker)

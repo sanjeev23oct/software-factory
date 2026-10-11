@@ -6,7 +6,7 @@
 <title>Factory Skills</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: a sticky bar; a short explanation; maker skills (the ones tasks name) first; then the skills stops use; then three ways to add one. */
+/* Layout: a sticky bar; a short explanation; maker skills (the ones tasks name) first; then the skills stages use; then three ways to add one. */
 :root {
   --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5; --field: #ffffff;
   --route: #1f5fd0; --maker: #12905a; --maker-bg: #dff3e9; --stop: #5d6b7e; --stop-bg: #e6eaf0; --ok: #12905a; --bad: #c2362b; --bad-bg: #fbe4e1; --warn: #a66300;
@@ -88,7 +88,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   </section>
 
   <section class="panel">
-    <header><h2>Stop skills</h2><p>The skill each stop on the route follows, including the checker that verifies the maker's work in a separate session.</p></header>
+    <header><h2>Stage skills</h2><p>The skill each stage on the route follows, including the checker that verifies the maker's work in a separate session.</p></header>
     <div id="stops" style="display:grid;gap:10px"></div>
   </section>
 
@@ -117,7 +117,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   function say(text, kind) { $('state').className = kind || ''; $('state').textContent = text; }
 
   function card(s) {
-    var kind = s.maker ? '<span class="kind maker">Maker skill</span>' : s.used_by.length ? '<span class="kind stop">Stop: ' + esc(s.used_by.join(', ')) + '</span>' : '<span class="kind idle">Not used</span>';
+    var kind = s.maker ? '<span class="kind maker">Maker skill</span>' : s.used_by.length ? '<span class="kind stop">Stage: ' + esc(s.used_by.join(', ')) + '</span>' : '<span class="kind idle">Not used</span>';
     return '<details class="skill" data-name="' + esc(s.name) + '"' + (opened[s.name] ? ' open' : '') + '><summary><b>/' + esc(s.name) + '</b>' + kind +
       '<span>' + esc(s.description) + '</span>' + (s.maker ? '<span class="fits">' + (s.applies_to ? 'for ' + esc(s.applies_to) : 'not yet told which files it is for') + '</span>' : '') + '</summary>' +
       '<div class="edit"><div class="field"><label>What it is for, in one line</label><input type="text" data-f="description" value="' + esc(s.description) + '"></div>' +

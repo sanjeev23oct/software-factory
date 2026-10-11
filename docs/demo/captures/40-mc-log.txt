@@ -1,15 +1,14 @@
 # the factory log (times in UTC). Each maker and checker line is a separate session.
-08:49:23  tasks           agent wrote the tasks
-08:49:23  lint-tasks      SCRIPT  passed
-08:49:57  build           MAKER   session e25e5e44  built a section
-08:51:29  build           CHECKER session 103ab984  passed it, wrote evidence
-08:52:12  build           MAKER   session 1014d1e2  built a section
-08:53:14  build           CHECKER session c6b3fbbc  passed it, wrote evidence
-08:53:44  build           MAKER   session c5990a6d  built a section
-08:54:25  build           CHECKER session 8a28db92  passed it, wrote evidence
-08:54:25  check-evidence  SCRIPT  found a check that does not match: sent back
-08:55:13  build           MAKER   session 71fa34b1  built a section
-08:55:32  check-evidence  SCRIPT  passed  (9 of 9 checks re-run)
-08:55:33  verify          SCRIPT  passed
-08:55:33  approve-screens GATE    waiting for a person
-08:56:30  approve-screens approved by human
+09:42:09  tasks           agent wrote the tasks
+09:42:09  lint-tasks      SCRIPT  passed
+09:42:48  build           MAKER   session 149b47c4  built a section
+09:43:41  build           CHECKER session d8a20b96  passed it, wrote the evidence
+09:44:31  build           MAKER   session be55b857  built a section
+09:45:28  build           CHECKER session 9a6128bf  passed it, wrote the evidence
+09:46:26  build           MAKER   session 1e0efc15  built a section
+09:47:29  build           CHECKER session 4060779c  passed it, wrote the evidence
+09:48:25  build           MAKER   session efa9fff9  built a section
+09:49:21  build           CHECKER session dd92450c  passed it, wrote the evidence
+09:49:21  check-evidence  SCRIPT  passed
+09:49:21  verify          SCRIPT  passed
+09:49:21  approve-screens GATE    waiting for a person

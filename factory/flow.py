@@ -92,8 +92,8 @@ def current(item):
     for stage in stages(item):
         if stage["id"] == item["stage"]:
             return stage
-    # The route was edited while this item was on a stop that no longer exists.
-    raise core.FactoryError("{} is at `{}`, which is no longer on the route. Start it again or put the stop back.".format(
+    # The route was edited while this item was on a stage that no longer exists.
+    raise core.FactoryError("{} is at `{}`, which is no longer on the route. Start it again or put the stage back.".format(
         item["id"], item["stage"]))
 
 
@@ -207,7 +207,7 @@ def context_file(item):
 
 
 def agent_task(item, stage, role=None):
-    """role is None for an ordinary stop, or "maker" / "checker" for a stop built by two separate sessions."""
+    """role is None for an ordinary stage, or "maker" / "checker" for a stage built by two separate sessions."""
     wt = checkout(item)
     shutil.copy(context_file(item), wt / "issue_context.md")
     if role == "checker":

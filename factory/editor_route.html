@@ -6,7 +6,7 @@
 <title>Factory Route</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: a sticky bar; a live drawing of the route; then the source, the list of stops, and the limits. */
+/* Layout: a sticky bar; a live drawing of the route; then the source, the list of stages, and the limits. */
 :root {
   --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5; --field: #ffffff;
   --route: #1f5fd0; --gate-bg: #fbecd0; --gate: #a66300; --check: #5d6b7e; --ok: #12905a; --bad: #c2362b; --bad-bg: #fbe4e1; --warn: #a66300;
@@ -135,7 +135,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       <div class="field"><label for="n_url">Clone address</label><input type="text" id="n_url" placeholder="only if the folder does not exist yet"><small>Leave empty when the repository is already on this machine.</small></div>
     </div>
     <div class="field"><label>Starting point</label>
-      <small>A starting point only saves typing. The examples are not project types: the factory works the same for any kind of work, and every stop and gate can be changed, removed or added afterwards.</small>
+      <small>A starting point only saves typing. The examples are not project types: the factory works the same for any kind of work, and every stage and gate can be changed, removed or added afterwards.</small>
       <div class="samples" id="samples"></div></div>
     <div id="newerror" class="problems" hidden></div>
     <div class="rowf" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="create">Create the route</button><button class="btn ghost" id="cancel">Cancel</button></div>
@@ -144,7 +144,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   <section class="panel">
     <header><h2>The route</h2><p id="about"></p></header>
     <div class="scroll"><div class="draw" id="draw"></div></div>
-    <div class="key"><span><b>Ring</b> a gate: a person approves</span><span><b>Blue stop</b> work an agent does</span><span><b>Small grey stop</b> an automatic check</span><span><b>Dashed</b> optional</span></div>
+    <div class="key"><span><b>Ring</b> a gate: a person approves</span><span><b>Blue stage</b> work an agent does</span><span><b>Small grey stage</b> an automatic check</span><span><b>Dashed</b> optional</span></div>
   </section>
 
   <section class="panel">
@@ -154,13 +154,13 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   </section>
 
   <section class="panel">
-    <header><h2>Stops and gates</h2><p>Work moves down this list. Use the arrows to reorder. A gate holds the work until a person approves.</p></header>
+    <header><h2>Stages and gates</h2><p>Work moves down this list, one stage at a time. Use the arrows to reorder. A gate holds the work until a person approves.</p></header>
     <div id="stops" style="display:grid;gap:10px"></div>
     <div class="adds">
       <div class="add"><b>Add a gate</b><span>A point where a person must approve before work continues.</span>
         <div class="rowf"><input type="text" id="gatename" placeholder="what is approved, e.g. design" aria-label="What the gate approves"><button class="btn ghost" id="addgate">Add</button></div></div>
-      <div class="add"><b>Add a stop</b><span id="libabout">Pick a ready-made stop.</span>
-        <div class="rowf"><select id="lib" aria-label="Stop to add"></select><button class="btn ghost" id="addstop">Add</button></div></div>
+      <div class="add"><b>Add a stage</b><span id="libabout">Pick a ready-made stage.</span>
+        <div class="rowf"><select id="lib" aria-label="Stage to add"></select><button class="btn ghost" id="addstop">Add</button></div></div>
     </div>
   </section>
 
@@ -177,7 +177,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   <section class="panel">
     <header><h2>Limits</h2><p>What stops an unattended factory from running away.</p></header>
     <div class="grid">
-      <div class="field"><label for="max_attempts">Tries per stop</label><input type="number" id="max_attempts" min="1" max="10"><small>After this many failed tries the item waits for a person.</small></div>
+      <div class="field"><label for="max_attempts">Tries per stage</label><input type="number" id="max_attempts" min="1" max="10"><small>After this many failed tries the item waits for a person.</small></div>
       <div class="field"><label for="daily_usd">Agent spend per day, in dollars</label><input type="number" id="daily_usd" min="1"><small>Reaching it pauses the route until tomorrow.</small></div>
     </div>
   </section>
@@ -196,7 +196,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
     'jira': { name: 'Jira issues', fields: [['project', 'Project key', 'SHOP'], ['label', 'Pick up issues labelled', 'factory'], ['assignee', 'Only when assigned to', 'username, or leave empty']] },
     'file': { name: 'A file you point it at', fields: [] }
   };
-  var KIND = { human: 'Gate', agent: 'Agent stop', script: 'Automatic check' };
+  var KIND = { human: 'Gate', agent: 'Agent stage', script: 'Automatic check' };
   function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML.replace(/"/g, '&quot;'); }
   function slug(s) { return s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
   function pretty(id) { return id.replace(/^approve-/, '').replace(/-/g, ' '); }
@@ -227,7 +227,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
     }).join('');
     var gates = def.stages.filter(function (s) { return s.by === 'human' && on(s); }).length;
     var live = def.stages.filter(on).length;
-    $('about').textContent = live + ' stops, ' + gates + (gates === 1 ? ' gate' : ' gates') + (def.gate_outside ? '. The deciding gate is outside the factory: ' + def.gate_outside : '.');
+    $('about').textContent = live + ' stages, ' + gates + (gates === 1 ? ' gate' : ' gates') + (def.gate_outside ? '. The deciding gate is outside the factory: ' + def.gate_outside : '.');
   }
   function drawSource() {
     var s = def.source, spec = SOURCES[s.type] || SOURCES.file;
@@ -267,7 +267,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   }
   function libAbout() {
     var pick = lib.filter(function (l) { return l.stage.id === $('lib').value; })[0];
-    $('libabout').textContent = pick && pick.about ? pick.about : 'Pick a ready-made stop.';
+    $('libabout').textContent = pick && pick.about ? pick.about : 'Pick a ready-made stage.';
   }
   function drawLimits() {
     def.limits = def.limits || {};
@@ -300,7 +300,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       var i = +b.dataset.i, j = i + (+b.dataset.move);
       if (j < 1 || j >= def.stages.length) { return; }
       var t = def.stages[i]; def.stages[i] = def.stages[j]; def.stages[j] = t;
-      // A check can only send work back to a stop that comes before it.
+      // A check can only send work back to a stage that comes before it.
       def.stages.forEach(function (s, k) { if (s.on_fail && def.stages.slice(0, k).map(function (x) { return x.id; }).indexOf(s.on_fail) < 0) { delete s.on_fail; } });
     } else if (b.dataset.remove) {
       var gone = def.stages.splice(+b.dataset.remove, 1)[0];
@@ -376,7 +376,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
     $('samples').innerHTML = data.samples.map(function (s, i) {
       return '<label class="sample' + (s.example ? '' : ' blank') + '"><input type="radio" name="sample" value="' + esc(s.name) + '"' + (i === 0 ? ' checked' : '') + '>' +
         '<em>' + (s.example ? 'Example route' : 'Start empty') + '</em><b>' + esc(s.example ? s.name.replace(/-/g, ' ') : 'Blank route') + '</b>' +
-        '<span>' + esc(s.description) + '</span><span>' + s.stops + ' stops · gates: ' + esc(s.gates.join(', ')) + '</span></label>';
+        '<span>' + esc(s.description) + '</span><span>' + s.stops + ' stages · gates: ' + esc(s.gates.join(', ')) + '</span></label>';
     }).join('');
   });
   listFactories();

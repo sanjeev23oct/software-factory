@@ -12,8 +12,8 @@
    "kicker": "What is a software factory?",
    "title": "A factory, for software",
    "seconds": 9,
-   "define": "A <b>written route</b> that every piece of work follows. <b>Agents</b> do each stop the same way every time, <b>scripts</b> check the result, and <b>people</b> approve at the gates.",
-   "explain": "A software factory is a written route that every piece of work follows. Agents do each stop the same way every time, scripts check the result, and people approve at the gates. It turns “ask an assistant to write some code” into a process you can repeat, inspect and trust."
+   "define": "A <b>written route</b> that every piece of work follows. <b>Agents</b> do each stage the same way every time, <b>scripts</b> check the result, and <b>people</b> approve at the gates.",
+   "explain": "A software factory is a written route that every piece of work follows. Agents do each stage the same way every time, scripts check the result, and people approve at the gates. It turns “ask an assistant to write some code” into a process you can repeat, inspect and trust."
   },
   {
    "kind": "chapter",
@@ -27,7 +27,7 @@
      "var(--r1)"
     ],
     [
-     "Stop",
+     "Stage",
      "One job. Done by an agent, or by a script.",
      "var(--r2)"
     ],
@@ -221,8 +221,8 @@
    "kind": "step",
    "n": 7,
    "of": 16,
-   "title": "Arrange the stops and gates",
-   "say": "The stops are the work. The gates are where a person approves.",
+   "title": "Arrange the stages and gates",
+   "say": "The stages are the work. The gates are where a person approves.",
    "seconds": 5
   },
   {
@@ -235,14 +235,14 @@
   {
    "kind": "image",
    "image": "s9b-stops.png",
-   "say": "Each stop is a row: reorder it, switch it off, or add your own",
+   "say": "Each stage is a row: reorder it, switch it off, or add your own",
    "seconds": 7,
    "n": 7
   },
   {
    "kind": "image",
    "image": "k6-separate.png",
-   "say": "Switch on maker and checker for the build stop",
+   "say": "Switch on maker and checker for the build stage",
    "seconds": 8,
    "n": 7
   },
@@ -287,7 +287,7 @@
   {
    "kind": "image",
    "image": "k5-checker.png",
-   "say": "And two skills for the build stop: one for the maker, one for the checker",
+   "say": "And two skills for the build stage: one for the maker, one for the checker",
    "seconds": 8,
    "n": 8
   },
@@ -340,7 +340,7 @@
   },
   {
    "kind": "image",
-   "image": "m1-issue.png",
+   "image": "n1-issue.png",
    "say": "The idea, as a person wrote it",
    "seconds": 8,
    "n": 11
@@ -355,7 +355,7 @@
   },
   {
    "kind": "image",
-   "image": "m2-picked-up.png",
+   "image": "n2-picked-up.png",
    "say": "The issue is on the line and an agent is at work",
    "seconds": 8,
    "n": 12,
@@ -371,22 +371,22 @@
   },
   {
    "kind": "image",
-   "image": "m3-gate.png",
+   "image": "n3-gate.png",
    "say": "Waiting for you: the route has stopped",
    "seconds": 7,
    "n": 13
   },
   {
    "kind": "image",
-   "image": "m4-read.png",
+   "image": "n4-read.png",
    "say": "Read what the agent wrote before approving",
    "seconds": 8,
    "n": 13
   },
   {
    "kind": "image",
-   "image": "m5-approve.png",
-   "say": "Approve. The optional stop is skipped for a small change.",
+   "image": "n5-approve.png",
+   "say": "Approve. The optional stage is skipped for a small change.",
    "seconds": 8,
    "n": 13
   },
@@ -397,11 +397,11 @@
    "title": "A maker builds, a checker proves",
    "say": "Two separate sessions for every section. Then a script checks them both.",
    "seconds": 5,
-   "explain": "Every task names the skill that builds it. The factory starts a <b>maker</b> session, which builds one section and may not tick anything or write evidence. It then starts a <b>checker</b> in a different session, which never saw the maker work: it runs the section's gate against what was built, writes the evidence, and ticks the tasks only if everything passed. The factory rejects a maker that ticks its own work and a checker that edits code, and it stamps each evidence file with both session ids. Finally a script re-runs the checks itself. In this run that script caught a mismatch the checker had let through, and sent the work back to be fixed."
+   "explain": "Every task names the skill that builds it. The factory starts a <b>maker</b> session, which builds one section and may not tick anything or write evidence. It then starts a <b>checker</b> in a different session, which never saw the maker work: it runs the section's gate against what was built, writes the evidence, and ticks the tasks only if everything passed. The factory rejects a maker that ticks its own work and a checker that edits code, and it stamps each evidence file with both session ids. In this run four sections were each built in one session and proved in another, eight sessions in all, using the logic, view, page and tests skills."
   },
   {
    "kind": "chapter",
-   "kicker": "How the build stop works",
+   "kicker": "How the build stage works",
    "title": "Maker, checker, script",
    "seconds": 11,
    "one_column": true,
@@ -452,7 +452,7 @@
   },
   {
    "kind": "image",
-   "image": "m6-maker.png",
+   "image": "n6-maker.png",
    "say": "First a maker session builds the section",
    "seconds": 7,
    "n": 14,
@@ -460,7 +460,7 @@
   },
   {
    "kind": "image",
-   "image": "m7-checker.png",
+   "image": "n7-checker.png",
    "say": "Then a checker, in a different session, verifies it",
    "seconds": 7,
    "n": 14,
@@ -472,7 +472,7 @@
    "say": "The checker's evidence: expected against found",
    "seconds": 9,
    "n": 14,
-   "lines": 22,
+   "lines": 20,
    "highlight": [
     "Status: PASS",
     "\\| PASS",
@@ -493,14 +493,13 @@
   {
    "kind": "terminal",
    "file": "40-mc-log.txt",
-   "say": "Sessions alternate. Then a script catches what the checker missed.",
+   "say": "Four sections: each built in one session and proved in another",
    "where": "the factory log",
    "seconds": 11,
    "n": 14,
    "highlight": [
     "MAKER",
-    "CHECKER",
-    "found a check"
+    "CHECKER"
    ]
   },
   {
@@ -525,21 +524,21 @@
   },
   {
    "kind": "image",
-   "image": "m9-before.png",
-   "say": "The board before",
+   "image": "n9-before.png",
+   "say": "The board before: numbers only",
    "seconds": 5,
    "n": 15
   },
   {
    "kind": "image",
-   "image": "m10-after.png",
-   "say": "After: built from that one issue",
+   "image": "n10-after.png",
+   "say": "After: a progress bar, built from that one issue",
    "seconds": 8,
    "n": 15
   },
   {
    "kind": "image",
-   "image": "m11-gate2.png",
+   "image": "n11-gate2.png",
    "say": "A person approves the second gate",
    "seconds": 7,
    "n": 15
@@ -554,15 +553,15 @@
   },
   {
    "kind": "image",
-   "image": "m12-done.png",
-   "say": "Every stop done, and a pull request open",
+   "image": "n12-done.png",
+   "say": "Every stage done, and a pull request open",
    "seconds": 7,
    "n": 16,
    "background": true
   },
   {
    "kind": "image",
-   "image": "m13-pr.png",
+   "image": "n13-pr.png",
    "say": "The pull request, with the spec and the checker's evidence attached",
    "seconds": 9,
    "n": 16
@@ -650,10 +649,10 @@
   {
    "kind": "chapter",
    "kicker": "What this demo produced",
-   "title": "Five ideas in, five pull requests out",
+   "title": "Six ideas in, six pull requests out",
    "seconds": 10,
-   "say": "9 gates approved by a person. Everything else was done by agents and checked by scripts. Agent cost for all of it: $14.96.",
-   "explain": "Across two repositories and five routes, five issues became five open pull requests, each with a spec or a reproduction, a checker's evidence, and passing tests. A person approved nine gates and will decide what to merge."
+   "say": "11 gates approved by a person. Everything else was done by agents and checked by scripts. Agent cost for all of it: $16.96.",
+   "explain": "Across two repositories and five routes, six issues became six open pull requests, each with a spec or a reproduction, a checker's evidence, and passing tests. A person approved eleven gates and will decide what to merge."
   }
  ],
  "facts": [
@@ -671,29 +670,29 @@
   ],
   [
    "issues turned into pull requests",
-   5
+   6
   ],
   [
    "gates approved by a person",
-   9
+   11
   ],
   [
    "total agent cost",
-   "$14.96"
+   "$16.96"
   ]
  ],
  "links": [
   [
-   "The feature in this video: pull request #6 on the UI repository",
-   "https://github.com/sanjeev23oct/factory-demo-ui/pull/6"
+   "The feature in this video: pull request #8 on the UI repository",
+   "https://github.com/sanjeev23oct/factory-demo-ui/pull/8"
   ],
   [
    "Its issue",
-   "https://github.com/sanjeev23oct/factory-demo-ui/issues/5"
+   "https://github.com/sanjeev23oct/factory-demo-ui/issues/7"
   ],
   [
    "Its commits: maker and checker alternate",
-   "https://github.com/sanjeev23oct/factory-demo-ui/pull/6/commits"
+   "https://github.com/sanjeev23oct/factory-demo-ui/pull/8/commits"
   ],
   [
    "An earlier feature on the same route: pull request #4",
@@ -716,5 +715,5 @@
    "https://github.com/sanjeev23oct/software-factory"
   ]
  ],
- "intro": "How an idea written in an issue becomes a reviewed, tested change. This page shows a software factory being set up, a route being given its stops, gates and skills, and one idea going all the way through, built by a maker and proved by a separate checker, on real repositories."
+ "intro": "How an idea written in an issue becomes a reviewed, tested change. This page shows a software factory being set up, a route being given its stages, gates and skills, and one idea going all the way through, built by a maker and proved by a separate checker, on real repositories."
 }

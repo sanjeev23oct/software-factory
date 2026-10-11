@@ -61,11 +61,13 @@ def cat1(spec, repo):
     results, left = [], []
     for checker in sorted((spec / "loop").glob("*checker*.md")):
         env, pending = {}, None
-        in_block = False
-        for raw in checker.read_text().splitlines():
+        text = checker.read_text()
+        # Commands are usually in a fenced block. A file with no fences at all is read as commands throughout.
+        in_block = "```" not in text
+        for raw in text.splitlines():
             line = raw.strip()
             if line.startswith("```"):
-                in_block, pending = line == "```bash", None
+                in_block, pending = (not in_block) if line == "```" else line in ("```bash", "```sh", "```shell"), None
                 continue
             if not in_block or not line:
                 continue

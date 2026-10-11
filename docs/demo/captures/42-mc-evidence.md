@@ -1,26 +1,28 @@
 Status: PASS
 
-# Evidence: section 2, page (`src/main.js`)
+# Evidence: section 2, view
 
 | Check | Expected | Found | Result |
 | --- | --- | --- | --- |
-| grep -c 'filterButtonText' src/main.js | at least 2 | 2 | PASS |
-| grep -c 'filterButtonAriaLabel' src/main.js | at least 2 | 2 | PASS |
-| grep -c "setAttribute('aria-label'" src/main.js | at least 1 | 1 | PASS |
-| grep -c 'aria-pressed' src/main.js | at least 1 | 1 | PASS |
-| grep -c 'summary(tasks)' src/main.js | at least 1 | 1 | PASS |
+| grep -c "export function renderProgress" src/render.js | 1 | 1 | PASS |
+| grep -c 'data-testid="progress-bar"' src/render.js | 1 | 1 | PASS |
+| grep -c 'data-testid="progress-label"' src/render.js | 1 | 1 | PASS |
+| grep -c 'role="progressbar"' src/render.js | 1 | 1 | PASS |
+| grep -c 'aria-valuemin="0"' src/render.js | 1 | 1 | PASS |
+| grep -c 'aria-valuemax="100"' src/render.js | 1 | 1 | PASS |
+| grep -c 'aria-valuenow' src/render.js | 1 | 1 | PASS |
+| grep -c 'aria-valuetext' src/render.js | 1 | 1 | PASS |
+| grep -c "export function renderSummary" src/render.js | 1 | 1 | PASS |
+| grep -c "export function renderTask" src/render.js | 1 | 1 | PASS |
 | node --test | all pass | 7 pass, 0 fail | PASS |
 
-## Sub-item review (reading `src/main.js` and `git diff 418b537 e604a31 -- src/main.js`)
+## Manual review of sub-items (src/render.js)
 
-- 2.1.1: line 1 is exactly `import { filterButtonAriaLabel, filterButtonText, sortTasks, summary, visibleTasks } from './board.js';` — PASS
-- 2.2.1: `const totals = summary(tasks);` is computed once, then `countsByFilter = { all: totals.total, open: totals.open, done: totals.done }`; each button's `count` is read from `countsByFilter[button.dataset.filter]`, never from `visibleTasks(tasks, filter)` — PASS
-- 2.2.2: label is `button.dataset.filter.charAt(0).toUpperCase() + button.dataset.filter.slice(1)` (`'all'`→`'All'` etc.), and `button.textContent = filterButtonText(label, count)` — PASS
-- 2.2.3: `button.setAttribute('aria-label', filterButtonAriaLabel(label, count))` uses the same `label`/`count` as 2.2.2 — PASS
-- 2.2.4: `button.setAttribute('aria-pressed', String(button.dataset.filter === filter))` is unchanged from the prior version (same expression, same place); the click handler (`filter = button.dataset.filter; draw();`) is untouched in the diff; `counts.innerHTML = renderSummary(totals)` where `totals = summary(tasks)` is equivalent to the prior `renderSummary(summary(tasks))` — PASS
-- 2.2.5: `draw()` never references `data-testid` or sets/removes `data-filter`; confirmed `index.html` lines 14-16 still carry both attributes, untouched by the diff — PASS
-
-`git show --stat HEAD` confirms only `src/main.js` was changed (1 file, 14 lines) — nothing outside this section's named file was touched.
+- 2.1.1: `renderProgress` emits a `<div>` with `data-testid="progress-bar"`, `role="progressbar"`, `aria-valuemin="0"`, `aria-valuemax="100"`, `aria-valuenow="${percent}"` and `aria-valuetext="${safeLabel}"` (label run through `escapeHtml`, consistent with the project's text-escaping convention). PASS
+- 2.1.2: a nested `<div class="progress-fill" style="width: ${percent}%">` reflects `percent` via inline style (e.g. 33 → `width: 33%`). PASS
+- 2.1.3: a `<span class="progress-label" data-testid="progress-label">${safeLabel}</span>` carries the label text exactly (escaped form decodes to the original string when parsed as HTML). PASS
+- 2.1.4: output is built by plain string interpolation with no conditional that hides/removes the bar at `percent` 0 — e.g. `percent: 0` yields `aria-valuenow="0"` and `width: 0%`, bar and testid still present. PASS
+- 2.1.5: `git diff HEAD~1 HEAD -- src/render.js` shows the change is a pure addition of `renderProgress`; `renderSummary` and `renderTask` are byte-for-byte unchanged. PASS
 
 ---
-_Stamped by the factory: this evidence was written by the checker in session `c6b3fbbc`, a different session from the maker's (`1014d1e2`). It checks the maker's commit `e604a31`._
+_Stamped by the factory: this evidence was written by the checker in session `9a6128bf`, a different session from the maker's (`be55b857`). It checks the maker's commit `e584623`._

@@ -20,7 +20,7 @@ ROUTES = [  # sample, display name, what it is for, colour token
     ("bugfix", "Bug fix", "Bug reports", "r4"),
 ]
 STARTS = {"file": "a file", "github": "GitHub", "gitlab": "GitLab", "jira": "Jira"}
-# Where each stop sits on the map, so the same stop lines up across routes.
+# Where each stage sits on the map, so the same stop lines up across routes.
 COLUMN = {"requirements": 1, "reproduce": 1, "approve-requirements": 2, "design": 3, "visual-spec": 3,
           "approve-design": 4, "tasks": 5, "build": 6, "fix": 6, "verify": 7, "review": 8,
           "approve-screens": 9, "approve-fix": 9, "merge-request": 10}
@@ -90,7 +90,7 @@ def route_map():
     parts.append("".join(mine) + "</g>")
     height = Y0 + len(ROUTES) * ROW + 62
     return ('<svg class="map" viewBox="0 0 1124 {}" role="img" aria-label="Route map of the four sample factories, '
-            'showing each stage as a stop and each human approval as a ringed stop">{}</svg>').format(height, "".join(parts))
+            'showing each stage as a stage and each human approval as a ringed stage">{}</svg>').format(height, "".join(parts))
 
 
 def route_cards():
@@ -101,7 +101,7 @@ def route_cards():
         work = sum(1 for _, _, kind in stops if kind in ("stop", "optional")) - 1
         cards.append(
             '<button type="button" class="rcard {}" data-route="{}" aria-pressed="false"><span class="swatch"></span>'
-            '<b>{}</b><span>{}</span><span class="meta">from {} · {} stops · gates: {}</span></button>'.format(
+            '<b>{}</b><span>{}</span><span class="meta">from {} · {} stages · gates: {}</span></button>'.format(
                 colour, sample, name, purpose, STARTS[definition["source"]["type"]], work, ", ".join(yours)))
     return "".join(cards)
 
@@ -271,7 +271,7 @@ SCRIPT = """
 
 KEY = (
     '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
-    '<circle cx="13" cy="13" r="6" fill="var(--paper)" stroke="var(--muted)" stroke-width="3.5"/></svg>Stop: a stage agents complete</span>'
+    '<circle cx="13" cy="13" r="6" fill="var(--paper)" stroke="var(--muted)" stroke-width="3.5"/></svg>Stage: work agents complete</span>'
     '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
     '<circle cx="13" cy="13" r="10" fill="var(--paper)" stroke="var(--ink)" stroke-width="3.5"/></svg>Gate: a person approves</span>'
     '<span><svg viewBox="0 0 26 26"><path d="M0 13H26" stroke="var(--muted)" stroke-width="5"/>'
@@ -291,7 +291,7 @@ def body():
 
 <header class="hero" id="top">
   <div><span class="eyebrow">A software factory for any team</span><h1>Map the route. Agents drive it.</h1></div>
-  <div><p>Lay out the stops between a request and a merge. Set gates where a person must approve. The factory runs the rest.</p>
+  <div><p>Lay out the stages between a request and a merge. Set gates where a person must approve. The factory runs the rest.</p>
     <div class="cta"><a class="btn solid" href="#start">Get started</a><a class="btn" href="%(repo)s">GitHub</a></div></div>
 </header>
 
@@ -299,7 +299,7 @@ def body():
   <div class="board-top"><h2>Example routes</h2><div class="key">%(key)s</div></div>
   <div class="scroll">%(map)s</div>
   <div class="rcards">%(cards)s</div>
-  <span class="hint">These four are examples. The factory is not tied to UI, backend, or any stack: a route is whatever stops and gates your work needs. Select one to trace it.</span>
+  <span class="hint">These four are examples. The factory is not tied to UI, backend, or any stack: a route is whatever stages and gates your work needs. Select one to trace it.</span>
 </div>
 
 <section id="pillars">
@@ -307,8 +307,8 @@ def body():
   <div class="pillars">
     <div class="pillar r1"><span>01</span><h3>One line</h3><p>Every request travels the same defined route. No improvising.</p></div>
     <div class="pillar r2"><span>02</span><h3>Gates</h3><p>The line stops at named points until a person approves.</p></div>
-    <div class="pillar r3"><span>03</span><h3>Standard work</h3><p>Each stop follows a written skill, so the work is done the same way each time.</p></div>
-    <div class="pillar r4"><span>04</span><h3>Proof at every stop</h3><p>Work moves on only with evidence that it passed its checks.</p></div>
+    <div class="pillar r3"><span>03</span><h3>Standard work</h3><p>Each stage follows a written skill, so the work is done the same way each time.</p></div>
+    <div class="pillar r4"><span>04</span><h3>Proof at every stage</h3><p>Work moves on only with evidence that it passed its checks.</p></div>
     <div class="pillar r1"><span>05</span><h3>A full record</h3><p>Every move is logged: what ran, what passed, when each gate opened.</p></div>
     <div class="pillar r2"><span>06</span><h3>Open by design</h3><p>Any tracker, any stack, any coding agent. Routes and skills are plain files.</p></div>
   </div>
@@ -318,10 +318,10 @@ def body():
   <div class="duo">
     <div class="points">
       <h2>Draw your own route</h2>
-      <div class="point r1"><i></i><h3>Add, remove or reorder stops</h3><p>A route is a short list in one file.</p></div>
+      <div class="point r1"><i></i><h3>Add, remove or reorder stages</h3><p>A route is a short list in one file.</p></div>
       <div class="point r2"><i></i><h3>Put gates where you want them</h3><p>Before design, after the build, or only at the end.</p></div>
       <div class="point r3"><i></i><h3>Start from your tracker</h3><p>GitHub, GitLab, Jira, or a plain file.</p></div>
-      <div class="point r4"><i></i><h3>Teach each stop your way</h3><p>Every stop follows a skill you can rewrite.</p></div>
+      <div class="point r4"><i></i><h3>Teach each stage your way</h3><p>Every stage follows a skill you can rewrite.</p></div>
     </div>
     <pre class="code"><span class="c">// targets/shop/factory.json</span>
 <span class="k1">"source"</span>: { "type": "github", "repo": "acme/shop" },
@@ -351,10 +351,10 @@ def body():
       <div class="ticket-foot">Example ticket, for illustration</div>
     </div>
     <div class="points">
-      <h2>Every stop stamps a ticket</h2>
+      <h2>Every stage stamps a ticket</h2>
       <div class="point r2"><i></i><h3>One builds, another checks</h3><p>The agent that did the work never marks its own homework.</p></div>
       <div class="point r2"><i></i><h3>Expected against found</h3><p>Each check is written down with its result.</p></div>
-      <div class="point r2"><i></i><h3>No ticket, no progress</h3><p>Unproven work is sent back to the stop that did it.</p></div>
+      <div class="point r2"><i></i><h3>No ticket, no progress</h3><p>Unproven work is sent back to the stage that did it.</p></div>
     </div>
   </div>
 </section>
@@ -374,7 +374,7 @@ def body():
     <div><h3>Running today</h3><ul><li>Example routes to start from, or a blank one</li><li>Issues from GitHub, GitLab, or a file</li>
       <li>A background job that picks up work unattended</li><li>Gates you approve from a page</li><li>Unproven work sent back automatically</li>
       <li>Pull and merge requests opened for you to merge</li><li>Pull requests reviewed: process first, then code</li>
-      <li>An editor for routes and review rules</li><li>Built-in runner for Claude Code; any agent can take a stop by hand-off</li></ul></div>
+      <li>An editor for routes and review rules</li><li>Built-in runner for Claude Code; any agent can take a stage by hand-off</li></ul></div>
     <div class="later"><h3>Not built yet</h3><ul><li>Approving a gate from the tracker itself</li><li>Commenting progress on the issue</li>
       <li>Jira, tested against a real instance</li><li>Built-in runners for other coding agents</li><li>A host that is always on: a laptop that sleeps stops the line</li></ul></div>
   </div>
