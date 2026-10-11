@@ -117,7 +117,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
 <body>
 <div class="bar"><div class="wrap">
   <h1>Factory</h1>
-  <nav class="tabs"><a href="/" aria-current="page">Route</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
+  <nav class="tabs"><a href="/" aria-current="page">Route</a><a href="/skills">Skills</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
   <label class="pick">Route <select id="target" aria-label="Route"></select></label>
   <button class="btn ghost" id="new">Add a repository</button>
   <span class="grow" id="state" role="status"></span>
@@ -243,6 +243,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       var what = s.by === 'human' ? 'Waits here until a person approves.' : (skills[s.skill] || '');
       var opts = '';
       if (s.by === 'agent') { opts += '<label><input type="checkbox" data-i="' + i + '" data-k="optional"' + (s.optional ? ' checked' : '') + '>Optional: can be skipped when approving</label>'; }
+      if (s.by === 'agent' && s.until) { opts += '<label><input type="checkbox" data-i="' + i + '" data-k="checker"' + (s.checker ? ' checked' : '') + '>Maker and checker: verified by a checker in a separate session, who writes the evidence</label>'; }
       if (s.by === 'script' && !s.intake) {
         opts += '<label>If it fails, go back to <select data-i="' + i + '" data-k="on_fail"><option value="">nowhere: wait for a person</option>' +
           earlier.map(function (e) { return '<option value="' + esc(e.id) + '"' + (s.on_fail === e.id ? ' selected' : '') + '>' + esc(pretty(e.id)) + '</option>'; }).join('') + '</select></label>';
@@ -325,6 +326,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       var s = def.stages[+t.dataset.i], k = t.dataset.k;
       if (k === 'id') { rename(+t.dataset.i, t.value); }
       else if (k === 'optional') { if (t.checked) { s.optional = true; } else { delete s.optional; } }
+      else if (k === 'checker') { if (t.checked) { s.checker = { agent: 'checker', skill: 'check-tasks' }; } else { delete s.checker; } }
       else if (k === 'enabled') { if (t.checked) { delete s.enabled; } else { s.enabled = false; } }
       else if (k === 'on_fail') { if (t.value) { s.on_fail = t.value; } else { delete s.on_fail; } }
       drawRoute(); drawStops(); setState();

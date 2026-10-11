@@ -86,7 +86,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
 <body>
 <div class="bar"><div class="wrap">
   <h1>Factory</h1>
-  <nav class="tabs"><a href="/">Route</a><a href="/rules">Review rules</a><a href="/activity" aria-current="page">Activity</a></nav>
+  <nav class="tabs"><a href="/">Route</a><a href="/skills">Skills</a><a href="/rules">Review rules</a><a href="/activity" aria-current="page">Activity</a></nav>
 </div></div>
 
 <div class="wrap"><main>
@@ -152,7 +152,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
     put('items', data.items.length ? data.items.map(function (i) {
       return '<div class="item"><div class="item-top"><span class="state ' + i.status + '">' + LABEL[i.status] + '</span><b>' + esc(i.title) + '</b>' +
         '<span class="id">' + esc(i.factory) + ' · ' + esc(i.id) + '</span></div>' +
-        '<div class="track">' + i.track.map(function (t) { return '<span class="' + t.state + (t.by === 'human' ? ' human' : '') + '">' + esc(t.by === 'human' ? 'gate: ' + pretty(t.id) : pretty(t.id)) + '</span>'; }).join('') + '</div>' +
+        '<div class="track">' + i.track.map(function (t) { return '<span class="' + t.state + (t.by === 'human' ? ' human' : '') + '">' + esc(t.by === 'human' ? 'gate: ' + pretty(t.id) : pretty(t.id) + (t.role ? ' · ' + t.role + ' session' : '')) + '</span>'; }).join('') + '</div>' +
         '<div class="meta">Last moved ' + ago(i.updated) + (i.cost ? ' · agent cost $' + i.cost.toFixed(2) : '') +
         (i.link ? ' · <a href="' + esc(i.link) + '">' + esc(i.link.replace('https://', '')) + '</a>' : '') + '</div></div>';
     }).join('') : '<p class="empty">No work has come in yet.</p>');

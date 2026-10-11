@@ -10,8 +10,11 @@
   "build_skills": [
     "build-backend",
     "build-db",
-    "build-ui",
-    "build-tests"
+    "build-ui-logic",
+    "build-ui-view",
+    "build-ui-page",
+    "build-tests",
+    "check-tasks"
   ],
   "stages": [
     {
@@ -81,7 +84,11 @@
       "by": "agent",
       "skill": "build-tasks",
       "agent": "builder",
-      "until": "all-tasks-ticked"
+      "until": "all-tasks-ticked",
+      "checker": {
+        "agent": "checker",
+        "skill": "check-tasks"
+      }
     },
     {
       "id": "check-evidence",

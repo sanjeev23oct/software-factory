@@ -1,22 +1,24 @@
 ---
 name: build-tasks
-description: Build every unticked task of a work item with a maker and an independent checker, writing evidence for each gate.
+description: Maker: build one section of tasks.md, using the skill each task names. Never ticks a task or writes evidence.
 ---
-# build-tasks
+# build-tasks (the maker)
 
-Work through `<spec folder>/tasks.md` from the first unticked box. You are the harness: you dispatch makers and checkers and you write no feature code yourself.
+You are the maker. The prompt names one section of `<spec folder>/tasks.md`. Build that section and stop.
 
-For each section:
+1. Read the requirements, the design if there is one, and the section you were given.
+2. For each unticked task in the section, in order:
+   - Open the skill the task names (`→ run: /skill`) in this route's skills folder and follow it.
+   - Build exactly what the task and its sub-items say. Where the spec leaves a detail out, stop and say so; do not invent it.
+3. Run the presubmit command the prompt names. It must pass.
+4. Report what you built, file by file.
 
-1. **Maker.** For each unticked task, start a subagent with the skill the task names and the task's lines from `tasks.md`. One task, one maker.
-2. **Checker.** When the section's tasks are built, start a fresh subagent that has not seen the maker's work. It runs the gate: every Cat 1 check in `loop/*-checker.md` against its EXPECTED value, then the Cat 3 command. It writes the evidence file the gate names, as a table of check, expected, actual, result, with a first line `Status: PASS` or `Status: FAIL`.
-3. **Tick** the section's boxes only when the evidence says PASS. On FAIL, send the findings to a maker, then check again. Stop after three failed attempts on one section and report it.
+## What you must not do
 
-Rules:
+- Do not tick any box in `tasks.md`.
+- Do not write anything under `evidence/`.
+- Do not run the section's gate and report it as passed.
 
-- A maker never runs the gate and never writes evidence. A checker never edits feature code.
-- Never tick a box with a note that the check was skipped or deferred.
-- Never invent a detail the spec does not give. Stop and report it.
-- If `factory_feedback.md` exists, the factory's own evidence check rejected the last attempt. Fix every finding in it first.
+A checker in a separate session, which has not seen you work, will run the gate against what you built and write the evidence. The factory rejects a maker that ticks tasks or writes evidence.
 
-When you finish, a script re-reads the evidence and re-runs the Cat 1 checks itself.
+If `factory_feedback.md` exists, the checker or a script rejected the last attempt at this section. Fix every finding in it first. If a finding says a check in `loop/` is itself wrong, correct that check and say why.

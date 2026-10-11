@@ -1,0 +1,183 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Factory Skills</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a sticky bar; a short explanation; maker skills (the ones tasks name) first; then the skills stops use; then three ways to add one. */
+:root {
+  --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5; --field: #ffffff;
+  --route: #1f5fd0; --maker: #12905a; --maker-bg: #dff3e9; --stop: #5d6b7e; --stop-bg: #e6eaf0; --ok: #12905a; --bad: #c2362b; --bad-bg: #fbe4e1; --warn: #a66300;
+  --display: "Barlow Condensed", "Arial Narrow", Arial, sans-serif;
+  --body: "Barlow", "Helvetica Neue", Arial, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a; --field: #0b121c;
+    --route: #6aa0ff; --maker: #4fd09a; --maker-bg: #0f3324; --stop: #92a0b3; --stop-bg: #1c2838; --ok: #4fd09a; --bad: #ff8a80; --bad-bg: #3d1714; --warn: #ffb84d;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0b121c; --paper: #121c2a; --ink: #e8eef7; --muted: #92a0b3; --line: #26344a; --field: #0b121c;
+  --route: #6aa0ff; --maker: #4fd09a; --maker-bg: #0f3324; --stop: #92a0b3; --stop-bg: #1c2838; --ok: #4fd09a; --bad: #ff8a80; --bad-bg: #3d1714; --warn: #ffb84d;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
+.wrap { max-width: 960px; margin: 0 auto; padding-inline: 20px; }
+h1, h2, h3, p { margin: 0; }
+h1 { font: 700 26px/1 var(--display); text-transform: uppercase; letter-spacing: 0.02em; }
+h2 { font: 700 30px/1 var(--display); text-transform: uppercase; }
+button, input, select, textarea { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 3px solid var(--route); outline-offset: 2px; }
+.bar { position: sticky; top: 0; z-index: 5; background: var(--bg); border-bottom: 1px solid var(--line); }
+.bar .wrap { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; padding-block: 14px; }
+.tabs { display: flex; gap: 4px; background: var(--paper); border: 1px solid var(--line); border-radius: 99px; padding: 3px; }
+.tabs a { text-decoration: none; padding: 6px 14px; border-radius: 99px; font-weight: 600; font-size: 15px; color: var(--muted); }
+.tabs a[aria-current] { background: var(--ink); color: var(--bg); }
+.pick { display: flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; color: var(--muted); }
+select, input[type=text] { padding: 8px 10px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); min-width: 0; max-width: 100%; }
+textarea { width: 100%; padding: 10px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--field); font: 13px/1.6 var(--mono); resize: vertical; }
+input.mono { font: 14px var(--mono); }
+#state { font-size: 14px; color: var(--muted); flex: 1; min-width: 0; }
+#state.bad { color: var(--bad); } #state.good { color: var(--ok); }
+.btn { padding: 9px 16px; border-radius: 99px; border: 2px solid var(--ink); background: var(--ink); color: var(--bg); font-weight: 600; }
+.btn.ghost { background: transparent; color: var(--ink); }
+.btn:disabled { opacity: 0.4; cursor: default; }
+.x { border: 0; background: transparent; color: var(--muted); font-size: 14px; text-decoration: underline; padding: 2px; }
+
+main { display: grid; gap: 18px; padding-block: 22px 60px; }
+.panel { background: var(--paper); border: 1px solid var(--line); border-radius: 16px; padding: 22px; display: grid; gap: 14px; min-width: 0; }
+.panel > header { display: grid; gap: 4px; } .panel > header p { color: var(--muted); font-size: 15px; max-width: 70ch; }
+.skill { border: 1px solid var(--line); border-radius: 12px; background: var(--bg); min-width: 0; }
+.skill summary { list-style: none; cursor: pointer; padding: 14px 16px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 14px; align-items: center; }
+.skill summary::-webkit-details-marker { display: none; }
+.skill summary b { font: 600 17px var(--mono); overflow-wrap: anywhere; }
+.skill summary span { grid-column: 1; color: var(--muted); font-size: 14px; }
+.kind { grid-row: span 2; font: 700 12px var(--display); letter-spacing: 0.1em; text-transform: uppercase; padding: 3px 10px; border-radius: 99px; white-space: nowrap; }
+.kind.maker { background: var(--maker-bg); color: var(--maker); } .kind.stop { background: var(--stop-bg); color: var(--stop); } .kind.idle { border: 1px dashed var(--line); color: var(--muted); }
+.fits { grid-column: 1; font: 13px var(--mono); color: var(--route); }
+.edit { padding: 0 16px 16px; display: grid; gap: 12px; }
+.field { display: grid; gap: 4px; min-width: 0; } .field label { font-size: 14px; font-weight: 600; } .field small { color: var(--muted); font-size: 13px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.adds { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 10px; }
+.add { border: 1.5px dashed var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.add b { font-weight: 600; } .add span { font-size: 14px; color: var(--muted); }
+.add .row > :first-child { flex: 1 1 140px; min-width: 0; }
+.empty { color: var(--muted); font-size: 15px; }
+</style>
+</head>
+<body>
+<div class="bar"><div class="wrap">
+  <h1>Factory</h1>
+  <nav class="tabs"><a href="/">Route</a><a href="/skills" aria-current="page">Skills</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
+  <label class="pick">Route <select id="target" aria-label="Route"></select></label>
+  <span id="state" role="status"></span>
+</div></div>
+
+<div class="wrap"><main>
+  <section class="panel">
+    <header><h2>Maker skills</h2><p>These are the skills a task can name. When the tasks are written, each task is given the one skill that fits the files it touches, and a script rejects a task that names the wrong one. Say what each skill is for.</p></header>
+    <div id="makers" style="display:grid;gap:10px"></div>
+  </section>
+
+  <section class="panel">
+    <header><h2>Stop skills</h2><p>The skill each stop on the route follows, including the checker that verifies the maker's work in a separate session.</p></header>
+    <div id="stops" style="display:grid;gap:10px"></div>
+  </section>
+
+  <section class="panel">
+    <header><h2>Add a skill</h2><p>A skill is a short document that says how to do one job. Bring one in, or write your own.</p></header>
+    <div class="adds">
+      <div class="add"><b>From the library</b><span id="lib-about">Ready-made skills that come with the factory.</span>
+        <div class="row"><select id="lib" aria-label="Library skill"></select><button class="btn ghost" data-add="library">Add</button></div></div>
+      <div class="add"><b>From this repository</b><span id="repo-about">Skills the team already keeps in the repository.</span>
+        <div class="row"><select id="repo" aria-label="Repository skill"></select><button class="btn ghost" data-add="repo">Add</button></div></div>
+      <div class="add"><b>Write a new one</b><span>Start a maker skill for one kind of file.</span>
+        <div class="row"><input type="text" id="newname" class="mono" placeholder="build-…" aria-label="New skill name"><button class="btn ghost" id="create">Start</button></div></div>
+    </div>
+  </section>
+</main></div>
+
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var data = null, opened = {};
+  var TEMPLATE = '# NAME\n\nBuild exactly the one task you were given, as its lines in `tasks.md` and the design describe it. Read the engineering guide and two neighbouring files of the same kind first, and match them.\n\n(Say here how this kind of file is built in this repository: the conventions, what to reuse, what never to do.)\n\nYou are the maker. Do not tick the task, do not run the section\'s gate, and do not write evidence. Report what you built and anything the spec left undefined.\n';
+  function esc(s) { var d = document.createElement('div'); d.textContent = s == null ? '' : s; return d.innerHTML.replace(/"/g, '&quot;'); }
+  function call(path, body) {
+    return fetch(path, body ? { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Factory-Editor': '1' }, body: JSON.stringify(body) } : undefined).then(function (r) { return r.json(); });
+  }
+  function say(text, kind) { $('state').className = kind || ''; $('state').textContent = text; }
+
+  function card(s) {
+    var kind = s.maker ? '<span class="kind maker">Maker skill</span>' : s.used_by.length ? '<span class="kind stop">Stop: ' + esc(s.used_by.join(', ')) + '</span>' : '<span class="kind idle">Not used</span>';
+    return '<details class="skill" data-name="' + esc(s.name) + '"' + (opened[s.name] ? ' open' : '') + '><summary><b>/' + esc(s.name) + '</b>' + kind +
+      '<span>' + esc(s.description) + '</span>' + (s.maker ? '<span class="fits">' + (s.applies_to ? 'for ' + esc(s.applies_to) : 'not yet told which files it is for') + '</span>' : '') + '</summary>' +
+      '<div class="edit"><div class="field"><label>What it is for, in one line</label><input type="text" data-f="description" value="' + esc(s.description) + '"></div>' +
+      (s.maker ? '<div class="field"><label>Files it is for</label><input type="text" class="mono" data-f="applies_to" value="' + esc(s.applies_to) + '" placeholder="e.g. src/board.js, src/logic/*.js">' +
+        '<small>Comma separated. A task that touches one of these files must name this skill.</small></div>' : '') +
+      '<div class="field"><label>Instructions the agent follows</label><textarea rows="12" spellcheck="false" data-f="body">' + esc(s.body) + '</textarea></div>' +
+      '<div class="row"><button class="btn" data-save="' + esc(s.name) + '">Save this skill</button>' +
+      (s.used_by.length ? '' : '<button class="x" data-remove="' + esc(s.name) + '">Remove</button>') + '</div></div></details>';
+  }
+  function options(id, list, none) {
+    $(id).innerHTML = list.length ? list.map(function (s) { return '<option value="' + esc(s.name) + '" title="' + esc(s.description) + '">' + esc(s.name) + '</option>'; }).join('') : '<option value="">' + none + '</option>';
+    $(id).parentNode.querySelector('button').disabled = !list.length;
+  }
+  function draw() {
+    var makers = data.skills.filter(function (s) { return s.maker; }), rest = data.skills.filter(function (s) { return !s.maker; });
+    $('makers').innerHTML = makers.length ? makers.map(card).join('') : '<p class="empty">This route has no maker skills yet. Add some below; tasks need them.</p>';
+    $('stops').innerHTML = rest.map(card).join('');
+    options('lib', data.library, 'Nothing left to add');
+    options('repo', data.repo, 'None found in .claude/skills');
+    $('repo-about').textContent = data.repo.length ? 'Skills the team already keeps in ' + data.repo_path.split('/').pop() + '/.claude/skills.' : 'This repository has no .claude/skills folder yet.';
+  }
+  function load(name, then) {
+    return call('/api/skills?target=' + encodeURIComponent(name)).then(function (d) {
+      if (d.error) { say(d.error, 'bad'); return; }
+      data = d; draw(); if (then) { then(); }
+    });
+  }
+  function done(result, message, open) {
+    if (result.error) { say(result.error, 'bad'); return; }
+    if (open) { opened[open] = true; }
+    load($('target').value, function () { say(message, 'good'); });
+  }
+
+  document.addEventListener('toggle', function (e) { if (e.target.dataset && e.target.dataset.name) { opened[e.target.dataset.name] = e.target.open; } }, true);
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest('button'); if (!b || !data) { return; }
+    var target = $('target').value;
+    if (b.dataset.save) {
+      var box = b.closest('.skill'), get = function (f) { var el = box.querySelector('[data-f=' + f + ']'); return el ? el.value : ''; };
+      call('/api/skills/save', { target: target, name: b.dataset.save, description: get('description'), applies_to: get('applies_to'), body: get('body') })
+        .then(function (r) { done(r, 'Saved /' + b.dataset.save, b.dataset.save); });
+    } else if (b.dataset.remove) {
+      call('/api/skills/remove', { target: target, name: b.dataset.remove }).then(function (r) { done(r, 'Removed /' + b.dataset.remove); });
+    } else if (b.dataset.add) {
+      var name = $(b.dataset.add === 'library' ? 'lib' : 'repo').value; if (!name) { return; }
+      call('/api/skills/add', { target: target, source: b.dataset.add, name: name }).then(function (r) { done(r, 'Added /' + name + '. Say which files it is for.', name); });
+    } else if (b.id === 'create') {
+      var fresh = $('newname').value.trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); if (!fresh) { $('newname').focus(); return; }
+      if (fresh.indexOf('build-') !== 0) { fresh = 'build-' + fresh; }
+      call('/api/skills/save', { target: target, name: fresh, description: 'Maker skill: build one ' + fresh.replace('build-', '').replace(/-/g, ' ') + ' artifact. Named by tasks in tasks.md.',
+        applies_to: '', body: TEMPLATE.replace('NAME', fresh) }).then(function (r) { $('newname').value = ''; done(r, 'Started /' + fresh + '. Fill in its instructions.', fresh); });
+    }
+  });
+  $('target').addEventListener('change', function () { opened = {}; say(''); load($('target').value); });
+  call('/api/routes').then(function (d) {
+    var pick = decodeURIComponent(location.hash.slice(1));
+    $('target').innerHTML = d.targets.map(function (t) { return '<option' + (t === pick ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
+    if (d.targets.length) { load($('target').value); } else { say('No route yet. Add a repository on the Route tab.', 'bad'); }
+  });
+})();
+</script>
+</body>
+</html>

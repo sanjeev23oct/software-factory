@@ -119,17 +119,28 @@ Then edit `targets/shop/factory.json`, `AGENTS.md` and `presubmit`.
 
     python3 factory/editor.py
 
-opens a local page with two tabs. **Route** shows the stops and gates as a
-list you reorder, switch on or off, and add to, with a drawing of the route
-that updates as you edit. **Review rules** sets how strict each process check
-is, lets you add your own rules by filling in a sentence, and can try them on
-a real merge request before you save. It serves on 127.0.0.1 only.
-[docs/index.html](docs/index.html) explains the concept and walks through
-creating a factory. `python3 factory/scripts/build_docs.py` regenerates it
-from the samples.
+opens a local page with four tabs. It serves on 127.0.0.1 only.
 
-Jira reading is written but has not been run against a real Jira. Nothing
-writes back to GitHub, GitLab or Jira.
+- **Route**: add a repository, then arrange its stops and gates, with a
+  drawing of the route that updates as you edit. Set what triggers it, the
+  team's rules, and the commands that prove a change.
+- **Skills**: the skills the route's agents follow. Add them from the
+  library, import the ones a repository keeps in `.claude/skills`, or write
+  your own, and say which files each maker skill is for.
+- **Review rules**: how strict each process check is, plus your own rules.
+- **Activity**: whether the factory is running in the background, where
+  every item is on its route, and the gates waiting for you, with an
+  Approve button.
+
+### Maker and checker
+
+A build stop is done by two separate sessions. A maker builds one section of
+`tasks.md`, using the skill each task names. A checker, in a different
+session that never saw the maker work, runs the section's gate, writes the
+evidence, and ticks the tasks only if everything passed. `flow.py` enforces
+the split: a maker that ticks a task or writes evidence is rejected and its
+work rolled back, and so is a checker that changes code. It stamps each
+evidence file with both session ids, and a script then re-runs the checks.
 
 ## Maintainer commands
 

@@ -41,6 +41,7 @@ DEFAULT_TARGET = "tasklite"
 MAX_REVIEW_ROUNDS = 3
 BUDGET_USD = os.environ.get("FACTORY_MAX_BUDGET_USD", "3")
 MODEL = os.environ.get("FACTORY_MODEL")
+LAST_SESSION = None
 AGENT_TIMEOUT = int(os.environ.get("FACTORY_AGENT_TIMEOUT_MINUTES", "45")) * 60
 
 PRIMARY_TYPES = ("agent:bug", "agent:feature", "agent:documentation", "agent:security")
@@ -692,6 +693,8 @@ def run_headless(task):
         raise FactoryError("claude gave no JSON:\n{}".format((proc.stdout + proc.stderr)[-2000:]))
     if data.get("is_error"):
         raise FactoryError("{} agent failed: {}".format(task["agent"], str(data.get("result"))[:2000]))
+    global LAST_SESSION
+    LAST_SESSION = data.get("session_id")   # each run is its own session; the flow engine records which one did what
     return data.get("total_cost_usd")
 
 

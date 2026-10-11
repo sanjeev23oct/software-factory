@@ -4,6 +4,7 @@
     python3 factory/editor.py [--port 8787] [--no-open]
 
   /        the route: where work comes from, the stops, the gates, the limits
+  /skills  the skills a route's agents follow: add, import, edit
   /rules   the process rules a merge request is checked against
   /activity   what the factory is doing now, and the gates waiting for a person
 
@@ -34,6 +35,7 @@ import flow  # noqa: E402
 
 TARGETS = HOME / "targets"
 PAGES = {"/": HOME / "factory" / "editor_route.html", "/rules": HOME / "factory" / "editor_rules.html",
+         "/skills": HOME / "factory" / "editor_skills.html",
          "/activity": HOME / "factory" / "editor_activity.html"}
 JOB = "com.software-factory.tick"
 # flow keeps the current factory in module state, so only one request may use it at a time.
@@ -76,6 +78,9 @@ def activity():
                 at = order.index(item["stage"]) if item["stage"] in order else 0
                 track = [{"id": s["id"], "by": s["by"], "state": "done" if i < at or item["status"] == "done" else "now" if i == at else "todo"}
                          for i, s in enumerate(route)]
+                if route[at].get("checker") and item["status"] == "pending":
+                    # Say whose turn it is: the maker's session or the checker's.
+                    track[at]["role"] = "checker" if item.get("phase") == "check" else "maker"
                 waiting = None
                 if item["status"] == "waiting":
                     # What the person is approving: whatever the agents wrote since the previous gate.
@@ -140,6 +145,84 @@ def library(home, definition):
     return stops
 
 
+def read_skill(path):
+    """A SKILL.md as its parts: the front matter fields the editor shows, and the instructions."""
+    text = path.read_text()
+    meta, body = {}, text
+    if text.startswith("---"):
+        _, front, body = text.split("---", 2)
+        for line in front.splitlines():
+            key, _, value = line.partition(":")
+            if value:
+                meta[key.strip()] = value.strip()
+    return {"name": path.parent.name, "description": meta.get("description", ""), "applies_to": meta.get("applies_to", ""),
+            "body": body.strip()}
+
+
+def skills_of(name):
+    """Everything the Skills page shows for one route."""
+    home = route_dir(name)
+    definition = json.loads((home / "factory.json").read_text())
+    used = {}
+    for stage in definition["stages"]:
+        for skill in (stage.get("skill"), (stage.get("checker") or {}).get("skill")):
+            if skill:
+                used.setdefault(skill, []).append(stage["id"])
+    mine = []
+    for path in sorted((home / "skills").glob("*/SKILL.md")):
+        entry = read_skill(path)
+        entry["used_by"] = used.get(entry["name"], [])
+        entry["maker"] = entry["name"].startswith("build-") and entry["name"] != "build-tasks"
+        mine.append(entry)
+    have = {s["name"] for s in mine}
+    repo = Path(json.loads((home / "target.json").read_text())["repo"])
+    brief = lambda folder: [{"name": p.parent.name, "description": read_skill(p)["description"]}
+                            for p in sorted(folder.glob("*/SKILL.md")) if p.parent.name not in have]
+    return {"skills": mine, "library": brief(LIBRARY / "skills"), "repo": brief(repo / ".claude" / "skills"), "repo_path": str(repo)}
+
+
+def slug(name):
+    return re.sub(r"[^a-z0-9]+", "-", name.strip().lower()).strip("-")
+
+
+def save_skill(data):
+    home, name = route_dir(data["target"]), slug(data.get("name", ""))
+    if not name:
+        raise ValueError("give the skill a name")
+    if not data.get("description", "").strip():
+        raise ValueError("say in one line what the skill is for")
+    if not data.get("body", "").strip():
+        raise ValueError("write the instructions the agent should follow")
+    folder = home / "skills" / name
+    folder.mkdir(parents=True, exist_ok=True)
+    globs = ", ".join(g.strip() for g in data.get("applies_to", "").split(",") if g.strip())
+    front = "---\nname: {}\ndescription: {}\n".format(name, " ".join(data["description"].split()))
+    front += "applies_to: {}\n".format(globs) if (globs or name.startswith("build-")) else ""
+    (folder / "SKILL.md").write_text(front + "---\n" + data["body"].strip() + "\n")
+    return name
+
+
+def add_skill(data):
+    home, name = route_dir(data["target"]), data["name"]
+    source = LIBRARY / "skills" if data.get("source") == "library" else Path(json.loads((home / "target.json").read_text())["repo"]) / ".claude" / "skills"
+    if "/" in name or not (source / name / "SKILL.md").exists():
+        raise ValueError("no such skill to add: {}".format(name))
+    if (home / "skills" / name).exists():
+        raise ValueError("this route already has a skill called {}".format(name))
+    shutil.copytree(source / name, home / "skills" / name)
+    return name
+
+
+def remove_skill(data):
+    home, name = route_dir(data["target"]), data["name"]
+    used = next((s for s in skills_of(data["target"])["skills"] if s["name"] == name), None)
+    if not used:
+        raise ValueError("no such skill: {}".format(name))
+    if used["used_by"]:
+        raise ValueError("{} is used by the {} stop; remove it from the route first".format(name, ", ".join(used["used_by"])))
+    shutil.rmtree(home / "skills" / name)
+
+
 def samples():
     out = []
     for path in sorted(LIBRARY.glob("*/factory.json")):
@@ -188,11 +271,11 @@ def save_route(name, definition, guide=None, presubmit=None, tools=None):
         skill = stage.get("skill")
         if skill and not (home / "skills" / skill).exists() and (LIBRARY / "skills" / skill).exists():
             shutil.copytree(LIBRARY / "skills" / skill, home / "skills" / skill)
-    if any(stage.get("skill") == "build-tasks" for stage in definition.get("stages", [])):
-        # The generic build stop hands each task to one of these maker skills.
-        for maker in ("build-backend", "build-db", "build-ui", "build-tests"):
-            if not (home / "skills" / maker).exists() and (LIBRARY / "skills" / maker).exists():
-                shutil.copytree(LIBRARY / "skills" / maker, home / "skills" / maker)
+    for stage in definition.get("stages", []):
+        # A stop built by a maker and a checker needs the checker's skill too.
+        checker = (stage.get("checker") or {}).get("skill")
+        if checker and not (home / "skills" / checker).exists() and (LIBRARY / "skills" / checker).exists():
+            shutil.copytree(LIBRARY / "skills" / checker, home / "skills" / checker)
     problems = flow.validate(definition, home / "skills")
     if problems:
         return problems
@@ -277,6 +360,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send({"definition": definition, "skills": skills, "library": library(home, definition),
                            "has_rules": (home / "process.json").exists(), "guide": read("AGENTS.md"),
                            "presubmit": read("presubmit"), "tools": tools_of(home), "repo": json.loads(read("target.json") or "{}").get("repo", "")})
+            elif url.path == "/api/skills":
+                self.send(skills_of(parse_qs(url.query)["target"][0]))
             elif url.path == "/api/activity":
                 self.send(activity())
             elif url.path == "/api/samples":
@@ -304,6 +389,13 @@ class Handler(BaseHTTPRequestHandler):
                 return self.send({"problems": problems} if problems else {"saved": True})
             if self.path == "/api/route/create":
                 return self.send({"created": create(data)})
+            if self.path == "/api/skills/save":
+                return self.send({"saved": save_skill(data)})
+            if self.path == "/api/skills/add":
+                return self.send({"added": add_skill(data)})
+            if self.path == "/api/skills/remove":
+                remove_skill(data)
+                return self.send({"removed": True})
             if self.path == "/api/approve":
                 approve(data)
                 return self.send({"approved": True})

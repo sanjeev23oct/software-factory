@@ -1,0 +1,32 @@
+// Records an idea going through the route with a separate maker and checker: gate, maker session, checker session, gate.
+import { open } from './drive.mjs';
+const page = await open();
+const T = 'Show how many tasks are in each filter';
+const item = "[...document.querySelectorAll('.item')].find((e) => e.textContent.includes('" + T + "'))";
+const card = "[...document.querySelectorAll('.wait')].find((e) => e.textContent.includes('" + T + "'))";
+const C = (inner) => 'js:(' + card + ')?.querySelector(' + JSON.stringify(inner) + ')';
+const I = (inner) => 'js:(' + item + ')?.querySelector(' + JSON.stringify(inner) + ')';
+const now = (text) => "(() => { const i = " + item + "; return i && [...i.querySelectorAll('.track .now')].some((n) => n.textContent.includes('" + text + "')); })()";
+
+await page.goto('https://github.com/sanjeev23oct/factory-demo-ui/issues/5', 8000);
+await page.shot('m1-issue', { 'The label this route watches for': 'text:feature', 'Assigned to the right person': 'text:sanjeev23oct' });
+await page.goto('http://127.0.0.1:8787/activity', 2500);
+await page.click('#pass', 2000);
+await page.until('!!' + item, 180); await page.wait(5000);
+await page.shot('m2-picked-up', { 'A pass is running': '#pulse-title', 'Picked up without anyone asking': I('.item-top'), 'An agent is writing the requirements': I('.track .now') });
+await page.until('!!' + card, 600);
+await page.shot('m3-gate', { 'The route has stopped at a gate': C('.tag'), 'What the agent wrote': C('.doc'), 'Waiting for a person': C('.btn.go') });
+await page.run('(' + card + ").querySelector('.doc summary').click()"); await page.wait(700);
+await page.shot('m4-read', { 'Read the requirements before approving': C('.doc pre') }, C('.wait-top'));
+await page.run('(' + card + ").querySelector('.doc').open = false");
+await page.run('(' + card + ").querySelector('input[data-skip]').click()"); await page.wait(400);
+await page.shot('m5-approve', { 'An optional stop, skipped for a small change': C('label'), 'The human decision': C('.btn.go') });
+await page.run('(' + card + ").querySelector('.btn.go').click()"); await page.wait(2500);
+await page.until('!' + card, 120);
+await page.until(now('maker session'), 900); await page.wait(3000);
+await page.shot('m6-maker', { 'The maker’s session: it builds one section': I('.track .now'), 'Nobody is at the keyboard': '#pulse-title' });
+await page.until(now('checker session'), 900); await page.wait(3000);
+await page.shot('m7-checker', { 'A different session: the checker verifies it': I('.track .now') });
+await page.until('!!' + card, 3000); await page.wait(1500);
+await page.shot('m8-gate2', { 'Every section built, then checked': I('.track'), 'Stopped again, for a person to look': C('.tag') });
+await page.close();

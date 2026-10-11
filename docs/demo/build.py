@@ -166,8 +166,10 @@ def terminal(text, highlight=()):
     return "\n".join(lines)
 
 
-def excerpt(name, start=None, end=None, lines=None):
+def excerpt(name, start=None, end=None, lines=None, tail=None):
     text = (CAPTURES / name).read_text()
+    if tail:
+        return "\n".join(text.splitlines()[-tail:])
     if start:
         text = text[text.index(start):]
     if end and end in text:
@@ -348,7 +350,7 @@ def main():
     scenes = story["scenes"]
     for scene in scenes:
         if "file" in scene:
-            scene["text"] = excerpt(scene["file"], scene.get("start"), scene.get("end"), scene.get("lines"))
+            scene["text"] = excerpt(scene["file"], scene.get("start"), scene.get("end"), scene.get("lines"), scene.get("tail"))
     draw(scenes)
     out = video(scenes)
     (HERE / "index.html").write_text(page(story))
