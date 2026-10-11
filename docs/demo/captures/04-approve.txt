@@ -1,0 +1,5 @@
+$ flow.py --target factory-demo-api approve GH1
+GH1: approved. Next stage: design
+$ flow.py --target factory-demo-ui approve GH1
+GH1: approved. Next stage: visual-spec
+GH1: approved. Next stage: tasks

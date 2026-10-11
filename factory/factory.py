@@ -41,6 +41,7 @@ DEFAULT_TARGET = "tasklite"
 MAX_REVIEW_ROUNDS = 3
 BUDGET_USD = os.environ.get("FACTORY_MAX_BUDGET_USD", "3")
 MODEL = os.environ.get("FACTORY_MODEL")
+AGENT_TIMEOUT = int(os.environ.get("FACTORY_AGENT_TIMEOUT_MINUTES", "45")) * 60
 
 PRIMARY_TYPES = ("agent:bug", "agent:feature", "agent:documentation", "agent:security")
 BLOCKING = ("needs-info", "duplicate", "reserved-internal", "needs-human")
@@ -681,7 +682,10 @@ def run_headless(task):
     cmd += ["--allowedTools", "Bash(python3:*)", "Bash({})".format(PRESUBMIT[0]), *EXTRA_TOOLS,
             "Bash(git diff:*)", "Bash(git log:*)",
             "Bash(git show:*)", "Bash(git status:*)", "Bash(git rev-parse:*)", "Bash(git merge main)"]
-    proc = subprocess.run(cmd, cwd=task["cwd"], text=True, capture_output=True)
+    try:
+        proc = subprocess.run(cmd, cwd=task["cwd"], text=True, capture_output=True, timeout=AGENT_TIMEOUT)
+    except subprocess.TimeoutExpired:
+        raise FactoryError("{} agent ran past {} minutes and was stopped".format(task["agent"], AGENT_TIMEOUT // 60))
     try:
         data = json.loads(proc.stdout)
     except ValueError:

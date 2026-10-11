@@ -27,6 +27,7 @@
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 var(--body); }
 .wrap { max-width: 960px; margin: 0 auto; padding-inline: 20px; }
 h1, h2, h3, p { margin: 0; }
@@ -68,7 +69,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
 .node.check i { border-color: var(--check); width: 12px; height: 12px; margin-top: 10px; border-width: 3px; }
 .node.optional i { border-style: dashed; }
 .node.off { opacity: 0.35; }
-.node span { font-size: 12px; line-height: 1.25; overflow-wrap: anywhere; padding-inline: 4px; }
+.node span { font-size: 11px; line-height: 1.25; padding-inline: 2px; }
 .node.gate span { font-weight: 600; }
 .key { display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
 .key b { font-weight: 600; color: var(--ink); }

@@ -1,0 +1,4 @@
+$ flow.py --target factory-demo-ui approve GH1
+GH1: approved. Next stage: pull-request
+$ flow.py --target factory-demo-ui run
+GH1: done at `pull-request`

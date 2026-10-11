@@ -1,0 +1,11 @@
+$ factory pass  (the scheduled job runs this every 10 minutes)
+== 2026-10-10 16:41:28 factory-demo-api
+started GH1: Tasks need a due date
+1 open issue(s) labelled `factory` and assigned to sanjeev23oct, 1 new
+GH1: requirements (spec agent working...)
+GH1: waiting at `approve-requirements`
+== 2026-10-10 16:42:45 factory-demo-ui
+started GH1: Show which tasks are overdue
+1 open issue(s) labelled `factory` and assigned to sanjeev23oct, 1 new
+GH1: requirements (spec agent working...)
+GH1: waiting at `approve-requirements`

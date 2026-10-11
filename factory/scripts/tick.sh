@@ -19,6 +19,11 @@ if ! mkdir "$LOCK" 2>/dev/null; then
 fi
 trap 'rmdir "$LOCK"' EXIT
 
+# Keep the machine awake for as long as this pass runs. A sleeping machine freezes agents mid-task.
+if command -v caffeinate >/dev/null 2>&1; then
+  caffeinate -i -w $$ &
+fi
+
 {
   if [ $# -eq 0 ]; then
     set -- $(python3 factory/flow.py scheduled)

@@ -1,0 +1,12 @@
+$ flow.py --target factory-demo-api status
+ITEM  STAGE                 STATUS   TRIES  TITLE
+GH1   approve-requirements  waiting  0      Tasks need a due date
+
+$ flow.py --target factory-demo-ui status
+ITEM  STAGE                 STATUS   TRIES  TITLE
+GH1   approve-requirements  waiting  0      Show which tasks are overdue
+
+$ flow.py --target factory-demo-api approve GH1
+GH1: approved. Next stage: design
+$ flow.py --target factory-demo-ui approve GH1
+GH1: approved. Next stage: visual-spec

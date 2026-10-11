@@ -15,6 +15,16 @@ This repository applies the same contracts to a small real product,
 `tasklite`. Claude Code agents stand in for Warp's Oz agents, and a local
 issue tracker stands in for GitHub.
 
+## See it run
+
+[docs/demo/](docs/demo/) holds a recording of one real run: two repositories,
+two routes, two issues taken through to open pull requests, and two pull
+requests reviewed. [factory-demo.mp4](docs/demo/factory-demo.mp4) is the
+three-minute video; [index.html](docs/demo/index.html) is the same run as a
+page, with how to set each part up. The repositories it ran on are
+[factory-demo-api](https://github.com/sanjeev23oct/factory-demo-api) and
+[factory-demo-ui](https://github.com/sanjeev23oct/factory-demo-ui).
+
 ## The pipeline
 
     filed ─▶ triage ─▶ [maintainer: ready-to-spec] ─▶ spec ─▶ spec review ─▶ [maintainer: plan-approved]

@@ -1,0 +1,6 @@
+{"ts": "2026-10-10T23:49:31Z", "item": "GH1", "stage": "build", "event": "agent task handed out", "detail": "", "cost_usd": null}
+{"ts": "2026-10-11T00:02:42Z", "item": "GH1", "stage": "build", "event": "agent stage finished", "detail": "", "cost_usd": 2.3343574}
+{"ts": "2026-10-11T00:02:42Z", "item": "GH1", "stage": "build", "event": "all tasks ticked", "detail": "", "cost_usd": null}
+{"ts": "2026-10-11T00:02:42Z", "item": "GH1", "stage": "check-evidence", "event": "script passed", "detail": "Cat 1: 19 checks run by script, 19 passed, 0 left to the checker agent\nOK", "cost_usd": null}
+{"ts": "2026-10-11T00:02:43Z", "item": "GH1", "stage": "verify", "event": "script passed", "detail": "\u2714 summary counts open and done (1.021875ms)\n\u2714 visibleTasks filters by state (0.084209ms)\n\u2714 sortTasks puts open tasks first and does not chang
+{"ts": "2026-10-11T00:02:43Z", "item": "GH1", "stage": "approve-screens", "event": "waiting for a human", "detail": "", "cost_usd": null}

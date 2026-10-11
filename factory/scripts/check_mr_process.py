@@ -146,7 +146,9 @@ def run(repo, base, cfg, context=""):
     spec_root = cfg["spec_root"].rstrip("/") + "/"
     spec_dirs = sorted({f[len(spec_root):].split("/")[0] for f in changed if f.startswith(spec_root) and "/" in f[len(spec_root):]})
 
-    linked = bool(re.search(r"(#\d+|[A-Z][A-Z0-9]+-\d+)", context))
+    # Look only at what the author wrote: the heading above it carries the request's own number.
+    written = "\n".join(line for line in context.splitlines() if not line.startswith(("# ", "- ", "<!--")))
+    linked = bool(re.search(r"(#\d+|[A-Z][A-Z0-9]+-\d+)", written))
     record("linked-issue", "Linked to an issue", linked, "" if linked else "the description names no issue")
 
     spec = None

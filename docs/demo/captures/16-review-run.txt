@@ -1,0 +1,9 @@
+$ flow.py --target factory-demo-api-review run
+PR2: review (review agent working...)
+PR2: done at `post-review`
+PR3: done at `post-review`
+
+$ flow.py --target factory-demo-api-review status
+ITEM  STAGE        STATUS  TITLE
+PR2   post-review  done    Tasks need a due date        (11 checks passed, agent reviewed)
+PR3   post-review  done    Add a health endpoint        (2 checks failed, no agent used)

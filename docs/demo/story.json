@@ -1,0 +1,302 @@
+{
+ "scenes": [
+  {
+   "kind": "card",
+   "kicker": "A real run, start to finish",
+   "title": "A software factory at work",
+   "say": "Two repositories. Two routes. Issues in, reviewed pull requests out.",
+   "seconds": 5,
+   "explain": "This is a recording of one real run. Two GitHub repositories, a tasks API and a task board, each got its own factory. One issue was filed in each. Everything below is what actually happened."
+  },
+  {
+   "kind": "card",
+   "part_kind": "route",
+   "kicker": "Part 1 · The route",
+   "title": "Define the line",
+   "say": "Each repository gets a route: the stops work passes through, and the gates where a person approves.",
+   "seconds": 6,
+   "explain": "A factory starts with a route. It lists the stops a piece of work passes through, in order, and marks the gates where it must wait for a person. The two routes here differ on purpose: the API route requires a design and has two gates before any code, because API changes are costly to undo. The UI route has a visual spec and a gate at the end where a person looks at the screens.",
+   "how": "<pre>python3 factory/editor.py</pre><span>Click <b>Add a repository</b>, pick a starting point, then reorder, add or remove stops and gates.</span>"
+  },
+  {
+   "kind": "image",
+   "part": "Route",
+   "image": "01-editor-api.png",
+   "offset": 62,
+   "say": "The API route: design is required, with two gates before any code",
+   "seconds": 7
+  },
+  {
+   "kind": "image",
+   "part": "Route",
+   "image": "02-editor-ui.png",
+   "offset": 62,
+   "say": "The UI route: a visual spec, and a gate at the end to look at the screens",
+   "seconds": 7
+  },
+  {
+   "kind": "card",
+   "part_kind": "stop",
+   "kicker": "Part 2 · Intake",
+   "title": "Work comes in",
+   "say": "A person writes an issue, labels it, and assigns it. The factory picks it up on its next pass.",
+   "seconds": 5,
+   "explain": "Work enters from the tracker the team already uses. Here that is GitHub issues; GitLab and files work the same way. An issue is picked up only when it carries the factory label and is assigned to the right person, so nothing starts by accident.",
+   "how": "<span>Under <b>Where work comes from</b>, set the repository, the label, and who it must be assigned to. Then switch on <b>Pick up work automatically</b>.</span>"
+  },
+  {
+   "kind": "image",
+   "part_kind": "stop",
+   "part": "Intake",
+   "image": "07-api-issue.png",
+   "offset": 150,
+   "say": "The issue, written by a person in plain words",
+   "seconds": 7
+  },
+  {
+   "kind": "terminal",
+   "part_kind": "stop",
+   "part": "Intake",
+   "file": "01-first-pass.txt",
+   "where": "one factory pass",
+   "say": "One pass picks up both issues and puts agents to work",
+   "seconds": 8
+  },
+  {
+   "kind": "card",
+   "part_kind": "stop",
+   "kicker": "Part 3 · Stops and skills",
+   "title": "Agents work each stop",
+   "say": "At every stop an agent follows a skill: a short document written for that one job.",
+   "seconds": 6,
+   "explain": "Each stop is done by an agent following a skill, a short document that says how to do that one job and nothing else. The requirements skill asks for testable criteria with exact responses. The design skill asks for a plan that cites the real code. Because the skill is written down, the work is done the same way every time, and you can change how a stop works by editing its skill.",
+   "how": "<span>Skills are files in <code>targets/&lt;name&gt;/skills/</code>. The editor shows each stop with its skill's description.</span>"
+  },
+  {
+   "kind": "doc",
+   "part_kind": "stop",
+   "part": "Stop: requirements",
+   "file": "03-api-requirements.md",
+   "start": "### Story 4",
+   "lines": 22,
+   "say": "Requirements: exact inputs, exact responses, edge cases named",
+   "seconds": 9
+  },
+  {
+   "kind": "doc",
+   "part_kind": "stop",
+   "part": "Stop: design",
+   "file": "05-api-design.md",
+   "lines": 26,
+   "say": "Design: the plan, pointing at the real lines of code",
+   "seconds": 9
+  },
+  {
+   "kind": "card",
+   "part_kind": "gate",
+   "kicker": "Part 4 · Gates",
+   "title": "Gates hold the line",
+   "say": "The route stops and waits until a person approves. Nothing passes a gate on its own.",
+   "seconds": 6,
+   "explain": "A gate is a point where the route stops until a person approves. Both routes stopped after requirements. The API route stopped again after design. The requirements each listed what the issue had left undecided, so the person approving could see exactly what they were agreeing to. In this run the gates were approved on the owner's behalf for the demo.",
+   "how": "<pre>python3 factory/flow.py --target factory-demo-api status\npython3 factory/flow.py --target factory-demo-api approve GH1</pre>"
+  },
+  {
+   "kind": "terminal",
+   "part_kind": "gate",
+   "part": "Gate",
+   "file": "19-gate.txt",
+   "where": "waiting, then approved",
+   "say": "Both routes wait at their gate. Approval moves them on.",
+   "seconds": 8
+  },
+  {
+   "kind": "card",
+   "part_kind": "proof",
+   "kicker": "Part 5 · Evidence",
+   "title": "Build, check, prove",
+   "say": "One agent builds each task. A different one checks it and writes evidence. A script re-runs the checks.",
+   "seconds": 7,
+   "explain": "The work is broken into small tasks, and every task names the skill that builds it; a script rejects a task list where one does not. A maker agent builds each task. A separate checker runs the section's gate and writes an evidence sheet of expected against found. Then the factory's own script re-runs the checks and the tests. Work that is ticked without evidence is sent back to the build stop automatically.",
+   "how": "<span>The <b>lint-tasks</b>, <b>check-evidence</b> and <b>verify</b> stops are scripts. Set where a failure sends the work back to, per stop, in the editor.</span>"
+  },
+  {
+   "kind": "doc",
+   "part_kind": "proof",
+   "part": "Stop: tasks",
+   "file": "12-api-tasks.md",
+   "lines": 30,
+   "say": "Tasks: each names its skill, each section ends in a gate",
+   "seconds": 9
+  },
+  {
+   "kind": "doc",
+   "part_kind": "proof",
+   "part": "Evidence",
+   "file": "13-api-evidence.md",
+   "lines": 30,
+   "say": "Evidence: every check with what was expected and what was found",
+   "seconds": 9
+  },
+  {
+   "kind": "terminal",
+   "part_kind": "proof",
+   "part": "Verified by script",
+   "file": "15-api-events.txt",
+   "where": "the factory's log for the API item",
+   "say": "Scripts re-check the evidence and run the tests before the route moves on",
+   "seconds": 8
+  },
+  {
+   "kind": "image",
+   "part_kind": "proof",
+   "part": "Before",
+   "image": "03-ui-before.png",
+   "say": "The task board before the change",
+   "seconds": 4
+  },
+  {
+   "kind": "image",
+   "part_kind": "proof",
+   "part": "After",
+   "image": "03-ui-result.png",
+   "say": "After: due dates, an Overdue label in words, a count, and a filter",
+   "seconds": 7
+  },
+  {
+   "kind": "card",
+   "part_kind": "gate",
+   "kicker": "Part 6 · Hand-off",
+   "title": "A pull request, not a merge",
+   "say": "The route ends by opening a pull request. Merging stays with a person.",
+   "seconds": 6,
+   "explain": "The route's last stop pushes its branch and opens a pull request. It carries one commit per stop, closes the issue, and links the requirements, the tasks and every evidence file, so the reviewer reads proof, not logs. The factory never merges.",
+   "how": "<span>Add the <b>pull-request</b> stop at the end of a route. It only pushes branches named <code>factory/…</code>.</span>"
+  },
+  {
+   "kind": "image",
+   "part_kind": "gate",
+   "part": "Pull request",
+   "image": "04-ui-pull-request.png",
+   "offset": 180,
+   "say": "One commit per stop, with the spec and all the evidence linked",
+   "seconds": 9
+  },
+  {
+   "kind": "card",
+   "part_kind": "proof",
+   "kicker": "Part 7 · Review",
+   "title": "Every request is checked",
+   "say": "A script checks the process first. Only work that passes earns an agent's review.",
+   "seconds": 6,
+   "explain": "A second route reviews pull requests, whoever wrote them. A script first checks the process: is there a spec, does every task name a skill, is there evidence, did the tests change with the code, plus any rules the team has added. Two requests were reviewed here. The one the factory built passed all 11 checks and then got an agent's code review. A quick hack added by hand, with no spec and no test, failed, and no agent time was spent on it.",
+   "how": "<span>Label a pull request <code>factory-review</code>. Set the rules under <b>Review rules</b> in the editor.</span>"
+  },
+  {
+   "kind": "terminal",
+   "part_kind": "proof",
+   "part": "Review route",
+   "file": "16-review-run.txt",
+   "where": "reviewing two pull requests",
+   "say": "Two requests in: one earns an agent's review, one is stopped by script",
+   "seconds": 7
+  },
+  {
+   "kind": "image",
+   "part_kind": "proof",
+   "part": "Review: quick hack",
+   "image": "06-api-pr-3.png",
+   "offset": 545,
+   "say": "No spec, no test: stopped by the script, and no agent was used",
+   "seconds": 9
+  },
+  {
+   "kind": "doc",
+   "part_kind": "proof",
+   "part": "Review: factory-built",
+   "file": "18-review-factory-built.md",
+   "lines": 30,
+   "say": "11 checks pass, then an agent reviews the code",
+   "seconds": 9
+  },
+  {
+   "kind": "card",
+   "part_kind": "route",
+   "kicker": "Part 8 · Your factory",
+   "title": "You set the rules",
+   "say": "Routes and review rules are edited on a page, per repository. No files to touch.",
+   "seconds": 6,
+   "explain": "Every check has a switch: fail, warn, or off. A team adds its own rules by filling in a sentence, such as “new lines under api/ must not contain print(”, and can try the rules against a real pull request before saving. Two such rules were added for this demo, and both caught the quick hack.",
+   "how": "<pre>python3 factory/editor.py     # then open the Review rules tab</pre>"
+  },
+  {
+   "kind": "image",
+   "part_kind": "route",
+   "part": "Review rules",
+   "image": "08-rules.png",
+   "offset": 62,
+   "say": "Each check is a switch. The team's own rules are sentences.",
+   "seconds": 8
+  },
+  {
+   "kind": "card",
+   "kicker": "What this run produced",
+   "title": "Two issues in, two pull requests out",
+   "say": "3 gates approved by a person. Everything else was done by agents and checked by scripts. Agent cost: $9.93.",
+   "seconds": 8,
+   "explain": "Both issues became open pull requests, each backed by requirements, tasks, evidence and passing tests. A person approved three gates and will decide whether to merge."
+  }
+ ],
+ "facts": [
+  [
+   "repositories, each with its own route",
+   2
+  ],
+  [
+   "gates approved by a person",
+   3
+  ],
+  [
+   "API tests, up from 9",
+   28
+  ],
+  [
+   "UI tests, up from 7",
+   18
+  ],
+  [
+   "process checks passed by the factory-built request",
+   "11/11"
+  ],
+  [
+   "total agent cost for the run",
+   "$9.93"
+  ]
+ ],
+ "links": [
+  [
+   "factory-demo-api: the pull request the factory opened",
+   "https://github.com/sanjeev23oct/factory-demo-api/pull/2"
+  ],
+  [
+   "factory-demo-api: the quick hack the review route stopped",
+   "https://github.com/sanjeev23oct/factory-demo-api/pull/3"
+  ],
+  [
+   "factory-demo-ui: the pull request the factory opened",
+   "https://github.com/sanjeev23oct/factory-demo-ui/pull/2"
+  ],
+  [
+   "The issues: API",
+   "https://github.com/sanjeev23oct/factory-demo-api/issues/1"
+  ],
+  [
+   "The issues: UI",
+   "https://github.com/sanjeev23oct/factory-demo-ui/issues/1"
+  ],
+  [
+   "The factory itself",
+   "https://github.com/sanjeev23oct/software-factory"
+  ]
+ ]
+}

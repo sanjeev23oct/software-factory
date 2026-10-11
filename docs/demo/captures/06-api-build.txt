@@ -1,0 +1,7 @@
+$ flow.py --target factory-demo-api run
+GH1: tasks (spec agent working...)
+GH1: build (builder agent working...)
+GH1: build (builder agent working...)
+GH1: stopped - claude gave no JSON:
+
+GH1: pending at `build`
