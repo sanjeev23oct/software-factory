@@ -49,5 +49,5 @@ await page.shot('p8b-agent-review', { 'Only then: an agent reviews the code': 'j
 
 await page.goto('http://127.0.0.1:8787/activity', 2500);
 await page.run("(() => { const i = [...document.querySelectorAll('.item')].find((e) => e.textContent.includes('trailing slash')); i.id = 'demo-item'; i.querySelector('.meta a').id = 'demo-link'; })()");
-await page.shot('a4-approved', { 'Approved: the route finished by itself': '#demo-item .track', 'A pull request is open': '#demo-link' });
+await page.shot('a4-approved', { 'Approved: the pipeline finished by itself': '#demo-item .track', 'A pull request is open': '#demo-link' });
 await page.close();

@@ -1,12 +1,12 @@
-$ git log --oneline factory/GH7        # one commit per session
-654c215 check (checker): Show overall progress on the board
-3c4eb3f build (maker): Show overall progress on the board
-e07134b check (checker): Show overall progress on the board
-5e186b0 build (maker): Show overall progress on the board
-171a0b3 check (checker): Show overall progress on the board
-e584623 build (maker): Show overall progress on the board
-8f3bc00 check (checker): Show overall progress on the board
-431780c build (maker): Show overall progress on the board
-d0ccd4c tasks: Show overall progress on the board
-ddc7c70 requirements: Show overall progress on the board
+$ git log --oneline factory/GH9        # one commit per session
+808033d check (checker): Show when each task is due
+3ae1210 build (maker): Show when each task is due
+062cd4d check (checker): Show when each task is due
+47c9d53 build (maker): Show when each task is due
+13480da check (checker): Show when each task is due
+1f3c23e build (maker): Show when each task is due
+8753ea8 check (checker): Show when each task is due
+240c0a4 build (maker): Show when each task is due
+360c2af tasks: Show when each task is due
+f760666 requirements: Show when each task is due
 24fd3d8 Initial task board

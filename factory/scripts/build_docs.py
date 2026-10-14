@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Render docs/index.html, the product page for the factory.
 
-The route map is drawn from factories/*/factory.json, so the page cannot
+The pipeline map is drawn from factories/*/factory.json, so the page cannot
 drift from the sample definitions. Run it after changing a sample:
 
     python3 factory/scripts/build_docs.py
@@ -78,7 +78,7 @@ def route_map():
         g.append("</g>")
         parts.append("".join(g))
     y = Y0 + len(ROUTES) * ROW
-    mine = ['<g class="route mine" data-route="yours">', '<text class="rname" x="0" y="{}">Your route</text>'.format(y - 2),
+    mine = ['<g class="route mine" data-route="yours">', '<text class="rname" x="0" y="{}">Your pipeline</text>'.format(y - 2),
             '<text class="rfrom" x="0" y="{}">from any tracker</text>'.format(y + 15),
             '<path class="rail later" d="M{} {}H{}"/>'.format(X0, y, X0 + 10 * STEP)]
     for col in (0, 1, 3, 5, 6, 7, 10):
@@ -89,7 +89,7 @@ def route_map():
         mine.append('<text class="slabel{}" x="{}" y="{}">{}</text>'.format(" strong" if strong else "", X0 + col * STEP, y + 31, text))
     parts.append("".join(mine) + "</g>")
     height = Y0 + len(ROUTES) * ROW + 62
-    return ('<svg class="map" viewBox="0 0 1124 {}" role="img" aria-label="Route map of the four sample factories, '
+    return ('<svg class="map" viewBox="0 0 1124 {}" role="img" aria-label="Map of the four sample pipelines, '
             'showing each stage as a stage and each human approval as a ringed stage">{}</svg>').format(height, "".join(parts))
 
 
@@ -287,38 +287,38 @@ def body():
     return """
 <div class="wrap">
 <nav><a class="brand" href="#top"><i><b></b><b></b><b></b><b></b></i>Software Factory</a>
-  <div class="links"><a href="#routes">Routes</a><a href="#pillars">Pillars</a><a href="#proof">Proof</a><a href="#start">Get started</a><a class="keep" href="%(repo)s">GitHub</a></div></nav>
+  <div class="links"><a href="#routes">Pipelines</a><a href="#pillars">Pillars</a><a href="#proof">Proof</a><a href="#start">Get started</a><a class="keep" href="%(repo)s">GitHub</a></div></nav>
 
 <header class="hero" id="top">
-  <div><span class="eyebrow">A software factory for any team</span><h1>Map the route. Agents drive it.</h1></div>
+  <div><span class="eyebrow">A software factory for any team</span><h1>Define the pipeline. Agents run it.</h1></div>
   <div><p>Lay out the stages between a request and a merge. Set gates where a person must approve. The factory runs the rest.</p>
     <div class="cta"><a class="btn solid" href="#start">Get started</a><a class="btn" href="%(repo)s">GitHub</a></div></div>
 </header>
 
 <div class="board" id="routes">
-  <div class="board-top"><h2>Example routes</h2><div class="key">%(key)s</div></div>
+  <div class="board-top"><h2>Example pipelines</h2><div class="key">%(key)s</div></div>
   <div class="scroll">%(map)s</div>
   <div class="rcards">%(cards)s</div>
-  <span class="hint">These four are examples. The factory is not tied to UI, backend, or any stack: a route is whatever stages and gates your work needs. Select one to trace it.</span>
+  <span class="hint">These four are examples. The factory is not tied to UI, backend, or any stack: a pipeline is whatever stages and gates your work needs. Select one to trace it.</span>
 </div>
 
 <section id="pillars">
   <h2>What makes it a factory</h2>
   <div class="pillars">
-    <div class="pillar r1"><span>01</span><h3>One line</h3><p>Every request travels the same defined route. No improvising.</p></div>
+    <div class="pillar r1"><span>01</span><h3>One line</h3><p>Every request travels the same defined pipeline. No improvising.</p></div>
     <div class="pillar r2"><span>02</span><h3>Gates</h3><p>The line stops at named points until a person approves.</p></div>
     <div class="pillar r3"><span>03</span><h3>Standard work</h3><p>Each stage follows a written skill, so the work is done the same way each time.</p></div>
     <div class="pillar r4"><span>04</span><h3>Proof at every stage</h3><p>Work moves on only with evidence that it passed its checks.</p></div>
     <div class="pillar r1"><span>05</span><h3>A full record</h3><p>Every move is logged: what ran, what passed, when each gate opened.</p></div>
-    <div class="pillar r2"><span>06</span><h3>Open by design</h3><p>Any tracker, any stack, any coding agent. Routes and skills are plain files.</p></div>
+    <div class="pillar r2"><span>06</span><h3>Open by design</h3><p>Any tracker, any stack, any coding agent. Pipelines and skills are plain files.</p></div>
   </div>
 </section>
 
 <section id="yours">
   <div class="duo">
     <div class="points">
-      <h2>Draw your own route</h2>
-      <div class="point r1"><i></i><h3>Add, remove or reorder stages</h3><p>A route is a short list in one file.</p></div>
+      <h2>Draw your own pipeline</h2>
+      <div class="point r1"><i></i><h3>Add, remove or reorder stages</h3><p>A pipeline is a short list in one file.</p></div>
       <div class="point r2"><i></i><h3>Put gates where you want them</h3><p>Before design, after the build, or only at the end.</p></div>
       <div class="point r3"><i></i><h3>Start from your tracker</h3><p>GitHub, GitLab, Jira, or a plain file.</p></div>
       <div class="point r4"><i></i><h3>Teach each stage your way</h3><p>Every stage follows a skill you can rewrite.</p></div>
@@ -362,7 +362,7 @@ def body():
 <section id="start">
   <h2>On the road in three commands</h2>
   <div class="steps">
-    <div class="step r1"><span class="n">1</span><h3>Pick a route</h3><p>Copy the nearest sample and point it at your repository.</p>%(c1)s</div>
+    <div class="step r1"><span class="n">1</span><h3>Pick a pipeline</h3><p>Copy the nearest sample and point it at your repository.</p>%(c1)s</div>
     <div class="step r3"><span class="n">2</span><h3>Redraw it</h3><p>Set your tracker, your rules and your tests. Move the gates.</p>%(c2)s</div>
     <div class="step r4"><span class="n">3</span><h3>Send one issue</h3><p>It runs until it reaches your first gate.</p>%(c3)s</div>
   </div>
@@ -371,10 +371,10 @@ def body():
 <section>
   <h2>Where it stands</h2>
   <div class="now">
-    <div><h3>Running today</h3><ul><li>Example routes to start from, or a blank one</li><li>Issues from GitHub, GitLab, or a file</li>
+    <div><h3>Running today</h3><ul><li>Example pipelines to start from, or a blank one</li><li>Issues from GitHub, GitLab, or a file</li>
       <li>A background job that picks up work unattended</li><li>Gates you approve from a page</li><li>Unproven work sent back automatically</li>
       <li>Pull and merge requests opened for you to merge</li><li>Pull requests reviewed: process first, then code</li>
-      <li>An editor for routes and review rules</li><li>Built-in runner for Claude Code; any agent can take a stage by hand-off</li></ul></div>
+      <li>An editor for pipelines and review rules</li><li>Built-in runner for Claude Code; any agent can take a stage by hand-off</li></ul></div>
     <div class="later"><h3>Not built yet</h3><ul><li>Approving a gate from the tracker itself</li><li>Commenting progress on the issue</li>
       <li>Jira, tested against a real instance</li><li>Built-in runners for other coding agents</li><li>A host that is always on: a laptop that sleeps stops the line</li></ul></div>
   </div>

@@ -8,7 +8,7 @@ const I = (inner) => `js:(${item})?.querySelector(${JSON.stringify(inner)})`;
 
 await page.goto('http://127.0.0.1:8787/activity', 2500);
 await page.until('!!' + card, 60);
-await page.shot('r4-gate', { 'The route has stopped at a gate': C('.tag'), 'What the agent wrote': C('.doc'), 'Waiting for a person': C('.btn.go') });
+await page.shot('r4-gate', { 'The pipeline has stopped at a gate': C('.tag'), 'What the agent wrote': C('.doc'), 'Waiting for a person': C('.btn.go') });
 await page.run(`(${card}).querySelector('.doc summary').click()`); await page.wait(700);
 await page.shot('r5-read', { 'Read the requirements before approving': C('.doc pre') }, C('.wait-top'));
 await page.run(`(${card}).querySelector('.doc').open = false`);

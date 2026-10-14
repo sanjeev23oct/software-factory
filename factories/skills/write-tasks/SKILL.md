@@ -39,7 +39,7 @@ Satisfies: AC 1.1, AC 1.2, correctness property 2
 
 ## Choosing the skill for a task
 
-The prompt lists the maker skills this route has and the files each is for. For every task:
+The prompt lists the maker skills this pipeline has and the files each is for. For every task:
 
 - Name the file the task touches, in backticks, on the task line.
 - Name the one skill that is for that file: `→ run: \`/skill\``. A script rejects a task whose file belongs to a different skill.
@@ -65,7 +65,7 @@ Tests are always the last section and use the tests skill.
 
 ## Rules
 
-- Every task (a checkbox numbered `N.M`) names a skill that exists on this route.
+- Every task (a checkbox numbered `N.M`) names a skill that exists on this pipeline.
 - Every section ends in a gate with Cat 1 (matches the spec), Cat 2 (the evidence file, named `evidence/<n>-<name>-gate.md`) and Cat 3 (it runs). A section titled Tests needs no gate of its own.
 - Cat 1 checks go in `loop/<section>-checker.md` as shell commands, each followed by `# EXPECTED: <n>` or `# EXPECTED: at least <n>`. Prefer `grep -c` so a script can re-run them. Derive each expected value from the spec, not from code that does not exist yet.
 - Say which acceptance criteria each section satisfies.

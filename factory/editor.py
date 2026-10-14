@@ -4,7 +4,7 @@
     python3 factory/editor.py [--port 8787] [--no-open]
 
   /        the route: where work comes from, the stages, the gates, the limits
-  /skills  the skills a route's agents follow: add, import, edit
+  /skills  the skills a pipeline's agents follow: add, import, edit
   /rules   the process rules a merge request is checked against
   /activity   what the factory is doing now, and the gates waiting for a person
 
@@ -58,7 +58,7 @@ def scheduler():
 
 
 def activity():
-    """Every item in every factory: where it is on its route, and what a person must decide."""
+    """Every item in every factory: where it is on its pipeline, and what a person must decide."""
     items = []
     with FLOW:
         for path in sorted(TARGETS.glob("*/factory.json")):
@@ -208,7 +208,7 @@ def add_skill(data):
     if "/" in name or not (source / name / "SKILL.md").exists():
         raise ValueError("no such skill to add: {}".format(name))
     if (home / "skills" / name).exists():
-        raise ValueError("this route already has a skill called {}".format(name))
+        raise ValueError("this pipeline already has a skill called {}".format(name))
     shutil.copytree(source / name, home / "skills" / name)
     return name
 
@@ -219,7 +219,7 @@ def remove_skill(data):
     if not used:
         raise ValueError("no such skill: {}".format(name))
     if used["used_by"]:
-        raise ValueError("{} is used by the {} stage; remove it from the route first".format(name, ", ".join(used["used_by"])))
+        raise ValueError("{} is used by the {} stage; remove it from the pipeline first".format(name, ", ".join(used["used_by"])))
     shutil.rmtree(home / "skills" / name)
 
 
@@ -231,7 +231,7 @@ def samples():
         out.append({"name": path.parent.name, "description": d["description"], "source": d["source"]["type"],
                     "example": path.parent.name != "blank",
                     "stops": len(live), "gates": [s["id"].replace("approve-", "") for s in live if s["by"] == "human"]})
-    return sorted(out, key=lambda s: s["example"])  # the blank route first
+    return sorted(out, key=lambda s: s["example"])  # the blank pipeline first
 
 
 def create(data):

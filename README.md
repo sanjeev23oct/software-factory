@@ -19,14 +19,14 @@ issue tracker stands in for GitHub.
 
 [docs/demo/](docs/demo/) holds a recording of the factory being set up and
 used for real. [factory-demo.mp4](docs/demo/factory-demo.mp4) is a
-seven-minute video in 15 numbered steps: set the factory up, define a route
+seven-minute video in 15 numbered steps: set the factory up, define a pipeline
 for a repository, then take one idea from an issue to a pull request, with a
 person approving at two gates. [index.html](docs/demo/index.html) is the same
 walkthrough as a page, with the commands for each step.
 
 It ran on [factory-demo-ui](https://github.com/sanjeev23oct/factory-demo-ui)
 and [factory-demo-api](https://github.com/sanjeev23oct/factory-demo-api): one
-factory, two repositories, five routes.
+factory, two repositories, five pipelines.
 
 ## The pipeline
 
@@ -121,15 +121,15 @@ Then edit `targets/shop/factory.json`, `AGENTS.md` and `presubmit`.
 
 opens a local page with four tabs. It serves on 127.0.0.1 only.
 
-- **Route**: add a repository, then arrange its stages and gates, with a
-  drawing of the route that updates as you edit. Set what triggers it, the
+- **Pipeline**: add a repository, then arrange its stages and gates, with a
+  drawing of the pipeline that updates as you edit. Set what triggers it, the
   team's rules, and the commands that prove a change.
-- **Skills**: the skills the route's agents follow. Add them from the
+- **Skills**: the skills the pipeline's agents follow. Add them from the
   library, import the ones a repository keeps in `.claude/skills`, or write
   your own, and say which files each maker skill is for.
 - **Review rules**: how strict each process check is, plus your own rules.
 - **Activity**: whether the factory is running in the background, where
-  every item is on its route, and the gates waiting for you, with an
+  every item is on its pipeline, and the gates waiting for you, with an
   Approve button.
 
 ### Maker and checker

@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Factory Route</title>
+<title>Factory Pipeline</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: a sticky bar; a live drawing of the route; then the source, the list of stages, and the limits. */
+/* Layout: a sticky bar; a live drawing of the pipeline; then the source, the list of stages, and the limits. */
 :root {
   --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5; --field: #ffffff;
   --route: #1f5fd0; --gate-bg: #fbecd0; --gate: #a66300; --check: #5d6b7e; --ok: #12905a; --bad: #c2362b; --bad-bg: #fbe4e1; --warn: #a66300;
@@ -117,8 +117,8 @@ textarea.mono { font: 13px/1.6 var(--mono); }
 <body>
 <div class="bar"><div class="wrap">
   <h1>Factory</h1>
-  <nav class="tabs"><a href="/" aria-current="page">Route</a><a href="/skills">Skills</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
-  <label class="pick">Route <select id="target" aria-label="Route"></select></label>
+  <nav class="tabs"><a href="/" aria-current="page">Pipeline</a><a href="/skills">Skills</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
+  <label class="pick">Pipeline <select id="target" aria-label="Pipeline"></select></label>
   <button class="btn ghost" id="new">Add a repository</button>
   <span class="grow" id="state" role="status"></span>
   <button class="btn" id="save" disabled>Save</button>
@@ -128,9 +128,9 @@ textarea.mono { font: 13px/1.6 var(--mono); }
   <div id="problems" class="problems" hidden></div>
 
   <section class="panel" id="newpanel" hidden>
-    <header><h2>Add a repository</h2><p>One factory serves many repositories. Each repository gets a route of its own, or several: one for features and a shorter one for bugs, say.</p></header>
+    <header><h2>Add a repository</h2><p>One factory serves many repositories. Each repository gets a pipeline of its own, or several: one for features and a shorter one for bugs, say.</p></header>
     <div class="grid">
-      <div class="field"><label for="n_name">Name for this route</label><input type="text" id="n_name" placeholder="e.g. billing-api"></div>
+      <div class="field"><label for="n_name">Name for this pipeline</label><input type="text" id="n_name" placeholder="e.g. billing-api"></div>
       <div class="field"><label for="n_repo">Folder the repository is in</label><input type="text" id="n_repo" placeholder="~/code/billing-api"></div>
       <div class="field"><label for="n_url">Clone address</label><input type="text" id="n_url" placeholder="only if the folder does not exist yet"><small>Leave empty when the repository is already on this machine.</small></div>
     </div>
@@ -138,11 +138,11 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       <small>A starting point only saves typing. The examples are not project types: the factory works the same for any kind of work, and every stage and gate can be changed, removed or added afterwards.</small>
       <div class="samples" id="samples"></div></div>
     <div id="newerror" class="problems" hidden></div>
-    <div class="rowf" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="create">Create the route</button><button class="btn ghost" id="cancel">Cancel</button></div>
+    <div class="rowf" style="display:flex;gap:10px;flex-wrap:wrap"><button class="btn" id="create">Create the pipeline</button><button class="btn ghost" id="cancel">Cancel</button></div>
   </section>
 
   <section class="panel">
-    <header><h2>The route</h2><p id="about"></p></header>
+    <header><h2>The pipeline</h2><p id="about"></p></header>
     <div class="scroll"><div class="draw" id="draw"></div></div>
     <div class="key"><span><b>Ring</b> a gate: a person approves</span><span><b>Blue stage</b> work an agent does</span><span><b>Small grey stage</b> an automatic check</span><span><b>Dashed</b> optional</span></div>
   </section>
@@ -178,7 +178,7 @@ textarea.mono { font: 13px/1.6 var(--mono); }
     <header><h2>Limits</h2><p>What stops an unattended factory from running away.</p></header>
     <div class="grid">
       <div class="field"><label for="max_attempts">Tries per stage</label><input type="number" id="max_attempts" min="1" max="10"><small>After this many failed tries the item waits for a person.</small></div>
-      <div class="field"><label for="daily_usd">Agent spend per day, in dollars</label><input type="number" id="daily_usd" min="1"><small>Reaching it pauses the route until tomorrow.</small></div>
+      <div class="field"><label for="daily_usd">Agent spend per day, in dollars</label><input type="number" id="daily_usd" min="1"><small>Reaching it pauses the pipeline until tomorrow.</small></div>
     </div>
   </section>
 </main></div>
@@ -369,13 +369,13 @@ textarea.mono { font: 13px/1.6 var(--mono); }
       $('create').disabled = false;
       if (data.error) { $('newerror').hidden = false; $('newerror').textContent = data.error; return; }
       $('newpanel').hidden = true; $('n_name').value = $('n_repo').value = $('n_url').value = '';
-      listFactories(data.created).then(function () { $('state').className = 'good'; $('state').textContent = 'Route created. Set the source, the rules and the commands, then switch on automatic pickup.'; });
+      listFactories(data.created).then(function () { $('state').className = 'good'; $('state').textContent = 'Pipeline created. Set the source, the rules and the commands, then switch on automatic pickup.'; });
     });
   });
   call('/api/samples').then(function (data) {
     $('samples').innerHTML = data.samples.map(function (s, i) {
       return '<label class="sample' + (s.example ? '' : ' blank') + '"><input type="radio" name="sample" value="' + esc(s.name) + '"' + (i === 0 ? ' checked' : '') + '>' +
-        '<em>' + (s.example ? 'Example route' : 'Start empty') + '</em><b>' + esc(s.example ? s.name.replace(/-/g, ' ') : 'Blank route') + '</b>' +
+        '<em>' + (s.example ? 'Example pipeline' : 'Start empty') + '</em><b>' + esc(s.example ? s.name.replace(/-/g, ' ') : 'Blank pipeline') + '</b>' +
         '<span>' + esc(s.description) + '</span><span>' + s.stops + ' stages · gates: ' + esc(s.gates.join(', ')) + '</span></label>';
     }).join('');
   });

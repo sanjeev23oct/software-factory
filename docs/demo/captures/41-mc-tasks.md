@@ -5,14 +5,14 @@
 
 ## Section 1 — Logic (`src/board.js`)
 
-Satisfies: AC 1.1, AC 1.2, AC 1.3, AC 1.4, correctness properties 1–3
+Satisfies: AC 1.1, AC 1.2, AC 1.4, AC 2.1, AC 2.2, AC 3.1, AC 3.2
 
-- [x] 1.1 `progress(tasks)` in `src/board.js`  → run: `/build-ui-logic`
-  - [x] 1.1.1 given `[]`, returns a whole-number `percent` of `0` and `label` exactly `No tasks yet`
-  - [x] 1.1.2 given a non-empty list where every task is done, returns `percent` of `100` and `label` exactly `All done`
-  - [x] 1.1.3 given a non-empty list where no task is done, returns `percent` of `0` and `label` exactly `{done} of {total} done` using the real counts (e.g. `0 of 3 done`), not `No tasks yet`
-  - [x] 1.1.4 given 1 done of 3 total, returns `percent` of `33` (a whole number, rounded) and `label` exactly `1 of 3 done`
-  - [x] 1.1.5 never returns `NaN` or `Infinity` for `percent` when `total` is `0`
+- [x] 1.1 `dueText(task, today)` in `src/board.js`  → run: `/build-ui-logic`
+  - [x] 1.1.1 given a task with no `due` property (or `due: null`/`undefined`), returns `null`
+  - [x] 1.1.2 given a task whose `due` equals `today` (both `"YYYY-MM-DD"` strings), returns exactly `due today`
+  - [x] 1.1.3 given a task with `due: "2026-11-03"` and a `today` that is not `"2026-11-03"`, returns exactly `due 3 Nov` (day of month with no leading zero, a space, a three-letter month abbreviation, no year)
+  - [x] 1.1.4 the day-of-month and month come from parsing the `due` string's own `"YYYY-MM-DD"` components (e.g. splitting on `-`), never from constructing a `Date` and reading timezone-shifted fields, so the result does not change with the caller's local timezone
+  - [x] 1.1.5 does not modify `summary`, `visibleTasks`, or `sortTasks`; their existing behavior is unchanged
 
 ### 1.X — Gate
 
@@ -22,14 +22,14 @@ Satisfies: AC 1.1, AC 1.2, AC 1.3, AC 1.4, correctness properties 1–3
 
 ## Section 2 — View (`src/render.js`)
 
-Satisfies: AC 1.1, AC 1.2, AC 1.3, AC 1.4, AC 1.6, AC 2.1, AC 2.2
+Satisfies: AC 1.3, AC 1.4, AC 1.5, AC 2.1
 
-- [x] 2.1 `renderProgress({ percent, label })` in `src/render.js`  → run: `/build-ui-view`
-  - [x] 2.1.1 renders an element with `data-testid="progress-bar"`, `role="progressbar"`, `aria-valuemin="0"`, `aria-valuemax="100"`, `aria-valuenow` equal to the given `percent`, and `aria-valuetext` equal to the given `label`
-  - [x] 2.1.2 renders a fill inside the bar whose width reflects `percent` (e.g. an inline `width: {percent}%` style), so a `percent` of `33` fills about a third of the bar
-  - [x] 2.1.3 renders an element with `data-testid="progress-label"` whose text is exactly the given `label`
-  - [x] 2.1.4 still renders the bar and its `data-testid` when `percent` is `0` (never hidden or removed)
-  - [x] 2.1.5 leaves `renderSummary` and `renderTask` unchanged in both markup and behavior
+- [x] 2.1 `renderTask(task, today)` in `src/render.js` imports and uses `dueText` from `./board.js`  → run: `/build-ui-view`
+  - [x] 2.1.1 when `dueText(task, today)` is non-`null`, adds `<span class="due" data-testid="due-${task.id}">${escapeHtml(dueText(task, today))}</span>` inside the `<li>`, after the title span, so it sits next to the title (AC 1.3, AC 1.5)
+  - [x] 2.1.2 when `dueText(task, today)` is `null`, adds no due element at all, and the rest of the markup (`data-testid="task-<id>"`, the mark, the title) is byte-for-byte identical to today's output for that task (AC 1.4)
+  - [x] 2.1.3 the due text passes through `escapeHtml` like every other piece of task text
+- [x] 2.2 `renderList(tasks, today)` threads `today` through to every call of `renderTask`  → run: `/build-ui-view`
+  - [x] 2.2.1 the empty-state branch (`data-testid="empty"`) is unchanged
 
 ### 2.X — Gate
 
@@ -37,16 +37,21 @@ Satisfies: AC 1.1, AC 1.2, AC 1.3, AC 1.4, AC 1.6, AC 2.1, AC 2.2
 > **CHECKER (Cat 2):** write `evidence/2-view-gate.md` as a tick sheet.
 > **CHECKER (Cat 3):** run `node --test`; EXPECTED: all pass.
 
-## Section 3 — Page (`index.html`, `src/main.js`, `styles.css`)
+## Section 3 — Page (`src/main.js`, `data/tasks.json`, `styles.css`)
 
-Satisfies: AC 1.5, AC 1.6
+Satisfies: AC 2.2, AC 3.2, AC 4.1, AC 4.2
 
-- [x] 3.1 Add a `#progress` container to `index.html`, placed directly after the `<h1>` and directly before `<p id="summary">`  → run: `/build-ui-page`
-  - [x] 3.1.1 the existing `<h1>`, `#summary`, and the three filter buttons (`data-testid="filter-all"`, `"filter-open"`, `"filter-done"`) keep their current markup and order
-- [x] 3.2 Wire `draw()` in `src/main.js` to compute `progress(tasks)` and set `#progress`'s `innerHTML` to `renderProgress(...)` on every draw  → run: `/build-ui-page`
-  - [x] 3.2.1 the existing wiring of `#tasks`, `#summary`, and the filter buttons' `aria-pressed` and click handling is unchanged
-- [x] 3.3 Add styles for the progress bar's track and fill to `styles.css`  → run: `/build-ui-page`
-  - [x] 3.3.1 the bar has a visible track and a fill that sits inside it, using the existing colour variables (`--line`, `--accent`, etc.)
+- [x] 3.1 Compute `today` once per `draw()` call in `src/main.js` and pass it to `renderList(...)`  → run: `/build-ui-page`
+  - [x] 3.1.1 `today` is a `"YYYY-MM-DD"` string derived from UTC date components (e.g. `new Date().toISOString().slice(0, 10)`), never from local-timezone components (AC 3.2)
+  - [x] 3.1.2 the same `today` value is used for every task rendered in that call, so no two same-dated tasks in one render disagree on "due today" (AC 2.2)
+  - [x] 3.1.3 the existing wiring of `#tasks`, `#summary`, and the filter buttons' `aria-pressed` and click handling is unchanged
+- [x] 3.2 `data/tasks.json` demonstrates all three due states  → run: `/build-ui-page`
+  - [x] 3.2.1 task `id: 1` ("Renew the domain", `done: false`) gets a `due` value in the future relative to when the file is read (AC 4.1)
+  - [x] 3.2.2 task `id: 3` ("Book the venue", `done: false`) gets a `due` value equal to today's date on the day this spec is implemented, so it renders as "due today" (AC 4.1)
+  - [x] 3.2.3 task `id: 2` ("Send the invoice", `done: true`) keeps no `due` field at all (AC 4.1)
+  - [x] 3.2.4 every task's `id`, `title`, and `done` fields are unchanged; only `due` fields are added (AC 4.2)
+  - [x] 3.2.5 keeps the file's existing one-task-per-line formatting
+- [x] 3.3 Add a `.task .due` style to `styles.css`, using the existing colour variables (e.g. `--muted`)  → run: `/build-ui-page`
 
 ### 3.X — Gate
 
@@ -56,7 +61,9 @@ Satisfies: AC 1.5, AC 1.6
 
 ## Section 4 — Tests (`test/*.js`)
 
-Satisfies: AC 1.1, AC 1.2, AC 1.3, AC 1.4, AC 2.1, AC 2.2, correctness properties 1–5
+Satisfies: AC 1.1, AC 1.2, AC 1.3, AC 1.4, AC 1.5, AC 2.1, AC 2.2, AC 3.1, AC 3.2, AC 4.1, AC 4.2, all correctness properties
 
-- [x] 4.1 Tests for `progress(tasks)` in `test/board.test.js`, covering the empty list, all-done, zero-done-not-empty, and a mixed count that rounds (e.g. 1 of 3 → 33)  → run: `/build-tests`
-- [x] 4.2 Tests for `renderProgress({ percent, label })` in `test/render.test.js`, covering the `data-testid`s, the ARIA attributes (`role`, `aria-valuemin`, `aria-valuemax`, `aria-valuenow`, `aria-valuetext`), and that the bar still renders at `percent` `0`  → run: `/build-tests`
+- [x] 4.1 Tests for `dueText(task, today)` in `test/board.test.js`  → run: `/build-tests`
+  - [x] 4.1.1 covers: no `due` → `null`; `due` equal to `today` → `due today`; `due: "2026-11-03"` with a different `today` → `due 3 Nov`; a second month/day combination (e.g. `due: "2026-01-09"`) → `due 9 Jan`, to show the result is derived from the string's own components and not a `Date` conversion
+- [x] 4.2 Tests for `renderTask`/`renderList` in `test/render.test.js`  → run: `/build-tests`
+  - [x] 4.2.1 covers: a task with a future `due` renders a `due-<id>` span with the formatted text; a task with `due` equal to `today` renders `due today`; a task with no `due` renders no `due-<id>` element and markup identical to the no-due-date case; due text containing HTML-sensitive characters is escaped; the empty-state and existing `renderSummary` tests continue to pass unchanged

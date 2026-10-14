@@ -16,7 +16,7 @@ await page.shot('c3-start-point', { 'A starting point, not a project type': 'inp
 
 await page.click('#create', 2500);
 await page.until(`document.querySelector('#target').value === 'factory-demo-api-bugs'`);
-await page.shot('c4-created', { 'Its route: stops, and a gate': '#draw', 'A new factory': '#target' });
+await page.shot('c4-created', { 'Its pipeline: stages, and a gate': '#draw', 'A new factory': '#target' });
 
 await page.run(`(() => { const s = document.querySelector('#stype'); s.value = 'github'; s.dispatchEvent(new Event('change', { bubbles: true })); })()`);
 await page.type('#s_repo', 'sanjeev23oct/factory-demo-api');

@@ -92,7 +92,7 @@ def current(item):
     for stage in stages(item):
         if stage["id"] == item["stage"]:
             return stage
-    # The route was edited while this item was on a stage that no longer exists.
+    # The pipeline was edited while this item was on a stage that no longer exists.
     raise core.FactoryError("{} is at `{}`, which is no longer on the route. Start it again or put the stage back.".format(
         item["id"], item["stage"]))
 
@@ -141,7 +141,7 @@ def checkout(item):
 
 
 def reports(item):
-    """Where a review route keeps what it produced, outside the checkout."""
+    """Where a review pipeline keeps what it produced, outside the checkout."""
     path = STATE / "reports" / item["id"]
     path.mkdir(parents=True, exist_ok=True)
     return path
@@ -363,7 +363,7 @@ def finish(item, cost=None, session=None):
             label = {"maker": "build (maker)", "checker": "check (checker)"}.get(role, stage["id"])
             core.sh(["git", "commit", "-q", "-m", "{}: {}".format(label, item["title"])], cwd=wt)
     else:
-        # A review route keeps its output and leaves the reviewed branch exactly as it was.
+        # A review pipeline keeps its output and leaves the reviewed branch exactly as it was.
         for produced in stage.get("produces", []):
             shutil.move(str(wt / fill(item, produced)), str(reports(item) / Path(produced).name))
     if role == "maker":
@@ -513,7 +513,7 @@ def cmd_init(args):
     for name in ("AGENTS.md", "presubmit"):
         shutil.copy(FACTORIES / "starter" / name, home / name)
     if definition.get("commit") is False:
-        # A review route checks requests against rules; start it with the generic set.
+        # A review pipeline checks requests against rules; start it with the generic set.
         rules = json.loads((FACTORIES / "starter" / "process.json").read_text())
         rules["skills_dirs"].append(str(home / "skills"))
         (home / "process.json").write_text(json.dumps(rules, indent=2) + "\n")

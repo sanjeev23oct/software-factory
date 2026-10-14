@@ -12,8 +12,8 @@
    "kicker": "What is a software factory?",
    "title": "A factory, for software",
    "seconds": 9,
-   "define": "A <b>written route</b> that every piece of work follows. <b>Agents</b> do each stage the same way every time, <b>scripts</b> check the result, and <b>people</b> approve at the gates.",
-   "explain": "A software factory is a written route that every piece of work follows. Agents do each stage the same way every time, scripts check the result, and people approve at the gates. It turns “ask an assistant to write some code” into a process you can repeat, inspect and trust."
+   "define": "A <b>written pipeline</b> that every piece of work follows. <b>Agents</b> do each stage the same way every time, <b>scripts</b> check the result, and <b>people</b> approve at the gates.",
+   "explain": "A software factory is a written pipeline that every piece of work follows. Agents do each stage the same way every time, scripts check the result, and people approve at the gates. It turns “ask an assistant to write some code” into a process you can repeat, inspect and trust."
   },
   {
    "kind": "chapter",
@@ -22,7 +22,7 @@
    "seconds": 11,
    "points": [
     [
-     "Route",
+     "Pipeline",
      "The stops a piece of work passes through, in order.",
      "var(--r1)"
     ],
@@ -72,12 +72,12 @@
      "var(--r2)"
     ],
     [
-     "Routes",
+     "Pipelines",
      "Each repository has one or more: features, bugs, reviewing pull requests.",
      "var(--r4)"
     ]
    ],
-   "explain": "There is one factory: one editor and one background job. It serves as many repositories as you like, and each repository has one or more routes, such as one for features, a shorter one for bugs, and one that reviews pull requests. This demo runs five routes across two repositories. One limit to know: a single route works on one repository, so an idea that spans two is two issues today."
+   "explain": "There is one factory: one editor and one background job. It serves as many repositories as you like, and each repository has one or more pipelines, such as one for features, a shorter one for bugs, and one that reviews pull requests. This demo runs five pipelines across two repositories. One limit to know: a single pipeline works on one repository, so an idea that spans two is two issues today."
   },
   {
    "kind": "chapter",
@@ -151,32 +151,32 @@
   },
   {
    "kind": "chapter",
-   "kicker": "Chapter 2 · Define a route",
-   "title": "Give a repository its route",
-   "say": "Seven steps in the editor. Here: a route for feature work on the UI repository.",
+   "kicker": "Chapter 2 · Define a pipeline",
+   "title": "Give a repository its pipeline",
+   "say": "Seven steps in the editor. Here: a pipeline for feature work on the UI repository.",
    "seconds": 5,
    "colour": "var(--r4)",
-   "explain": "Seven steps in the editor. These frames show a real route being created: feature work on the UI repository."
+   "explain": "Seven steps in the editor. These frames show a real pipeline being created: feature work on the UI repository."
   },
   {
    "kind": "step",
    "n": 4,
    "of": 16,
    "title": "Add a repository",
-   "say": "Tell the factory where the code is and give the route a name.",
+   "say": "Tell the factory where the code is and give the pipeline a name.",
    "seconds": 5
   },
   {
    "kind": "image",
    "image": "s4-add.png",
-   "say": "The editor lists every route in the factory. Add one.",
+   "say": "The editor lists every pipeline in the factory. Add one.",
    "seconds": 7,
    "n": 4
   },
   {
    "kind": "image",
    "image": "s5-form.png",
-   "say": "Name the route and point it at the code",
+   "say": "Name the pipeline and point it at the code",
    "seconds": 7,
    "n": 4
   },
@@ -191,14 +191,14 @@
   {
    "kind": "image",
    "image": "s6-start.png",
-   "say": "Examples to start from. Any kind of work can have a route.",
+   "say": "Examples to start from. Any kind of work can have a pipeline.",
    "seconds": 7,
    "n": 5
   },
   {
    "kind": "image",
    "image": "s7-created.png",
-   "say": "The route exists and is listed in the factory",
+   "say": "The pipeline exists and is listed in the factory",
    "seconds": 7,
    "n": 5
   },
@@ -228,7 +228,7 @@
   {
    "kind": "image",
    "image": "s9-route.png",
-   "say": "This route has two gates and ends with a pull request",
+   "say": "This pipeline has two gates and ends with a pull request",
    "seconds": 8,
    "n": 7
   },
@@ -250,7 +250,7 @@
    "kind": "step",
    "n": 8,
    "of": 16,
-   "title": "Give the route its skills",
+   "title": "Give the pipeline its skills",
    "say": "A skill says how one kind of job is done. Tasks will each name one.",
    "seconds": 5,
    "explain": "A skill is a short document that says how one kind of job is done. Maker skills are the ones a task can name. For each, you say which files it is for; when tasks are written, every task gets the skill that fits the file it touches, and a script rejects a task that names the wrong one. Bring skills in from the library, import the ones your team already keeps in the repository, or write your own.",
@@ -259,7 +259,7 @@
   {
    "kind": "image",
    "image": "k1-skills.png",
-   "say": "The Skills tab: what this route has, and three ways to add more",
+   "say": "The Skills tab: what this pipeline has, and three ways to add more",
    "seconds": 7,
    "n": 8
   },
@@ -340,7 +340,7 @@
   },
   {
    "kind": "image",
-   "image": "n1-issue.png",
+   "image": "q1-issue.png",
    "say": "The idea, as a person wrote it",
    "seconds": 8,
    "n": 11
@@ -355,7 +355,7 @@
   },
   {
    "kind": "image",
-   "image": "n2-picked-up.png",
+   "image": "q2-picked-up.png",
    "say": "The issue is on the line and an agent is at work",
    "seconds": 8,
    "n": 12,
@@ -366,26 +366,26 @@
    "n": 13,
    "of": 16,
    "title": "Approve the requirements",
-   "say": "The route stops at its first gate. A person reads, then decides.",
+   "say": "The pipeline stops at its first gate. A person reads, then decides.",
    "seconds": 5
   },
   {
    "kind": "image",
-   "image": "n3-gate.png",
-   "say": "Waiting for you: the route has stopped",
+   "image": "q3-gate.png",
+   "say": "Waiting for you: the pipeline has stopped",
    "seconds": 7,
    "n": 13
   },
   {
    "kind": "image",
-   "image": "n4-read.png",
+   "image": "q4-read.png",
    "say": "Read what the agent wrote before approving",
    "seconds": 8,
    "n": 13
   },
   {
    "kind": "image",
-   "image": "n5-approve.png",
+   "image": "q5-approve.png",
    "say": "Approve. The optional stage is skipped for a small change.",
    "seconds": 8,
    "n": 13
@@ -452,7 +452,7 @@
   },
   {
    "kind": "image",
-   "image": "n6-maker.png",
+   "image": "q6-maker.png",
    "say": "First a maker session builds the section",
    "seconds": 7,
    "n": 14,
@@ -460,7 +460,7 @@
   },
   {
    "kind": "image",
-   "image": "n7-checker.png",
+   "image": "q7-checker.png",
    "say": "Then a checker, in a different session, verifies it",
    "seconds": 7,
    "n": 14,
@@ -524,21 +524,21 @@
   },
   {
    "kind": "image",
-   "image": "n9-before.png",
-   "say": "The board before: numbers only",
+   "image": "q9-before.png",
+   "say": "The board before: no deadlines shown",
    "seconds": 5,
    "n": 15
   },
   {
    "kind": "image",
-   "image": "n10-after.png",
-   "say": "After: a progress bar, built from that one issue",
+   "image": "q10-after.png",
+   "say": "After: a due date beside each task, built from that one issue",
    "seconds": 8,
    "n": 15
   },
   {
    "kind": "image",
-   "image": "n11-gate2.png",
+   "image": "q11-gate2.png",
    "say": "A person approves the second gate",
    "seconds": 7,
    "n": 15
@@ -548,12 +548,12 @@
    "n": 16,
    "of": 16,
    "title": "Ready to merge",
-   "say": "The route ends with a pull request. Merging it is a person's decision, and that is where the idea becomes value.",
+   "say": "The pipeline ends with a pull request. Merging it is a person's decision, and that is where the idea becomes value.",
    "seconds": 5
   },
   {
    "kind": "image",
-   "image": "n12-done.png",
+   "image": "q12-done.png",
    "say": "Every stage done, and a pull request open",
    "seconds": 7,
    "n": 16,
@@ -561,19 +561,19 @@
   },
   {
    "kind": "image",
-   "image": "n13-pr.png",
+   "image": "q13-pr.png",
    "say": "The pull request, with the spec and the checker's evidence attached",
    "seconds": 9,
    "n": 16
   },
   {
    "kind": "chapter",
-   "kicker": "Chapter 4 · More routes",
-   "title": "Other routes, same factory",
-   "say": "A bug needs a shorter route. An API change needs a stricter one.",
+   "kicker": "Chapter 4 · More pipelines",
+   "title": "Other pipelines, same factory",
+   "say": "A bug needs a shorter pipeline. An API change needs a stricter one.",
    "seconds": 5,
    "colour": "var(--r3)",
-   "explain": "The same factory runs other routes at the same time. On the API repository, feature work has two gates before any code, because API changes are costly to undo. Bugs take a short route with no spec: reproduce with a failing test, fix, review, then one gate. A bug filed in this demo went from issue to a reviewed fix in under three minutes."
+   "explain": "The same factory runs other pipelines at the same time. On the API repository, feature work has two gates before any code, because API changes are costly to undo. Bugs take a short pipeline with no spec: reproduce with a failing test, fix, review, then one gate. A bug filed in this demo went from issue to a reviewed fix in under three minutes."
   },
   {
    "kind": "image",
@@ -584,7 +584,7 @@
   {
    "kind": "image",
    "image": "b3-picked-up.png",
-   "say": "A bug route: picked up in the background like any other",
+   "say": "A bug pipeline: picked up in the background like any other",
    "seconds": 7,
    "background": true
   },
@@ -613,7 +613,7 @@
    "say": "Every pull request is checked by a script first. Only work that followed the process earns an agent's time.",
    "seconds": 6,
    "colour": "var(--r3)",
-   "explain": "A review route checks pull requests, whoever wrote them. A script goes first: is there a spec, does every task name a skill, is there evidence, did the tests change with the code, plus the team's own rules. A quick hack added by hand was stopped by the script and cost nothing. The request the factory built passed all 11 checks, and only then did an agent review the code.",
+   "explain": "A review pipeline checks pull requests, whoever wrote them. A script goes first: is there a spec, does every task name a skill, is there evidence, did the tests change with the code, plus the team's own rules. A quick hack added by hand was stopped by the script and cost nothing. The request the factory built passed all 11 checks, and only then did an agent review the code.",
    "how": "<span>Label a pull request <code>factory-review</code>. Set the rules in the editor's <b>Review rules</b> tab.</span>"
   },
   {
@@ -649,10 +649,10 @@
   {
    "kind": "chapter",
    "kicker": "What this demo produced",
-   "title": "Six ideas in, six pull requests out",
+   "title": "Seven ideas in, seven pull requests out",
    "seconds": 10,
-   "say": "11 gates approved by a person. Everything else was done by agents and checked by scripts. Agent cost for all of it: $16.96.",
-   "explain": "Across two repositories and five routes, six issues became six open pull requests, each with a spec or a reproduction, a checker's evidence, and passing tests. A person approved eleven gates and will decide what to merge."
+   "say": "13 gates approved by a person. Everything else was done by agents and checked by scripts. Agent cost for all of it: $19.91.",
+   "explain": "Across two repositories and five pipelines, seven issues became seven open pull requests, each with a spec or a reproduction, a checker's evidence, and passing tests. A person approved thirteen gates and will decide what to merge."
   }
  ],
  "facts": [
@@ -665,37 +665,37 @@
    2
   ],
   [
-   "routes",
+   "pipelines",
    5
   ],
   [
    "issues turned into pull requests",
-   6
+   7
   ],
   [
    "gates approved by a person",
-   11
+   13
   ],
   [
    "total agent cost",
-   "$16.96"
+   "$19.91"
   ]
  ],
  "links": [
   [
-   "The feature in this video: pull request #8 on the UI repository",
-   "https://github.com/sanjeev23oct/factory-demo-ui/pull/8"
+   "The feature in this video: pull request #10 on the UI repository",
+   "https://github.com/sanjeev23oct/factory-demo-ui/pull/10"
   ],
   [
    "Its issue",
-   "https://github.com/sanjeev23oct/factory-demo-ui/issues/7"
+   "https://github.com/sanjeev23oct/factory-demo-ui/issues/9"
   ],
   [
    "Its commits: maker and checker alternate",
-   "https://github.com/sanjeev23oct/factory-demo-ui/pull/8/commits"
+   "https://github.com/sanjeev23oct/factory-demo-ui/pull/10/commits"
   ],
   [
-   "An earlier feature on the same route: pull request #4",
+   "An earlier feature on the same pipeline: pull request #4",
    "https://github.com/sanjeev23oct/factory-demo-ui/pull/4"
   ],
   [
@@ -703,11 +703,11 @@
    "https://github.com/sanjeev23oct/factory-demo-api/pull/5"
   ],
   [
-   "A feature through the stricter API route: pull request #2",
+   "A feature through the stricter API pipeline: pull request #2",
    "https://github.com/sanjeev23oct/factory-demo-api/pull/2"
   ],
   [
-   "The quick hack the review route stopped: pull request #3",
+   "The quick hack the review pipeline stopped: pull request #3",
    "https://github.com/sanjeev23oct/factory-demo-api/pull/3"
   ],
   [
@@ -715,5 +715,5 @@
    "https://github.com/sanjeev23oct/software-factory"
   ]
  ],
- "intro": "How an idea written in an issue becomes a reviewed, tested change. This page shows a software factory being set up, a route being given its stages, gates and skills, and one idea going all the way through, built by a maker and proved by a separate checker, on real repositories."
+ "intro": "How an idea written in an issue becomes a reviewed, tested change. This page shows a software factory being set up, a pipeline being given its stages, gates and skills, and one idea going all the way through, built by a maker and proved by a separate checker, on real repositories."
 }

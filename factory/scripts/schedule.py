@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Install, remove, or inspect the scheduled job that runs the factory unattended (macOS).
 
-    schedule.py install --every 10 [TARGET ...]    run a pass every 10 minutes; no targets = every route that is switched on
+    schedule.py install --every 10 [TARGET ...]    run a pass every 10 minutes; no targets = every pipeline that is switched on
     schedule.py status
     schedule.py remove
 
@@ -54,7 +54,7 @@ def main():
         if result.returncode:
             sys.exit("schedule: could not load the job: {}".format(result.stderr.strip()))
         print("Installed. Every {} minutes it checks: {}".format(
-            args.every, ", ".join(args.targets) or "every route that is switched on"))
+            args.every, ", ".join(args.targets) or "every pipeline that is switched on"))
         print("Log: {}".format(logs / "tick.log"))
     elif args.command == "remove":
         launchctl("bootout", DOMAIN + "/" + LABEL)
@@ -72,7 +72,7 @@ def main():
             job = plistlib.load(f)
         print("Running in the background: yes")
         print("Checks for new work every {} minutes".format(job["StartInterval"] // 60))
-        print("Routes: {}".format(", ".join(job["ProgramArguments"][2:]) or "every route that is switched on"))
+        print("Pipelines: {}".format(", ".join(job["ProgramArguments"][2:]) or "every pipeline that is switched on"))
         print("Passes since it was installed: {}".format(field("runs") or "0"))
         print("Right now: {}".format("a pass is running" if field("state") == "running" else "idle until the next pass"))
 

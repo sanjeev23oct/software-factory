@@ -8,16 +8,16 @@ const node = (text) => `js:[...document.querySelectorAll('.node')].find((n) => n
 const card = (name) => `js:document.querySelector('.skill[data-name="${name}"]')`;
 
 await page.goto('http://127.0.0.1:8787/#factory-demo-api');
-await page.shot('s4-add', { 'Add a repository': '#new', 'Routes already in this factory': '.pick' });
+await page.shot('s4-add', { 'Add a repository': '#new', 'Pipelines already in this factory': '.pick' });
 await page.click('#new');
 await page.type('#n_name', R);
 await page.type('#n_repo', `${homedir()}/personal-repos/factory-demo-ui`);
-await page.shot('s5-form', { 'A name for the route': '#n_name', 'Where the code is': '#n_repo' });
+await page.shot('s5-form', { 'A name for the pipeline': '#n_name', 'Where the code is': '#n_repo' });
 await page.click('input[name=sample][value=ui-app]');
 await page.shot('s6-start', { 'An example to start from and edit': 'js:document.querySelector("input[name=sample][value=ui-app]").closest(".sample")', 'Or start from nothing': '.sample.blank' }, '#samples');
 
 await page.goto(`http://127.0.0.1:8787/#${R}`, 2500);
-await page.shot('s7-created', { 'The route: its stages and gates': '#draw', 'Listed in the factory': '.pick' });
+await page.shot('s7-created', { 'The pipeline: its stages and gates': '#draw', 'Listed in the factory': '.pick' });
 await page.shot('s8-trigger', { 'Issues with this label': '#s_label', 'Assigned to this person': '#s_assignee', 'In this repository': '#s_repo' }, '#source');
 await page.shot('s9-route', { 'Gate: a person approves the requirements': node('Gate: requirements'), 'Gate: a person looks at the screens': node('Gate: screens'), 'Ends by opening a pull request': node('pull request') });
 await page.shot('s9b-stops', { 'A stage an agent does': stage('requirements'), 'A gate: it waits for a person': stage('approve-requirements'), 'Reorder with the arrows': 'js:' + stage('requirements').slice(3) + '.querySelector(".order")' }, stage('requirements'));

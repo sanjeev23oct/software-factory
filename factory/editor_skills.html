@@ -76,8 +76,8 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
 <body>
 <div class="bar"><div class="wrap">
   <h1>Factory</h1>
-  <nav class="tabs"><a href="/">Route</a><a href="/skills" aria-current="page">Skills</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
-  <label class="pick">Route <select id="target" aria-label="Route"></select></label>
+  <nav class="tabs"><a href="/">Pipeline</a><a href="/skills" aria-current="page">Skills</a><a href="/rules">Review rules</a><a href="/activity">Activity</a></nav>
+  <label class="pick">Pipeline <select id="target" aria-label="Pipeline"></select></label>
   <span id="state" role="status"></span>
 </div></div>
 
@@ -88,7 +88,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   </section>
 
   <section class="panel">
-    <header><h2>Stage skills</h2><p>The skill each stage on the route follows, including the checker that verifies the maker's work in a separate session.</p></header>
+    <header><h2>Stage skills</h2><p>The skill each stage on the pipeline follows, including the checker that verifies the maker's work in a separate session.</p></header>
     <div id="stops" style="display:grid;gap:10px"></div>
   </section>
 
@@ -133,7 +133,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   }
   function draw() {
     var makers = data.skills.filter(function (s) { return s.maker; }), rest = data.skills.filter(function (s) { return !s.maker; });
-    $('makers').innerHTML = makers.length ? makers.map(card).join('') : '<p class="empty">This route has no maker skills yet. Add some below; tasks need them.</p>';
+    $('makers').innerHTML = makers.length ? makers.map(card).join('') : '<p class="empty">This pipeline has no maker skills yet. Add some below; tasks need them.</p>';
     $('stops').innerHTML = rest.map(card).join('');
     options('lib', data.library, 'Nothing left to add');
     options('repo', data.repo, 'None found in .claude/skills');
@@ -175,7 +175,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   call('/api/routes').then(function (d) {
     var pick = decodeURIComponent(location.hash.slice(1));
     $('target').innerHTML = d.targets.map(function (t) { return '<option' + (t === pick ? ' selected' : '') + '>' + esc(t) + '</option>'; }).join('');
-    if (d.targets.length) { load($('target').value); } else { say('No route yet. Add a repository on the Route tab.', 'bad'); }
+    if (d.targets.length) { load($('target').value); } else { say('No pipeline yet. Add a repository on the Pipeline tab.', 'bad'); }
   });
 })();
 </script>

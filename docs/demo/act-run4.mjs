@@ -9,13 +9,13 @@ const I = (inner) => 'js:(' + item + ')?.querySelector(' + JSON.stringify(inner)
 const now = (text) => "(() => { const i = " + item + "; return i && [...i.querySelectorAll('.track .now')].some((n) => n.textContent.includes('" + text + "')); })()";
 
 await page.goto('https://github.com/sanjeev23oct/factory-demo-ui/issues/7', 8000);
-await page.shot('n1-issue', { 'The label this route watches for': 'text:feature', 'Assigned to the right person': 'text:sanjeev23oct' });
+await page.shot('n1-issue', { 'The label this pipeline watches for': 'text:feature', 'Assigned to the right person': 'text:sanjeev23oct' });
 await page.goto('http://127.0.0.1:8787/activity', 2500);
 await page.click('#pass', 2000);
 await page.until('!!' + item, 180); await page.wait(5000);
 await page.shot('n2-picked-up', { 'A pass is running': '#pulse-title', 'Picked up without anyone asking': I('.item-top'), 'An agent is writing the requirements': I('.track .now') });
 await page.until('!!' + card, 600);
-await page.shot('n3-gate', { 'The route has stopped at a gate': C('.tag'), 'What the agent wrote': C('.doc'), 'Waiting for a person': C('.btn.go') });
+await page.shot('n3-gate', { 'The pipeline has stopped at a gate': C('.tag'), 'What the agent wrote': C('.doc'), 'Waiting for a person': C('.btn.go') });
 await page.run('(' + card + ").querySelector('.doc summary').click()"); await page.wait(700);
 await page.shot('n4-read', { 'Read the requirements before approving': C('.doc pre') }, C('.wait-top'));
 await page.run('(' + card + ").querySelector('.doc').open = false");

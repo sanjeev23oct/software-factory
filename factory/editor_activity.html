@@ -6,7 +6,7 @@
 <title>Factory Activity</title>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: a sticky bar; a strip saying whether the factory is running in the background; gates waiting for a person; then every item on its route. */
+/* Layout: a sticky bar; a strip saying whether the factory is running in the background; gates waiting for a person; then every item on its pipeline. */
 :root {
   --bg: #f2f4f7; --paper: #ffffff; --ink: #0f1b2d; --muted: #5d6b7e; --line: #d6dce5; --field: #ffffff;
   --route: #1f5fd0; --gate: #a66300; --gate-bg: #fbecd0; --ok: #12905a; --ok-bg: #dff3e9; --bad: #c2362b; --bad-bg: #fbe4e1; --check: #7b8797;
@@ -86,7 +86,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
 <body>
 <div class="bar"><div class="wrap">
   <h1>Factory</h1>
-  <nav class="tabs"><a href="/">Route</a><a href="/skills">Skills</a><a href="/rules">Review rules</a><a href="/activity" aria-current="page">Activity</a></nav>
+  <nav class="tabs"><a href="/">Pipeline</a><a href="/skills">Skills</a><a href="/rules">Review rules</a><a href="/activity" aria-current="page">Activity</a></nav>
 </div></div>
 
 <div class="wrap"><main>
@@ -101,7 +101,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
   </section>
 
   <section class="panel">
-    <header><h2>On the line</h2><p>Every piece of work, and where it is on its route.</p></header>
+    <header><h2>On the line</h2><p>Every piece of work, and where it is on its pipeline.</p></header>
     <div id="items"></div>
   </section>
 </main></div>
@@ -130,7 +130,7 @@ main { display: grid; gap: 18px; padding-block: 22px 60px; }
     $('pulse').className = 'pulse' + (s.installed ? ' on' : '');
     $('pulse-title').textContent = s.installed ? (s.running ? 'A pass is running right now' : 'Running in the background') : 'Not running in the background';
     $('pulse-detail').textContent = s.installed
-      ? 'One factory, ' + Object.keys(factories).length + ' routes with work. Checks for new work every ' + s.every + ' minutes, with nobody at the keyboard. Last pass ' + ago(s.last_pass) + '.'
+      ? 'One factory, ' + Object.keys(factories).length + ' pipelines with work. Checks for new work every ' + s.every + ' minutes, with nobody at the keyboard. Last pass ' + ago(s.last_pass) + '.'
       : 'Nothing is picked up automatically. Start it with: python3 factory/scripts/schedule.py install';
     $('pass').disabled = !s.installed;
 

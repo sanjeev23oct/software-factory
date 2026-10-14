@@ -8,7 +8,7 @@ You are the maker. The prompt names one section of `<spec folder>/tasks.md`. Bui
 
 1. Read the requirements, the design if there is one, and the section you were given.
 2. For each unticked task in the section, in order:
-   - Open the skill the task names (`→ run: /skill`) in this route's skills folder and follow it.
+   - Open the skill the task names (`→ run: /skill`) in this pipeline's skills folder and follow it.
    - Build exactly what the task and its sub-items say. Where the spec leaves a detail out, stop and say so; do not invent it.
 3. Run the presubmit command the prompt names. It must pass.
 4. Report what you built, file by file.
