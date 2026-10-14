@@ -1,0 +1,143 @@
+Idea to Value. How one idea becomes a tested change, with people deciding only where it matters. <break time="1.2s" />
+
+A software factory is a written pipeline for every piece of work. Agents do the stages, scripts check the results, and people approve at the gates. <break time="0.6s" />
+
+Six words. Pipeline: the stages work goes through. Stage: one job. Skill: how it's done. Gate: a person approves. Evidence: proof it passed. Background job: keeps work moving. <break time="0.4s" />
+
+One factory serves many repositories. Each repository can have several pipelines: one for features, a shorter one for bugs, one for reviews. <break time="1.2s" />
+
+First, set up the factory. Three steps, done once. <break time="1.4s" />
+
+Step one: get the factory. <break time="3.0s" />
+
+Clone it, and check the three things it needs: Python, Claude Code, and a login to your issue tracker. <break time="0.4s" />
+
+Step two: open the editor. <break time="3.0s" />
+
+One command opens it in your browser. From here, it's all on a page. <break time="0.4s" />
+
+Step three: start the background job. <break time="2.6s" />
+
+Install it once. Every ten minutes it checks for new work, so nobody has to start anything again. <break time="0.8s" />
+
+Now, give a repository its pipeline. Seven steps, all in the editor. <break time="0.4s" />
+
+Step one: add a repository. <break time="3.0s" />
+
+The editor lists every pipeline in this factory. We add a new one. <break time="1.8s" />
+
+Give it a name, and point it at the code. <break time="3.0s" />
+
+Step two: pick a starting point. <break time="2.6s" />
+
+Start from an example, or from blank. Examples are just starting points. Any kind of work can have a pipeline. <break time="0.4s" />
+
+The new pipeline is created, and listed in the factory. <break time="3.0s" />
+
+Step three: say what triggers it. <break time="2.6s" />
+
+Only issues with this label, assigned to this person, are picked up. Everything else is left alone. <break time="1.2s" />
+
+Step four: arrange the stages and the gates. <break time="1.8s" />
+
+Stages are the work. Gates are where a person approves. This pipeline has two gates, and ends with a pull request. <break time="0.4s" />
+
+Each stage is a row. Reorder it, switch it off, or add your own. <break time="1.4s" />
+
+For the build stage, switch on maker and checker. We'll see what that means shortly. <break time="2.0s" />
+
+Step five: give the pipeline its skills. <break time="2.2s" />
+
+A skill says how one kind of job is done. The Skills tab shows what this pipeline has. <break time="0.4s" />
+
+Add skills from the library, import the ones your team already keeps, or write your own. <break time="1.6s" />
+
+Each skill says what it's for, which files it covers, and how the job is done. <break time="2.6s" />
+
+For UI work there are separate skills for logic, view, page and tests, each tied to its own files. <break time="1.4s" />
+
+And two skills for the build stage: one for the maker, and one for the checker. <break time="1.6s" />
+
+Step six: write the rules. <break time="3.0s" />
+
+The team's rules, in plain words, plus the commands that prove a change works. Agents read them before every task. <break time="0.4s" />
+
+Step seven: switch it on. <break time="3.0s" />
+
+Turn on automatic pickup, and save. The background job now watches this repository. <break time="1.8s" />
+
+Now, from idea to value. One issue, all the way to a pull request. <break time="0.4s" />
+
+First, write the idea down. <break time="3.0s" />
+
+A plain-words issue in the tracker, with the label and the assignee the pipeline watches for. <break time="1.6s" />
+
+Nobody starts it. The factory picks it up. <break time="1.8s" />
+
+On its next pass, the background job finds the issue. It's on the line, and an agent is writing the requirements. <break time="0.4s" />
+
+Then the first gate: approve the requirements. <break time="2.2s" />
+
+The pipeline has stopped, and waits for a person. <break time="3.0s" />
+
+Open the requirements, and read what the agent wrote before you decide. <break time="3.0s" />
+
+Approve. The optional design stage is skipped, because this is a small change. <break time="2.8s" />
+
+Now, a maker builds, and a checker proves. <break time="1.8s" />
+
+The maker builds one section, using the skill each task names. A checker, in a separate session, verifies it and writes the evidence. Then a script re-runs the checks. <break time="1.4s" />
+
+The tasks file opens by saying who builds and who checks. Nothing is ticked until the checker's evidence passes. <break time="1.4s" />
+
+Every task names its file, and the skill that fits it: logic, view, page, or tests. <break time="2.6s" />
+
+First, a maker session builds the section. <break time="3.0s" />
+
+Then a checker, in a different session that never saw the maker work, verifies it. <break time="1.0s" />
+
+The checker writes the evidence: what was expected, against what was found. <break time="3.0s" />
+
+And the factory stamps it with both session ids, so the maker never checks its own work. <break time="1.2s" />
+
+Four sections, eight sessions: each section built in one and proved in another. Then a script re-ran all twenty-four checks, and every one matched. <break time="1.4s" />
+
+One commit per session: maker, checker, maker, checker. <break time="3.0s" />
+
+The second gate: look at the result. <break time="2.2s" />
+
+Before: the board shows no deadlines. <break time="2.6s" />
+
+After: a due date beside each task, and "due today" in words. Built from that one issue. <break time="1.2s" />
+
+A person looks, and approves the second gate. <break time="3.0s" />
+
+And it's ready to merge. <break time="3.0s" />
+
+Every stage done, and a pull request open. <break time="3.0s" />
+
+The pull request links the spec and the checker's evidence. Merging is a person's decision. That's where the idea becomes value. <break time="0.6s" />
+
+The same factory runs other pipelines too. <break time="2.2s" />
+
+API features are stricter: requirements and design are both approved before any code. <break time="2.8s" />
+
+Bugs take a shorter pipeline, picked up in the background like any other. <break time="1.8s" />
+
+Reproduced with a failing test, fixed, and reviewed, in under three minutes. <break time="3.0s" />
+
+And its pull request opened after a single approval. <break time="2.4s" />
+
+One more rule: no process, no review. <break time="3.0s" />
+
+Every pull request is checked by a script first. A quick hack, with no spec and no test, is stopped, and costs nothing. <break time="0.4s" />
+
+The request the factory built passes every check. <break time="3.0s" />
+
+Only then does an agent review the code. <break time="3.0s" />
+
+You decide how strict each check is. <break time="3.0s" />
+
+And add your own rules by filling in a sentence. <break time="3.0s" />
+
+Seven ideas in, seven pull requests out. Thirteen approvals by a person. Everything else done by agents, and checked by scripts, for about twenty dollars. <break time="0.4s" />

@@ -4,16 +4,18 @@
    "kind": "title",
    "kicker": "A software factory, shown end to end",
    "title": "Idea <em>to</em> Value",
-   "seconds": 6,
-   "say": "How an idea written in an issue becomes a reviewed, tested change, with people deciding only where it matters."
+   "seconds": 8,
+   "say": "How an idea written in an issue becomes a reviewed, tested change, with people deciding only where it matters.",
+   "voice": "Idea to Value. How one idea becomes a tested change, with people deciding only where it matters."
   },
   {
    "kind": "chapter",
    "kicker": "What is a software factory?",
    "title": "A factory, for software",
-   "seconds": 9,
+   "seconds": 11,
    "define": "A <b>written pipeline</b> that every piece of work follows. <b>Agents</b> do each stage the same way every time, <b>scripts</b> check the result, and <b>people</b> approve at the gates.",
-   "explain": "A software factory is a written pipeline that every piece of work follows. Agents do each stage the same way every time, scripts check the result, and people approve at the gates. It turns “ask an assistant to write some code” into a process you can repeat, inspect and trust."
+   "explain": "A software factory is a written pipeline that every piece of work follows. Agents do each stage the same way every time, scripts check the result, and people approve at the gates. It turns “ask an assistant to write some code” into a process you can repeat, inspect and trust.",
+   "voice": "A software factory is a written pipeline for every piece of work. Agents do the stages, scripts check the results, and people approve at the gates."
   },
   {
    "kind": "chapter",
@@ -23,7 +25,7 @@
    "points": [
     [
      "Pipeline",
-     "The stops a piece of work passes through, in order.",
+     "The stages a piece of work passes through, in order.",
      "var(--r1)"
     ],
     [
@@ -52,7 +54,8 @@
      "var(--r2)"
     ]
    ],
-   "explain": "Six words describe the whole thing."
+   "explain": "Six words describe the whole thing.",
+   "voice": "Six words. Pipeline: the stages work goes through. Stage: one job. Skill: how it's done. Gate: a person approves. Evidence: proof it passed. Background job: keeps work moving."
   },
   {
    "kind": "chapter",
@@ -77,7 +80,8 @@
      "var(--r4)"
     ]
    ],
-   "explain": "There is one factory: one editor and one background job. It serves as many repositories as you like, and each repository has one or more pipelines, such as one for features, a shorter one for bugs, and one that reviews pull requests. This demo runs five pipelines across two repositories. One limit to know: a single pipeline works on one repository, so an idea that spans two is two issues today."
+   "explain": "There is one factory: one editor and one background job. It serves as many repositories as you like, and each repository has one or more pipelines, such as one for features, a shorter one for bugs, and one that reviews pull requests. This demo runs five pipelines across two repositories. One limit to know: a single pipeline works on one repository, so an idea that spans two is two issues today.",
+   "voice": "One factory serves many repositories. Each repository can have several pipelines: one for features, a shorter one for bugs, one for reviews."
   },
   {
    "kind": "chapter",
@@ -86,7 +90,8 @@
    "say": "Three steps. After this, the factory is running and waiting for work.",
    "seconds": 5,
    "colour": "var(--r1)",
-   "explain": "Three steps, done once per machine."
+   "explain": "Three steps, done once per machine.",
+   "voice": "First, set up the factory. Three steps, done once."
   },
   {
    "kind": "step",
@@ -95,7 +100,8 @@
    "title": "Get the factory",
    "say": "Clone it. It needs Python, Claude Code, and a login to your tracker.",
    "seconds": 5,
-   "how": "<pre>git clone https://github.com/sanjeev23oct/software-factory.git\ncd software-factory</pre>"
+   "how": "<pre>git clone https://github.com/sanjeev23oct/software-factory.git\ncd software-factory</pre>",
+   "voice": "Step one: get the factory."
   },
   {
    "kind": "terminal",
@@ -106,7 +112,8 @@
    "n": 1,
    "highlight": [
     "git clone"
-   ]
+   ],
+   "voice": "Clone it, and check the three things it needs: Python, Claude Code, and a login to your issue tracker."
   },
   {
    "kind": "step",
@@ -115,7 +122,8 @@
    "title": "Open the editor",
    "say": "Everything from here is done on a page, not in files.",
    "seconds": 5,
-   "how": "<pre>python3 factory/editor.py</pre>"
+   "how": "<pre>python3 factory/editor.py</pre>",
+   "voice": "Step two: open the editor."
   },
   {
    "kind": "terminal",
@@ -126,7 +134,8 @@
    "n": 2,
    "highlight": [
     "editor.py"
-   ]
+   ],
+   "voice": "One command opens it in your browser. From here, it's all on a page."
   },
   {
    "kind": "step",
@@ -135,7 +144,8 @@
    "title": "Start the background job",
    "say": "It checks for new work every ten minutes. Nobody has to start anything again.",
    "seconds": 5,
-   "how": "<pre>python3 factory/scripts/schedule.py install --every 10\npython3 factory/scripts/schedule.py status</pre>"
+   "how": "<pre>python3 factory/scripts/schedule.py install --every 10\npython3 factory/scripts/schedule.py status</pre>",
+   "voice": "Step three: start the background job."
   },
   {
    "kind": "terminal",
@@ -147,7 +157,8 @@
    "highlight": [
     "Running in the background",
     "schedule.py install"
-   ]
+   ],
+   "voice": "Install it once. Every ten minutes it checks for new work, so nobody has to start anything again."
   },
   {
    "kind": "chapter",
@@ -156,7 +167,8 @@
    "say": "Seven steps in the editor. Here: a pipeline for feature work on the UI repository.",
    "seconds": 5,
    "colour": "var(--r4)",
-   "explain": "Seven steps in the editor. These frames show a real pipeline being created: feature work on the UI repository."
+   "explain": "Seven steps in the editor. These frames show a real pipeline being created: feature work on the UI repository.",
+   "voice": "Now, give a repository its pipeline. Seven steps, all in the editor."
   },
   {
    "kind": "step",
@@ -164,21 +176,24 @@
    "of": 16,
    "title": "Add a repository",
    "say": "Tell the factory where the code is and give the pipeline a name.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "Step one: add a repository."
   },
   {
    "kind": "image",
    "image": "s4-add.png",
    "say": "The editor lists every pipeline in the factory. Add one.",
    "seconds": 7,
-   "n": 4
+   "n": 4,
+   "voice": "The editor lists every pipeline in this factory. We add a new one."
   },
   {
    "kind": "image",
    "image": "s5-form.png",
    "say": "Name the pipeline and point it at the code",
    "seconds": 7,
-   "n": 4
+   "n": 4,
+   "voice": "Give it a name, and point it at the code."
   },
   {
    "kind": "step",
@@ -186,21 +201,24 @@
    "of": 16,
    "title": "Pick a starting point",
    "say": "Start from an example and edit it, or from nothing. Examples are not fixed types.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "Step two: pick a starting point."
   },
   {
    "kind": "image",
    "image": "s6-start.png",
    "say": "Examples to start from. Any kind of work can have a pipeline.",
-   "seconds": 7,
-   "n": 5
+   "seconds": 8,
+   "n": 5,
+   "voice": "Start from an example, or from blank. Examples are just starting points. Any kind of work can have a pipeline."
   },
   {
    "kind": "image",
    "image": "s7-created.png",
    "say": "The pipeline exists and is listed in the factory",
    "seconds": 7,
-   "n": 5
+   "n": 5,
+   "voice": "The new pipeline is created, and listed in the factory."
   },
   {
    "kind": "step",
@@ -208,14 +226,16 @@
    "of": 16,
    "title": "Say what triggers it",
    "say": "Which repository, which label, and who the issue must be assigned to.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "Step three: say what triggers it."
   },
   {
    "kind": "image",
    "image": "s8-trigger.png",
    "say": "Only issues with this label, assigned to this person, are picked up",
    "seconds": 8,
-   "n": 6
+   "n": 6,
+   "voice": "Only issues with this label, assigned to this person, are picked up. Everything else is left alone."
   },
   {
    "kind": "step",
@@ -223,28 +243,32 @@
    "of": 16,
    "title": "Arrange the stages and gates",
    "say": "The stages are the work. The gates are where a person approves.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "Step four: arrange the stages and the gates."
   },
   {
    "kind": "image",
    "image": "s9-route.png",
    "say": "This pipeline has two gates and ends with a pull request",
    "seconds": 8,
-   "n": 7
+   "n": 7,
+   "voice": "Stages are the work. Gates are where a person approves. This pipeline has two gates, and ends with a pull request."
   },
   {
    "kind": "image",
    "image": "s9b-stops.png",
    "say": "Each stage is a row: reorder it, switch it off, or add your own",
    "seconds": 7,
-   "n": 7
+   "n": 7,
+   "voice": "Each stage is a row. Reorder it, switch it off, or add your own."
   },
   {
    "kind": "image",
    "image": "k6-separate.png",
    "say": "Switch on maker and checker for the build stage",
    "seconds": 8,
-   "n": 7
+   "n": 7,
+   "voice": "For the build stage, switch on maker and checker. We'll see what that means shortly."
   },
   {
    "kind": "step",
@@ -254,42 +278,48 @@
    "say": "A skill says how one kind of job is done. Tasks will each name one.",
    "seconds": 5,
    "explain": "A skill is a short document that says how one kind of job is done. Maker skills are the ones a task can name. For each, you say which files it is for; when tasks are written, every task gets the skill that fits the file it touches, and a script rejects a task that names the wrong one. Bring skills in from the library, import the ones your team already keeps in the repository, or write your own.",
-   "how": "<span>Open the <b>Skills</b> tab. Add a skill, fill in <b>Files it is for</b>, and save.</span>"
+   "how": "<span>Open the <b>Skills</b> tab. Add a skill, fill in <b>Files it is for</b>, and save.</span>",
+   "voice": "Step five: give the pipeline its skills."
   },
   {
    "kind": "image",
    "image": "k1-skills.png",
    "say": "The Skills tab: what this pipeline has, and three ways to add more",
    "seconds": 7,
-   "n": 8
+   "n": 8,
+   "voice": "A skill says how one kind of job is done. The Skills tab shows what this pipeline has."
   },
   {
    "kind": "image",
    "image": "k2-library.png",
    "say": "Add from the library, import the team's own, or write one",
    "seconds": 8,
-   "n": 8
+   "n": 8,
+   "voice": "Add skills from the library, import the ones your team already keeps, or write your own."
   },
   {
    "kind": "image",
    "image": "k3-files.png",
    "say": "Say what a skill is for, which files it covers, and how the job is done",
    "seconds": 9,
-   "n": 8
+   "n": 8,
+   "voice": "Each skill says what it's for, which files it covers, and how the job is done."
   },
   {
    "kind": "image",
    "image": "k4-makers.png",
    "say": "For UI work: separate skills for logic, view, page and tests, each with its files",
    "seconds": 9,
-   "n": 8
+   "n": 8,
+   "voice": "For UI work there are separate skills for logic, view, page and tests, each tied to its own files."
   },
   {
    "kind": "image",
    "image": "k5-checker.png",
    "say": "And two skills for the build stage: one for the maker, one for the checker",
    "seconds": 8,
-   "n": 8
+   "n": 8,
+   "voice": "And two skills for the build stage: one for the maker, and one for the checker."
   },
   {
    "kind": "step",
@@ -297,14 +327,16 @@
    "of": 16,
    "title": "Write the rules",
    "say": "The team's rules in plain words, and the commands that prove a change works.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "Step six: write the rules."
   },
   {
    "kind": "image",
    "image": "s10-rules.png",
    "say": "Agents read these rules before every task",
    "seconds": 8,
-   "n": 9
+   "n": 9,
+   "voice": "The team's rules, in plain words, plus the commands that prove a change works. Agents read them before every task."
   },
   {
    "kind": "step",
@@ -312,14 +344,16 @@
    "of": 16,
    "title": "Switch it on",
    "say": "From here the background job watches this repository.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "Step seven: switch it on."
   },
   {
    "kind": "image",
    "image": "s11-live.png",
    "say": "Switch on automatic pickup, and save",
    "seconds": 7,
-   "n": 10
+   "n": 10,
+   "voice": "Turn on automatic pickup, and save. The background job now watches this repository."
   },
   {
    "kind": "chapter",
@@ -328,7 +362,8 @@
    "say": "One idea, written as an issue, taken all the way to a pull request. A person decides twice.",
    "seconds": 6,
    "colour": "var(--r2)",
-   "explain": "One idea, written as an issue, taken all the way to a pull request in about ten minutes of work. A person decided twice; everything else was done by agents in separate sessions and checked by scripts."
+   "explain": "One idea, written as an issue, taken all the way to a pull request in about ten minutes of work. A person decided twice; everything else was done by agents in separate sessions and checked by scripts.",
+   "voice": "Now, from idea to value. One issue, all the way to a pull request."
   },
   {
    "kind": "step",
@@ -336,14 +371,16 @@
    "of": 16,
    "title": "Write the idea down",
    "say": "An issue in the tracker, in plain words, with the label and the assignee.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "First, write the idea down."
   },
   {
    "kind": "image",
    "image": "q1-issue.png",
    "say": "The idea, as a person wrote it",
    "seconds": 8,
-   "n": 11
+   "n": 11,
+   "voice": "A plain-words issue in the tracker, with the label and the assignee the pipeline watches for."
   },
   {
    "kind": "step",
@@ -351,7 +388,8 @@
    "of": 16,
    "title": "The factory picks it up",
    "say": "Nobody starts it. The background job finds the issue on its next pass.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "Nobody starts it. The factory picks it up."
   },
   {
    "kind": "image",
@@ -359,7 +397,8 @@
    "say": "The issue is on the line and an agent is at work",
    "seconds": 8,
    "n": 12,
-   "background": true
+   "background": true,
+   "voice": "On its next pass, the background job finds the issue. It's on the line, and an agent is writing the requirements."
   },
   {
    "kind": "step",
@@ -367,28 +406,32 @@
    "of": 16,
    "title": "Approve the requirements",
    "say": "The pipeline stops at its first gate. A person reads, then decides.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "Then the first gate: approve the requirements."
   },
   {
    "kind": "image",
    "image": "q3-gate.png",
    "say": "Waiting for you: the pipeline has stopped",
    "seconds": 7,
-   "n": 13
+   "n": 13,
+   "voice": "The pipeline has stopped, and waits for a person."
   },
   {
    "kind": "image",
    "image": "q4-read.png",
    "say": "Read what the agent wrote before approving",
    "seconds": 8,
-   "n": 13
+   "n": 13,
+   "voice": "Open the requirements, and read what the agent wrote before you decide."
   },
   {
    "kind": "image",
    "image": "q5-approve.png",
    "say": "Approve. The optional stage is skipped for a small change.",
    "seconds": 8,
-   "n": 13
+   "n": 13,
+   "voice": "Approve. The optional design stage is skipped, because this is a small change."
   },
   {
    "kind": "step",
@@ -397,13 +440,14 @@
    "title": "A maker builds, a checker proves",
    "say": "Two separate sessions for every section. Then a script checks them both.",
    "seconds": 5,
-   "explain": "Every task names the skill that builds it. The factory starts a <b>maker</b> session, which builds one section and may not tick anything or write evidence. It then starts a <b>checker</b> in a different session, which never saw the maker work: it runs the section's gate against what was built, writes the evidence, and ticks the tasks only if everything passed. The factory rejects a maker that ticks its own work and a checker that edits code, and it stamps each evidence file with both session ids. In this run four sections were each built in one session and proved in another, eight sessions in all, using the logic, view, page and tests skills."
+   "explain": "Every task names the skill that builds it. The factory starts a <b>maker</b> session, which builds one section and may not tick anything or write evidence. It then starts a <b>checker</b> in a different session, which never saw the maker work: it runs the section's gate against what was built, writes the evidence, and ticks the tasks only if everything passed. The factory rejects a maker that ticks its own work and a checker that edits code, and it stamps each evidence file with both session ids. In this run four sections were each built in one session and proved in another, eight sessions in all, using the logic, view, page and tests skills.",
+   "voice": "Now, a maker builds, and a checker proves."
   },
   {
    "kind": "chapter",
    "kicker": "How the build stage works",
    "title": "Maker, checker, script",
-   "seconds": 11,
+   "seconds": 13,
    "one_column": true,
    "points": [
     [
@@ -421,7 +465,8 @@
      "Re-runs the checks itself. Rejects a maker that ticks, or a checker that edits code.",
      "var(--r1)"
     ]
-   ]
+   ],
+   "voice": "The maker builds one section, using the skill each task names. A checker, in a separate session, verifies it and writes the evidence. Then a script re-runs the checks."
   },
   {
    "kind": "doc",
@@ -435,7 +480,8 @@
     "A checker then verifies",
     "it runs the gate",
     "Nothing is ticked"
-   ]
+   ],
+   "voice": "The tasks file opens by saying who builds and who checks. Nothing is ticked until the checker's evidence passes."
   },
   {
    "kind": "doc",
@@ -448,7 +494,8 @@
    "highlight": [
     "run: `/build",
     "CHECKER"
-   ]
+   ],
+   "voice": "Every task names its file, and the skill that fits it: logic, view, page, or tests."
   },
   {
    "kind": "image",
@@ -456,7 +503,8 @@
    "say": "First a maker session builds the section",
    "seconds": 7,
    "n": 14,
-   "background": true
+   "background": true,
+   "voice": "First, a maker session builds the section."
   },
   {
    "kind": "image",
@@ -464,7 +512,8 @@
    "say": "Then a checker, in a different session, verifies it",
    "seconds": 7,
    "n": 14,
-   "background": true
+   "background": true,
+   "voice": "Then a checker, in a different session that never saw the maker work, verifies it."
   },
   {
    "kind": "doc",
@@ -477,7 +526,8 @@
     "Status: PASS",
     "\\| PASS",
     "PASS \\|"
-   ]
+   ],
+   "voice": "The checker writes the evidence: what was expected, against what was found."
   },
   {
    "kind": "doc",
@@ -488,7 +538,8 @@
    "tail": 7,
    "highlight": [
     "Stamped by the factory"
-   ]
+   ],
+   "voice": "And the factory stamps it with both session ids, so the maker never checks its own work."
   },
   {
    "kind": "terminal",
@@ -500,7 +551,8 @@
    "highlight": [
     "MAKER",
     "CHECKER"
-   ]
+   ],
+   "voice": "Four sections, eight sessions: each section built in one and proved in another. Then a script re-ran all twenty-four checks, and every one matched."
   },
   {
    "kind": "terminal",
@@ -512,7 +564,8 @@
    "highlight": [
     "maker",
     "checker"
-   ]
+   ],
+   "voice": "One commit per session: maker, checker, maker, checker."
   },
   {
    "kind": "step",
@@ -520,28 +573,32 @@
    "of": 16,
    "title": "Look at the result, and approve",
    "say": "The second gate is for a person to look at what was built.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "The second gate: look at the result."
   },
   {
    "kind": "image",
    "image": "q9-before.png",
    "say": "The board before: no deadlines shown",
    "seconds": 5,
-   "n": 15
+   "n": 15,
+   "voice": "Before: the board shows no deadlines."
   },
   {
    "kind": "image",
    "image": "q10-after.png",
    "say": "After: a due date beside each task, built from that one issue",
    "seconds": 8,
-   "n": 15
+   "n": 15,
+   "voice": "After: a due date beside each task, and \"due today\" in words. Built from that one issue."
   },
   {
    "kind": "image",
    "image": "q11-gate2.png",
    "say": "A person approves the second gate",
    "seconds": 7,
-   "n": 15
+   "n": 15,
+   "voice": "A person looks, and approves the second gate."
   },
   {
    "kind": "step",
@@ -549,7 +606,8 @@
    "of": 16,
    "title": "Ready to merge",
    "say": "The pipeline ends with a pull request. Merging it is a person's decision, and that is where the idea becomes value.",
-   "seconds": 5
+   "seconds": 5,
+   "voice": "And it's ready to merge."
   },
   {
    "kind": "image",
@@ -557,14 +615,16 @@
    "say": "Every stage done, and a pull request open",
    "seconds": 7,
    "n": 16,
-   "background": true
+   "background": true,
+   "voice": "Every stage done, and a pull request open."
   },
   {
    "kind": "image",
    "image": "q13-pr.png",
    "say": "The pull request, with the spec and the checker's evidence attached",
    "seconds": 9,
-   "n": 16
+   "n": 16,
+   "voice": "The pull request links the spec and the checker's evidence. Merging is a person's decision. That's where the idea becomes value."
   },
   {
    "kind": "chapter",
@@ -573,20 +633,23 @@
    "say": "A bug needs a shorter pipeline. An API change needs a stricter one.",
    "seconds": 5,
    "colour": "var(--r3)",
-   "explain": "The same factory runs other pipelines at the same time. On the API repository, feature work has two gates before any code, because API changes are costly to undo. Bugs take a short pipeline with no spec: reproduce with a failing test, fix, review, then one gate. A bug filed in this demo went from issue to a reviewed fix in under three minutes."
+   "explain": "The same factory runs other pipelines at the same time. On the API repository, feature work has two gates before any code, because API changes are costly to undo. Bugs take a short pipeline with no spec: reproduce with a failing test, fix, review, then one gate. A bug filed in this demo went from issue to a reviewed fix in under three minutes.",
+   "voice": "The same factory runs other pipelines too."
   },
   {
    "kind": "image",
    "image": "p1-api-route.png",
    "say": "API features: requirements and design are both approved before any code",
-   "seconds": 8
+   "seconds": 8,
+   "voice": "API features are stricter: requirements and design are both approved before any code."
   },
   {
    "kind": "image",
    "image": "b3-picked-up.png",
    "say": "A bug pipeline: picked up in the background like any other",
    "seconds": 7,
-   "background": true
+   "background": true,
+   "voice": "Bugs take a shorter pipeline, picked up in the background like any other."
   },
   {
    "kind": "terminal",
@@ -598,13 +661,15 @@
     "waiting at",
     "nobody typed"
    ],
-   "background": true
+   "background": true,
+   "voice": "Reproduced with a failing test, fixed, and reviewed, in under three minutes."
   },
   {
    "kind": "image",
    "image": "p9-bug-pr.png",
    "say": "And its pull request, opened after one approval",
-   "seconds": 6
+   "seconds": 6,
+   "voice": "And its pull request opened after a single approval."
   },
   {
    "kind": "chapter",
@@ -614,37 +679,43 @@
    "seconds": 6,
    "colour": "var(--r3)",
    "explain": "A review pipeline checks pull requests, whoever wrote them. A script goes first: is there a spec, does every task name a skill, is there evidence, did the tests change with the code, plus the team's own rules. A quick hack added by hand was stopped by the script and cost nothing. The request the factory built passed all 11 checks, and only then did an agent review the code.",
-   "how": "<span>Label a pull request <code>factory-review</code>. Set the rules in the editor's <b>Review rules</b> tab.</span>"
+   "how": "<span>Label a pull request <code>factory-review</code>. Set the rules in the editor's <b>Review rules</b> tab.</span>",
+   "voice": "One more rule: no process, no review."
   },
   {
    "kind": "image",
    "image": "p7-quick-hack.png",
    "say": "A quick hack with no spec and no test: stopped by the script",
-   "seconds": 9
+   "seconds": 9,
+   "voice": "Every pull request is checked by a script first. A quick hack, with no spec and no test, is stopped, and costs nothing."
   },
   {
    "kind": "image",
    "image": "p8-factory-built.png",
    "say": "The request the factory built passes every check",
-   "seconds": 7
+   "seconds": 7,
+   "voice": "The request the factory built passes every check."
   },
   {
    "kind": "image",
    "image": "p8b-agent-review.png",
    "say": "Only then does an agent review the code",
-   "seconds": 7
+   "seconds": 7,
+   "voice": "Only then does an agent review the code."
   },
   {
    "kind": "image",
    "image": "p10-rules-checks.png",
    "say": "You decide how strict each check is",
-   "seconds": 6
+   "seconds": 6,
+   "voice": "You decide how strict each check is."
   },
   {
    "kind": "image",
    "image": "p11-rules-own.png",
    "say": "And add your own rules by filling in a sentence",
-   "seconds": 7
+   "seconds": 7,
+   "voice": "And add your own rules by filling in a sentence."
   },
   {
    "kind": "chapter",
@@ -652,7 +723,8 @@
    "title": "Seven ideas in, seven pull requests out",
    "seconds": 10,
    "say": "13 gates approved by a person. Everything else was done by agents and checked by scripts. Agent cost for all of it: $19.91.",
-   "explain": "Across two repositories and five pipelines, seven issues became seven open pull requests, each with a spec or a reproduction, a checker's evidence, and passing tests. A person approved thirteen gates and will decide what to merge."
+   "explain": "Across two repositories and five pipelines, seven issues became seven open pull requests, each with a spec or a reproduction, a checker's evidence, and passing tests. A person approved thirteen gates and will decide what to merge.",
+   "voice": "Seven ideas in, seven pull requests out. Thirteen approvals by a person. Everything else done by agents, and checked by scripts, for about twenty dollars."
   }
  ],
  "facts": [
