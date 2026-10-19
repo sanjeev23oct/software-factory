@@ -16,3 +16,4 @@ site/
 # Targets for private repositories stay on this machine.
 targets/*/
 !targets/example/
+.DS_Store

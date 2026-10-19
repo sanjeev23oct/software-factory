@@ -6,9 +6,12 @@
     read_issue.py --source jira --ref ABC-12 --out issue_context.md
     read_issue.py --source file --ref requirement.md --out issue_context.md
     read_issue.py --source github --repo owner/name --list --label factory [--assignee username]
+    read_issue.py --source gitlab --project group/repo --ref 12 --notes    the comments, as JSON
 
-GitLab uses the `glab` login on this machine and GitHub uses `gh`. Jira reads
-JIRA_BASE_URL, JIRA_EMAIL and JIRA_API_TOKEN from the environment.
+GitLab uses FACTORY_GITLAB_TOKEN when it is set, and the `glab` login otherwise.
+GitHub uses FACTORY_GITHUB_TOKEN when it is set, and the `gh` login otherwise.
+A CI runner sets the tokens; a laptop uses the logins. Jira reads JIRA_BASE_URL,
+JIRA_EMAIL and JIRA_API_TOKEN from the environment.
 
 Fetching prints the title. Listing prints JSON: [{"ref": "...", "title": "..."}].
 """
@@ -19,6 +22,7 @@ import json
 import os
 import subprocess
 import sys
+import urllib.error
 import urllib.request
 from urllib.parse import quote
 
@@ -35,6 +39,21 @@ def cli(cmd):
     return json.loads(proc.stdout)
 
 
+def http(url, headers):
+    request = urllib.request.Request(url, headers=dict(headers, Accept="application/json"))
+    try:
+        with urllib.request.urlopen(request, timeout=30) as response:
+            return json.loads(response.read())
+    except urllib.error.HTTPError as e:
+        sys.exit("read_issue: {} said {}: {}".format(url.split("?")[0], e.code, e.read().decode()[:300]))
+
+
+def github(path):
+    if os.environ.get("FACTORY_GITHUB_TOKEN"):
+        return http("https://api.github.com/" + path, {"Authorization": "Bearer " + os.environ["FACTORY_GITHUB_TOKEN"]})
+    return cli(["gh", "api", path])
+
+
 def jira(path):
     base = os.environ.get("JIRA_BASE_URL")
     if not base:
@@ -47,6 +66,10 @@ def jira(path):
 
 
 def gitlab(args, path):
+    project = "projects/{}/{}".format(quote(args.project, safe=""), path)
+    if os.environ.get("FACTORY_GITLAB_TOKEN"):
+        return http("https://{}/api/v4/{}".format(args.host or "gitlab.com", project),
+                    {"PRIVATE-TOKEN": os.environ["FACTORY_GITLAB_TOKEN"]})
     host = ["--hostname", args.host] if args.host else []
     return cli(["glab", "api"] + host + ["projects/{}/{}".format(quote(args.project, safe=""), path)])
 
@@ -59,8 +82,8 @@ def fetch(args):
         return (issue["title"], issue["web_url"], issue["author"]["username"], issue["state"], issue.get("labels", []),
                 issue.get("description"), [(n["author"]["username"], n["created_at"], n["body"]) for n in notes])
     if args.source == "github":
-        issue = cli(["gh", "api", "repos/{}/issues/{}".format(args.repo, args.ref)])
-        notes = cli(["gh", "api", "repos/{}/issues/{}/comments?per_page=100".format(args.repo, args.ref)])
+        issue = github("repos/{}/issues/{}".format(args.repo, args.ref))
+        notes = github("repos/{}/issues/{}/comments?per_page=100".format(args.repo, args.ref))
         return (issue["title"], issue["html_url"], issue["user"]["login"], issue["state"],
                 [l["name"] for l in issue.get("labels", [])], issue.get("body"),
                 [(n["user"]["login"], n["created_at"], n["body"]) for n in notes])
@@ -79,7 +102,7 @@ def listing(args):
         return [{"ref": str(i["iid"]), "title": i["title"]} for i in found]
     if args.source == "github":
         who = "&assignee={}".format(quote(args.assignee)) if args.assignee else ""
-        found = cli(["gh", "api", "repos/{}/issues?state=open&labels={}&per_page=100{}".format(args.repo, quote(args.label), who)])
+        found = github("repos/{}/issues?state=open&labels={}&per_page=100{}".format(args.repo, quote(args.label), who))
         return [{"ref": str(i["number"]), "title": i["title"]} for i in found if "pull_request" not in i]
     if args.source == "jira":
         who = ' AND assignee = "{}"'.format(args.assignee) if args.assignee else ""
@@ -98,12 +121,17 @@ def main():
     p.add_argument("--ref", help="issue number, Jira key, or file path")
     p.add_argument("--out")
     p.add_argument("--list", action="store_true")
+    p.add_argument("--notes", action="store_true", help="print the comments as JSON: [{who, when, text}]")
     p.add_argument("--label", default="factory")
     p.add_argument("--assignee", help="when listing, only issues assigned to this username")
     args = p.parse_args()
 
     if args.list:
         print(json.dumps(listing(args)))
+        return
+    if args.notes:
+        notes = fetch(args)[-1]
+        print(json.dumps([{"who": who, "when": when, "text": text} for who, when, text in notes]))
         return
     if not (args.ref and args.out):
         sys.exit("read_issue: give --ref and --out")

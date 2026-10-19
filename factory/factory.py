@@ -37,6 +37,8 @@ from pathlib import Path
 HOME = Path(__file__).resolve().parent.parent
 SKILLS = HOME / ".agents" / "skills"
 TARGETS = Path(os.environ.get("FACTORY_TARGETS_DIR", HOME / "targets"))
+# Progress: items, the event log and worktrees. A CI runner points this at its `factory-state` checkout.
+STATE_ROOT = Path(os.environ.get("FACTORY_STATE_DIR", HOME / ".factory"))
 DEFAULT_TARGET = "tasklite"
 MAX_REVIEW_ROUNDS = 3
 BUDGET_USD = os.environ.get("FACTORY_MAX_BUDGET_USD", "3")
@@ -75,9 +77,17 @@ def use_target(name):
         if not (home / "target.json").exists():
             raise FactoryError("no such target: {} (see `factory.py targets`)".format(name))
         config = json.loads((home / "target.json").read_text())
-        REPO, ISSUES, state = Path(config["repo"]), home / "issues", HOME / ".factory" / name
+        REPO, ISSUES, state = Path(config.get("repo") or home / "checkout"), home / "issues", STATE_ROOT / name
         labels, GUIDE, LOCAL_SKILLS = home / "labels.json", home / "AGENTS.md", home / "skills"
         PRESUBMIT, MAIN = [str(home / "presubmit")], config.get("main", "main")
+        if os.environ.get("FACTORY_REPOS_DIR") and config.get("remote"):
+            # On a CI runner nothing is checked out yet: clone the repository for this pass.
+            import cloud
+            REPO = Path(os.environ["FACTORY_REPOS_DIR"]) / name
+            try:
+                cloud.ensure_clone(REPO, config["remote"], MAIN)
+            except RuntimeError as e:
+                raise FactoryError(str(e))
         MERGE, EXTRA_TOOLS = config.get("merge", False), config.get("allowed_tools", [])
         PROTECTED = tuple(config.get("protected", []))
         if not (REPO / ".git").exists():
@@ -114,6 +124,13 @@ SCRATCH = CONTEXT_FILES + ["triage_result.json", "review.json", "pr-metadata.jso
 
 class FactoryError(Exception):
     pass
+
+
+class UsageLimit(FactoryError):
+    """Claude's usage limit was reached. Not the work's fault, so it does not use up an attempt."""
+
+
+USAGE_LIMIT = re.compile(r"usage limit|rate.?limit|\b429\b|overloaded", re.I)
 
 
 def sh(cmd, cwd=None, check=True):
@@ -690,8 +707,12 @@ def run_headless(task):
     try:
         data = json.loads(proc.stdout)
     except ValueError:
+        if USAGE_LIMIT.search(proc.stdout + proc.stderr):
+            raise UsageLimit("Claude's usage limit was reached: {}".format((proc.stdout + proc.stderr)[-300:]))
         raise FactoryError("claude gave no JSON:\n{}".format((proc.stdout + proc.stderr)[-2000:]))
     if data.get("is_error"):
+        if USAGE_LIMIT.search(str(data.get("result"))):
+            raise UsageLimit("Claude's usage limit was reached: {}".format(str(data.get("result"))[:300]))
         raise FactoryError("{} agent failed: {}".format(task["agent"], str(data.get("result"))[:2000]))
     global LAST_SESSION
     LAST_SESSION = data.get("session_id")   # each run is its own session; the flow engine records which one did what

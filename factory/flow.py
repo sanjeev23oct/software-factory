@@ -20,6 +20,8 @@ stages until someone approves.
     flow.py --target NAME approve ITEM [--skip STAGE]   a human approves; optionally skip an optional stage
     flow.py --target NAME retry ITEM              unblock an item after fixing what stopped it
     flow.py --target NAME run [ITEM]              headless: next -> claude -p -> done, until a human is needed
+    flow.py --target NAME gates                   approve gates from `/approve` comments; post a notice on new ones
+    flow.py --target NAME publish                 push every item's factory/* branch (on a CI runner, after `run`)
 """
 
 import argparse
@@ -93,7 +95,7 @@ def current(item):
         if stage["id"] == item["stage"]:
             return stage
     # The pipeline was edited while this item was on a stage that no longer exists.
-    raise core.FactoryError("{} is at `{}`, which is no longer on the route. Start it again or put the stage back.".format(
+    raise core.FactoryError("{} is at `{}`, which is no longer in the pipeline. Start it again or put the stage back.".format(
         item["id"], item["stage"]))
 
 
@@ -107,6 +109,10 @@ def move(item, stage_id=None):
             return
         stage_id = order[index]
     item["stage"], item["status"] = stage_id, "pending"
+
+
+def utc_now():
+    return datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%S")
 
 
 def block(item, why):
@@ -236,7 +242,7 @@ def agent_task(item, stage, role=None):
                   "Do not change any code. The factory rejects a checker that does.",
                   "If the section passes, write its evidence and tick its boxes. If it fails, tick nothing and write your findings to {} at the checkout root for the maker.".format(FEEDBACK)]
     if stage["id"] == "tasks" and maker_skills():
-        lines += ["", "Maker skills available on this route. Name exactly one per task, chosen by the files the task touches:"] + maker_skills()
+        lines += ["", "Maker skills available in this pipeline. Name exactly one per task, chosen by the files the task touches:"] + maker_skills()
     if (wt / FEEDBACK).exists() and role != "checker":
         lines.append("A check rejected the previous attempt. Its findings are in {}. Fix every one.".format(FEEDBACK))
     if stage.get("writes"):
@@ -255,7 +261,7 @@ def step(item):
         stage = current(item)
         if stage["by"] == "human":
             if item["status"] != "waiting":
-                item["status"] = "waiting"
+                item["status"], item["waiting_since"] = "waiting", utc_now()
                 log(item, "waiting for a human")
             return None
         if stage["by"] == "script":
@@ -608,20 +614,121 @@ def cmd_done(args):
     print("{}: `{}` accepted".format(item["id"], stage))
 
 
-def cmd_approve(args):
-    item = load(args.item)
+def approve(item, skip=(), by=""):
     stage = current(item)
     if stage["by"] != "human":
         raise core.FactoryError("{} is at `{}`, which does not wait for a human".format(item["id"], stage["id"]))
-    for skipped in args.skip or []:
+    for skipped in skip:
         target = next((s for s in DEFINITION["stages"] if s["id"] == skipped), None)
         if not target or not target.get("optional"):
             raise core.FactoryError("`{}` is not an optional stage".format(skipped))
-        item["skip"].append(skipped)
-    log(item, "approved by human", "skipping: {}".format(", ".join(args.skip or []) or "nothing"))
+    item["skip"] += list(skip)
+    log(item, "approved by human", "{}skipping: {}".format("by {}; ".format(by) if by else "", ", ".join(skip) or "nothing"))
     move(item)
     log(item, "moved on")
-    print("{}: approved. {}".format(item["id"], "Finished." if item["status"] == "done" else "Next stage: " + item["stage"]))
+    print("{}: approved{}. {}".format(item["id"], " by " + by if by else "",
+                                      "Finished." if item["status"] == "done" else "Next stage: " + item["stage"]))
+
+
+def cmd_approve(args):
+    approve(load(args.item), args.skip or [])
+
+
+def approvers():
+    source = DEFINITION["source"]
+    return [a.lower() for a in source.get("approvers") or ([source["assignee"]] if source.get("assignee") else [])]
+
+
+def approval(item, notes):
+    """(who, skips) from the first `/approve` comment an approver wrote since the gate opened, or None.
+
+    Comments are untrusted: only an approver's counts, and only one written after the item reached this gate."""
+    for note in notes:
+        if note["who"].lower() not in approvers() or note["when"][:19] < item["waiting_since"]:
+            continue
+        words = (note["text"].strip().splitlines() or [""])[0].split()
+        if words and words[0] == "/approve":
+            return note["who"], [w for w in words[1:] if w not in ("skip", "--skip")]
+    return None
+
+
+def links(item):
+    """Web links to what the agents wrote before this gate, on the item's pushed branch."""
+    source, branch = DEFINITION["source"], "factory/{}".format(item["id"])
+    if item.get("sha") or not (core.WORKTREES / item["id"]).exists():
+        return []
+    if source["type"] == "gitlab":
+        base = "https://{}/{}/-/blob/{}/".format(source.get("host") or "gitlab.com", source["project"], branch)
+    else:
+        base = "https://github.com/{}/blob/{}/".format(source["repo"], branch)
+    found = []
+    for stage in stages(item):
+        if stage["id"] == item["stage"]:
+            break
+        for path in stage.get("produces", []):
+            path = path.format(spec=item["spec"]).rstrip("/")
+            if (core.WORKTREES / item["id"] / path).is_file():
+                found.append("[{}]({}{})".format(Path(path).name, base, path))
+    return found
+
+
+def cmd_gates(args):
+    """Approve gates from `/approve` comments on the issue, and tell people about gates that are waiting.
+
+    This is how a person approves when the factory runs on a CI runner, with no editor to click in."""
+    if DEFINITION["source"]["type"] not in ("gitlab", "github"):
+        return print("gates: approval by comment needs a GitLab or GitHub source")
+    if not approvers():
+        return print("gates: set source.approvers (or source.assignee) to say who may approve by comment")
+    for item in all_items():
+        if item["status"] != "waiting":
+            continue
+        stage = current(item)
+        if not item.get("waiting_since"):
+            item["waiting_since"] = utc_now()   # waiting since before comments were read: only newer ones count
+            log(item, "approval by comment open")
+        notes = json.loads(read_issue(source_args(item["ref"]) + ["--notes"]))
+        found = approval(item, notes)
+        if found:
+            who, skip = found
+            try:
+                approve(item, skip, by=who)
+            except core.FactoryError as e:
+                print("{}: /approve not applied - {}".format(item["id"], e))
+            continue
+        if item.get("notified") == stage["id"]:
+            continue
+        optional = [s["id"] for s in stages(item) if s.get("optional") and stages(item).index(s) > stages(item).index(stage)]
+        body = ["**The factory is waiting for you** at `{}`.".format(stage["id"]), ""]
+        docs = links(item)
+        body += ["Read first: " + " · ".join(docs), ""] if docs else []
+        body += ["To approve, reply `/approve`."]
+        body += ["To approve and skip an optional stage: `/approve skip {}`.".format(optional[0])] if optional else []
+        body += ["", "Only {} can approve. <!-- software-factory:gate {} {} -->".format(
+            ", ".join("@" + a for a in approvers()), item["id"], stage["id"])]
+        note = STATE / "items" / "{}.note.md".format(item["id"])
+        note.write_text("\n".join(body) + "\n")
+        source, cmd = DEFINITION["source"], ["python3", str(SCRIPTS / "post_issue_note.py"), "--source", DEFINITION["source"]["type"]]
+        cmd += [a for key in ("project", "host", "repo") if source.get(key) for a in ("--" + key, source[key])]
+        proc = subprocess.run(cmd + ["--ref", item["ref"], "--file", str(note)], text=True, capture_output=True)
+        note.unlink()
+        if proc.returncode:
+            print("{}: could not post the gate notice - {}".format(item["id"], (proc.stderr or proc.stdout).strip()))
+            continue
+        item["notified"] = stage["id"]
+        log(item, "asked for approval on the issue", stage["id"])
+        print("{}: asked for approval at `{}`".format(item["id"], stage["id"]))
+
+
+def cmd_publish(args):
+    """Push each item's `factory/*` branch, so a pass on another machine can carry on from here."""
+    import cloud
+    for item in all_items():
+        branch = "factory/{}".format(item["id"])
+        if item.get("sha") or core.sh(["git", "rev-parse", "--verify", "-q", branch], check=False).returncode:
+            continue
+        pushed = cloud.push_branch(core.REPO, branch)
+        print("{}: {}".format(branch, "pushed" if pushed.returncode == 0 else "not pushed - " + (pushed.stderr or "").strip()[:300]))
 
 
 def cmd_retry(args):
@@ -657,6 +764,11 @@ def cmd_run(args):
                 core.BUDGET_USD = str(DEFINITION.get("limits", {}).get("run_usd", core.BUDGET_USD))
                 try:
                     cost = core.run_headless(task)
+                except core.UsageLimit as e:
+                    # Nothing is wrong with the work. Leave everything as it is and let a later pass carry on.
+                    log(item, "paused: usage limit", str(e))
+                    print("{}: paused - {}. A later pass carries on.".format(item["id"], e))
+                    return
                 except core.FactoryError as e:
                     # A run that died still counts as an attempt, or a scheduled job would retry it forever.
                     item["attempts"][task["stage"]] = item["attempts"].get(task["stage"], 0) + 1
@@ -675,7 +787,8 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
     p = sub.add_parser("start"); p.add_argument("--issue"); p.add_argument("--file"); p.add_argument("--title")
     p.set_defaults(fn=cmd_start)
-    for name, fn in (("poll", cmd_poll), ("status", cmd_status), ("validate", cmd_validate), ("show", cmd_show)):
+    for name, fn in (("poll", cmd_poll), ("status", cmd_status), ("validate", cmd_validate), ("show", cmd_show),
+                     ("gates", cmd_gates), ("publish", cmd_publish)):
         sub.add_parser(name).set_defaults(fn=fn)
     sub.add_parser("scheduled").set_defaults(fn=cmd_scheduled)
     p = sub.add_parser("init"); p.add_argument("name"); p.add_argument("--sample", required=True)

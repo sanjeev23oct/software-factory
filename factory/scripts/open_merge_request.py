@@ -27,11 +27,14 @@ from urllib.parse import quote
 def token_for(host):
     token = os.environ.get("FACTORY_GITLAB_TOKEN")
     if not token:
-        proc = subprocess.run(["security", "find-generic-password", "-a", "software-factory", "-s", host, "-w"],
-                              text=True, capture_output=True)
-        token = proc.stdout.strip()
+        try:
+            proc = subprocess.run(["security", "find-generic-password", "-a", "software-factory", "-s", host, "-w"],
+                                  text=True, capture_output=True)
+            token = proc.stdout.strip()
+        except FileNotFoundError:
+            pass   # not a Mac: there is no Keychain, only the environment variable
     if not token:
-        sys.exit("open_merge_request: no token. Add one with:\n"
+        sys.exit("open_merge_request: no token. Set FACTORY_GITLAB_TOKEN, or on a Mac add one with:\n"
                  "  security add-generic-password -a software-factory -s {} -w".format(host))
     return token
 

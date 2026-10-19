@@ -72,6 +72,15 @@ wrote. It stops at every maintainer gate and waits for you.
 This is the same loop with `claude -p` in place of subagents. `FACTORY_MODEL`
 picks the model. `FACTORY_MAX_BUDGET_USD` caps one agent run (default 3).
 
+## Run it in the cloud
+
+The factory can run on a GitLab runner on a schedule, with nothing on your
+machine. Progress is kept on a `factory-state` branch, the work branches are
+pushed after every pass, and you approve a gate by replying `/approve` on the
+issue. A Claude subscription works, through `claude setup-token`. Setup is in
+[docs/run-in-gitlab.md](docs/run-in-gitlab.md), and the job file is
+[factories/ci/gitlab-ci.yml](factories/ci/gitlab-ci.yml).
+
 ## Other repositories, and defining your own factory
 
 The factory can work on a repository elsewhere on disk. Each one is a folder

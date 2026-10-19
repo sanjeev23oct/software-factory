@@ -33,7 +33,7 @@ sys.path.insert(0, str(HOME / "factory"))
 import check_mr_process as process  # noqa: E402
 import flow  # noqa: E402
 
-TARGETS = HOME / "targets"
+TARGETS = Path(os.environ.get("FACTORY_TARGETS_DIR", HOME / "targets"))
 PAGES = {"/": HOME / "factory" / "editor_route.html", "/rules": HOME / "factory" / "editor_rules.html",
          "/skills": HOME / "factory" / "editor_skills.html",
          "/activity": HOME / "factory" / "editor_activity.html"}

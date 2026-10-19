@@ -1,0 +1,24 @@
+# The software factory, run by GitLab instead of a laptop.
+#
+# Put this file in your factory project as .gitlab-ci.yml. That project holds
+# targets/ (your pipelines) and, on its `factory-state` branch, the factory's
+# progress. A pipeline schedule runs one pass every ten minutes.
+# Setup, variables and approvals: docs/run-in-gitlab.md in the factory's repository.
+
+variables:
+  FACTORY_CODE: https://github.com/sanjeev23oct/software-factory.git
+  FACTORY_REF: main          # pin a commit here once it works for you
+
+factory:
+  image: node:22             # has git and python3; add what your repositories' presubmit needs
+  resource_group: software-factory   # one pass at a time, so two passes never race on the progress
+  timeout: 3h
+  rules:
+    - if: $CI_PIPELINE_SOURCE == "schedule"
+    - if: $CI_PIPELINE_SOURCE == "web"       # "Run pipeline" by hand
+  before_script:
+    - npm install -g --silent @anthropic-ai/claude-code
+    - git clone -q "$FACTORY_CODE" /opt/software-factory
+    - git -C /opt/software-factory checkout -q "$FACTORY_REF"
+  script:
+    - /opt/software-factory/factory/scripts/ci_tick.sh
