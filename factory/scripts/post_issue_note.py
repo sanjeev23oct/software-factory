@@ -36,7 +36,7 @@ def post(url, headers, body):
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     p.add_argument("--source", required=True, choices=["gitlab", "github"])
-    p.add_argument("--project"), p.add_argument("--host"), p.add_argument("--repo")
+    p.add_argument("--project"), p.add_argument("--host"), p.add_argument("--repo"), p.add_argument("--token-env")
     p.add_argument("--ref", required=True)
     p.add_argument("--file", required=True)
     args = p.parse_args()
@@ -46,7 +46,7 @@ def main():
     if args.source == "gitlab":
         host = args.host or "gitlab.com"
         post("https://{}/api/v4/projects/{}/issues/{}/notes".format(host, quote(args.project, safe=""), args.ref),
-             {"PRIVATE-TOKEN": token_for(host)}, {"body": body})
+             {"PRIVATE-TOKEN": token_for(host, args.token_env)}, {"body": body})
     elif os.environ.get("FACTORY_GITHUB_TOKEN"):
         post("https://api.github.com/repos/{}/issues/{}/comments".format(args.repo, args.ref),
              {"Authorization": "Bearer " + os.environ["FACTORY_GITHUB_TOKEN"], "Accept": "application/json"}, {"body": body})

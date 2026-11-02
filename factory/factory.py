@@ -52,7 +52,7 @@ SEVERITIES = ("🚨 [CRITICAL]", "⚠️ [IMPORTANT]", "💡 [SUGGESTION]", "�
 
 # The repository being worked on. Set once by use_target().
 NAME = REPO = ISSUES = WORKTREES = RUNS = TAXONOMY = MAIN = PROTECTED = None
-PRESUBMIT = LOCAL_SKILLS = GUIDE = MERGE = EXTRA_TOOLS = None
+PRESUBMIT = LOCAL_SKILLS = GUIDE = MERGE = EXTRA_TOOLS = TOKEN_ENV = None
 
 
 def use_target(name):
@@ -64,12 +64,13 @@ def use_target(name):
     repository except `factory/GH<n>` branches.
     """
     global NAME, REPO, ISSUES, WORKTREES, RUNS, TAXONOMY, MAIN, PROTECTED
-    global PRESUBMIT, LOCAL_SKILLS, GUIDE, MERGE, EXTRA_TOOLS
+    global PRESUBMIT, LOCAL_SKILLS, GUIDE, MERGE, EXTRA_TOOLS, TOKEN_ENV
     NAME = name
     if name == DEFAULT_TARGET:
         REPO, ISSUES, state = HOME, HOME / "issues", HOME / ".factory"
         labels, GUIDE, LOCAL_SKILLS = HOME / ".github" / "issue-triage" / "config.json", HOME / "AGENTS.md", SKILLS
         PRESUBMIT, MAIN, MERGE, EXTRA_TOOLS = ["./script/presubmit"], "main", True, []
+        TOKEN_ENV = None
         # Product work may not touch the factory, its skills, or the tracker.
         PROTECTED = ("issues/", "factory/", ".agents/", ".claude/", ".github/", "script/", "targets/")
     else:
@@ -80,12 +81,13 @@ def use_target(name):
         REPO, ISSUES, state = Path(config.get("repo") or home / "checkout"), home / "issues", STATE_ROOT / name
         labels, GUIDE, LOCAL_SKILLS = home / "labels.json", home / "AGENTS.md", home / "skills"
         PRESUBMIT, MAIN = [str(home / "presubmit")], config.get("main", "main")
+        TOKEN_ENV = config.get("token_env")
         if os.environ.get("FACTORY_REPOS_DIR") and config.get("remote"):
             # On a CI runner nothing is checked out yet: clone the repository for this pass.
             import cloud
             REPO = Path(os.environ["FACTORY_REPOS_DIR"]) / name
             try:
-                cloud.ensure_clone(REPO, config["remote"], MAIN)
+                cloud.ensure_clone(REPO, config["remote"], MAIN, token_env=TOKEN_ENV)
             except RuntimeError as e:
                 raise FactoryError(str(e))
         MERGE, EXTRA_TOOLS = config.get("merge", False), config.get("allowed_tools", [])
@@ -695,9 +697,12 @@ def run_headless(task):
     cmd = ["claude", "-p", task["prompt"], "--output-format", "json", "--setting-sources", "project",
            "--append-system-prompt", body, "--permission-mode", "acceptEdits", "--max-budget-usd", BUDGET_USD,
            "--tools", tools, "--add-dir", str(HOME)]
+    for path in task.get("add_dirs", []):
+        cmd += ["--add-dir", str(path)]
     if MODEL:
         cmd += ["--model", MODEL]
     cmd += ["--allowedTools", "Bash(python3:*)", "Bash({})".format(PRESUBMIT[0]), *EXTRA_TOOLS,
+            *task.get("allowed_tools", []),
             "Bash(git diff:*)", "Bash(git log:*)",
             "Bash(git show:*)", "Bash(git status:*)", "Bash(git rev-parse:*)", "Bash(git merge main)"]
     try:

@@ -52,7 +52,8 @@ The runner starts empty each time. Everything the next pass needs is on the
 
 3. **Add the job.** Copy [`factories/ci/gitlab-ci.yml`](../factories/ci/gitlab-ci.yml) to the project as `.gitlab-ci.yml`.
 
-4. **Add the CI/CD variables** (Settings → CI/CD → Variables). Make both masked and protected.
+4. **Add the CI/CD variables** (Settings → CI/CD → Variables). Mask values when GitLab accepts them.
+   Protect a variable only when the schedule runs on a protected branch.
 
    | Variable | Value |
    |---|---|
@@ -64,6 +65,63 @@ The runner starts empty each time. Everything the next pass needs is on the
 
 6. **Stop the job on your machine**, if one is running: `python3 factory/scripts/schedule.py remove`.
    Two factories that do not share progress would both take the same issues.
+
+## One issue across several repositories
+
+The repository named by the top-level `repo` and `remote` in `target.json` is
+the primary checkout. It holds the issue's spec and approval gates. Add other
+possible GitLab repositories under `repositories`. The list grants access; an
+agent decides which repositories need changes for each issue. Unchanged
+repositories get no branch push or merge request.
+
+```json
+{
+  "repo": "/local/path/backend",
+  "remote": "https://gitlab.one.example/team/backend.git",
+  "main": "main",
+  "token_env": "FACTORY_ONE_TOKEN",
+  "repositories": {
+    "ui": {
+      "repo": "/local/path/ui",
+      "remote": "https://gitlab.two.example/team/ui.git",
+      "main": "main",
+      "host": "gitlab.two.example",
+      "project": "team/ui",
+      "token_env": "FACTORY_TWO_TOKEN",
+      "presubmit": ["./script/presubmit"],
+      "protected": [".gitlab-ci.yml", ".github/"]
+    }
+  },
+  "integration": ["./script/check-backend-and-ui"]
+}
+```
+
+Set the issue source's `token_env` in `factory.json` too when it is on a
+different host from the factory project:
+
+```json
+"source": {
+  "type": "gitlab", "host": "gitlab.one.example",
+  "project": "team/backend", "token_env": "FACTORY_ONE_TOKEN"
+}
+```
+
+Add `FACTORY_ONE_TOKEN` and `FACTORY_TWO_TOKEN` as masked CI variables. Each
+token needs issue read/comment access on its source host, and repository push
+and merge-request access on its own host. Use the same variable for repositories
+on the same GitLab host if its scope covers them. Never put token values in
+`target.json` or `factory.json`.
+
+Before review, the factory runs `presubmit` for each changed additional repo.
+The optional `integration` command runs from the primary checkout after those
+checks. It receives `FACTORY_REPO_PRIMARY` and `FACTORY_REPO_UI` as paths to
+the worktrees. Add a real joint test when the feature must work across both
+repos. The factory rechecks them before opening requests.
+
+One issue keeps one work item. The factory opens a separate merge request in
+each changed repository and posts their links on the original issue. It never
+merges them. Merge the requests in a compatible order: two GitLab merges
+cannot happen as one atomic operation.
 
 ## Approve a gate
 

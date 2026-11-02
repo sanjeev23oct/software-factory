@@ -67,9 +67,12 @@ def jira(path):
 
 def gitlab(args, path):
     project = "projects/{}/{}".format(quote(args.project, safe=""), path)
-    if os.environ.get("FACTORY_GITLAB_TOKEN"):
+    token_env = args.token_env or "FACTORY_GITLAB_TOKEN"
+    if os.environ.get(token_env):
         return http("https://{}/api/v4/{}".format(args.host or "gitlab.com", project),
-                    {"PRIVATE-TOKEN": os.environ["FACTORY_GITLAB_TOKEN"]})
+                    {"PRIVATE-TOKEN": os.environ[token_env]})
+    if args.token_env:
+        sys.exit("read_issue: set {} to read this GitLab source".format(args.token_env))
     host = ["--hostname", args.host] if args.host else []
     return cli(["glab", "api"] + host + ["projects/{}/{}".format(quote(args.project, safe=""), path)])
 
@@ -117,6 +120,7 @@ def main():
     p.add_argument("--source", required=True, choices=["gitlab", "github", "jira", "file"])
     p.add_argument("--project", help="GitLab project path, or Jira project key when listing")
     p.add_argument("--host", help="GitLab host, when not gitlab.com")
+    p.add_argument("--token-env", help="CI variable holding this GitLab host's token")
     p.add_argument("--repo", help="GitHub owner/name")
     p.add_argument("--ref", help="issue number, Jira key, or file path")
     p.add_argument("--out")

@@ -24,9 +24,9 @@ from pathlib import Path
 from urllib.parse import quote
 
 
-def token_for(host):
-    token = os.environ.get("FACTORY_GITLAB_TOKEN")
-    if not token:
+def token_for(host, token_env=None):
+    token = os.environ.get(token_env) if token_env else os.environ.get("FACTORY_GITLAB_TOKEN")
+    if not token and not token_env:
         try:
             proc = subprocess.run(["security", "find-generic-password", "-a", "software-factory", "-s", host, "-w"],
                                   text=True, capture_output=True)
@@ -34,6 +34,8 @@ def token_for(host):
         except FileNotFoundError:
             pass   # not a Mac: there is no Keychain, only the environment variable
     if not token:
+        if token_env:
+            sys.exit("open_merge_request: set {} for {}".format(token_env, host))
         sys.exit("open_merge_request: no token. Set FACTORY_GITLAB_TOKEN, or on a Mac add one with:\n"
                  "  security add-generic-password -a software-factory -s {} -w".format(host))
     return token
@@ -70,30 +72,36 @@ def push(repo, host, project, branch, token, dry_run):
 
 
 def description(args, web_url):
-    spec, repo = Path(args.spec), Path(args.repo)
-    rel = spec.relative_to(repo)
-    link = lambda path: "[{}]({}/-/blob/{}/{})".format(path.name, web_url, quote(args.branch, safe=""), quote(str(path.relative_to(repo))))
     lines = ["Closes #{}".format(args.issue), ""] if args.issue else []
-    lines += ["Built by the software factory on branch `{}`. A person reviews and merges.".format(args.branch), "", "## Spec", ""]
-    lines += ["- " + link(spec / name) for name in ("requirements.md", "design.md", "tasks.md") if (spec / name).exists()]
-    evidence = sorted((spec / "evidence").glob("*.md")) if (spec / "evidence").exists() else []
-    if evidence:
-        lines += ["", "## Evidence", ""] + ["- " + link(path) for path in evidence]
-    lines += ["", "Spec folder: `{}`".format(rel)]
+    lines += ["Related issue: {}".format(args.issue_url), ""] if args.issue_url else []
+    lines += ["Built by the software factory on branch `{}`. A person reviews and merges.".format(args.branch)]
+    if args.spec:
+        spec, repo = Path(args.spec), Path(args.repo)
+        rel = spec.relative_to(repo)
+        link = lambda path: "[{}]({}/-/blob/{}/{})".format(path.name, web_url, quote(args.branch, safe=""), quote(str(path.relative_to(repo))))
+        lines += ["", "## Spec", ""]
+        lines += ["- " + link(spec / name) for name in ("requirements.md", "design.md", "tasks.md") if (spec / name).exists()]
+        evidence = sorted((spec / "evidence").glob("*.md")) if (spec / "evidence").exists() else []
+        if evidence:
+            lines += ["", "## Evidence", ""] + ["- " + link(path) for path in evidence]
+        lines += ["", "Spec folder: `{}`".format(rel)]
     return "\n".join(lines)
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    for name in ("repo", "host", "project", "branch", "target", "title", "spec"):
+    for name in ("repo", "host", "project", "branch", "target", "title"):
         p.add_argument("--" + name, required=True)
     p.add_argument("--issue")
+    p.add_argument("--issue-url")
+    p.add_argument("--spec")
+    p.add_argument("--token-env")
     p.add_argument("--dry-run", action="store_true", help="check the token and the push without changing anything")
     args = p.parse_args()
 
     if not args.branch.startswith("factory/") or args.branch == args.target:
         sys.exit("open_merge_request: refusing to push `{}`; only factory/* branches are pushed".format(args.branch))
-    token = token_for(args.host)
+    token = token_for(args.host, args.token_env)
     project = api(args.host, token, "GET", "projects/" + quote(args.project, safe=""))
     args.dry_run = args.dry_run or bool(os.environ.get("FACTORY_DRY_RUN"))
     pushed = push(args.repo, args.host, args.project, args.branch, token, args.dry_run)
