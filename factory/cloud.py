@@ -31,38 +31,45 @@ from pathlib import Path
 STATE_BRANCH = os.environ.get("FACTORY_STATE_BRANCH", "factory-state")
 # Worktrees are rebuilt from the pushed branches, and logs belong to the CI job.
 STATE_IGNORE = "*/worktrees/\nlogs/\ntick.lock\n"
-_ENV = None
+_ENVS = {}
 
 
-def token():
+def token(token_env=None):
+    if token_env:
+        return os.environ.get(token_env)
     return os.environ.get("FACTORY_GIT_TOKEN") or os.environ.get("FACTORY_GITLAB_TOKEN")
 
 
-def git_env():
+def git_env(token_env=None):
     """The environment for a git command that may need to sign in."""
-    global _ENV
-    if _ENV is None:
-        _ENV = dict(os.environ, GIT_TERMINAL_PROMPT="0")
-        if token():
+    key = (token_env, token(token_env))
+    if key not in _ENVS:
+        env = dict(os.environ, GIT_TERMINAL_PROMPT="0")
+        secret = key[1]
+        if secret:
             folder = tempfile.mkdtemp(prefix="factory-askpass-")
             atexit.register(shutil.rmtree, folder, True)
             helper = Path(folder) / "askpass"
             helper.write_text('#!/bin/sh\ncase "$1" in Username*) echo oauth2 ;; *) echo "$FACTORY_PUSH_TOKEN" ;; esac\n')
             helper.chmod(0o700)
-            _ENV.update(GIT_ASKPASS=str(helper), FACTORY_PUSH_TOKEN=token())
-    return _ENV
+            env.update(GIT_ASKPASS=str(helper), FACTORY_PUSH_TOKEN=secret)
+        _ENVS[key] = env
+    return _ENVS[key]
 
 
-def git(args, cwd, check=True):
-    proc = subprocess.run(["git", "-c", "credential.helper="] + args if token() else ["git"] + args,
-                          cwd=str(cwd), text=True, capture_output=True, env=git_env())
+def git(args, cwd, check=True, token_env=None):
+    secret = token(token_env)
+    if token_env and not secret:
+        raise RuntimeError("set {} to access this repository".format(token_env))
+    proc = subprocess.run(["git", "-c", "credential.helper="] + args if secret else ["git"] + args,
+                          cwd=str(cwd), text=True, capture_output=True, env=git_env(token_env))
     if check and proc.returncode != 0:
         out = (proc.stderr or proc.stdout).strip()
-        raise RuntimeError("git {} failed: {}".format(args[0], out.replace(token() or "\0", "***")[:600]))
+        raise RuntimeError("git {} failed: {}".format(args[0], out.replace(secret or "\0", "***")[:600]))
     return proc
 
 
-def ensure_clone(path, remote, main):
+def ensure_clone(path, remote, main, token_env=None):
     """Clone a target's repository with its `factory/*` branches, unless this pass already has it.
 
     Only on first clone: fetching into a branch that a worktree has checked out is refused."""
@@ -70,14 +77,15 @@ def ensure_clone(path, remote, main):
     if (path / ".git").exists():
         return
     path.parent.mkdir(parents=True, exist_ok=True)
-    git(["clone", "-q", "--branch", main, remote, str(path)], cwd=path.parent)
-    git(["fetch", "-q", "origin", "+refs/heads/factory/*:refs/heads/factory/*"], cwd=path)
+    git(["clone", "-q", "--branch", main, remote, str(path)], cwd=path.parent, token_env=token_env)
+    git(["fetch", "-q", "origin", "+refs/heads/factory/*:refs/heads/factory/*"], cwd=path, token_env=token_env)
 
 
-def push_branch(repo, branch):
+def push_branch(repo, branch, token_env=None):
     if not branch.startswith("factory/"):
         raise RuntimeError("refusing to push `{}`; only factory/* branches are pushed".format(branch))
-    return git(["push", "-q", "origin", "{0}:refs/heads/{0}".format(branch)], cwd=repo, check=False)
+    return git(["push", "-q", "origin", "{0}:refs/heads/{0}".format(branch)], cwd=repo,
+               check=False, token_env=token_env)
 
 
 def state_remote():
