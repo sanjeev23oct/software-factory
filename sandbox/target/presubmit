@@ -1,0 +1,4 @@
+#!/bin/sh
+# The checks every change must pass. The factory runs this from the checkout root.
+set -e
+node --test

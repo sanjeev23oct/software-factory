@@ -1,0 +1,21 @@
+# The preview server for the leadership test drive. setup.sh writes .env next
+# to this file and starts it with `docker compose up -d`.
+services:
+  factory-preview:
+    image: nginx:1.27-alpine
+    container_name: factory-preview
+    restart: unless-stopped
+    environment:
+      PREVIEW_REPO: ${PREVIEW_REPO}
+      PREVIEW_TOKEN: ${PREVIEW_TOKEN}
+    volumes:
+      - ./sync.sh:/docker-entrypoint.d/90-preview-sync.sh:ro
+    ports:
+      - "${PREVIEW_PORT:-8090}:80"
+    networks:
+      - gitlab
+
+networks:
+  gitlab:
+    external: true
+    name: ${GITLAB_NETWORK}

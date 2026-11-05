@@ -21,6 +21,7 @@ stages until someone approves.
     flow.py --target NAME retry ITEM              unblock an item after fixing what stopped it
     flow.py --target NAME run [ITEM]              headless: next -> claude -p -> done, until a human is needed
     flow.py --target NAME gates                   approve gates from `/approve` comments; post a notice on new ones
+    flow.py --target NAME report                  comment each item's progress since the last report on its issue
     flow.py --target NAME publish                 push every item's factory/* branch (on a CI runner, after `run`)
 """
 
@@ -164,7 +165,8 @@ def fill(item, text):
               "presubmit": core.PRESUBMIT[0], "reports": str(reports(item)), "ref": item["ref"],
               "sha": item.get("sha", ""), "base": "origin/" + core.MAIN, "context": str(context_file(item)),
               "source_repo": DEFINITION["source"].get("repo", ""), "source_project": DEFINITION["source"].get("project", ""),
-              "source_host": DEFINITION["source"].get("host", ""), "target": str(core.TARGETS / core.NAME)}
+              "source_host": DEFINITION["source"].get("host", ""), "target": str(core.TARGETS / core.NAME),
+              "name": core.NAME}
     return re.sub(r"\{(\w+)\}", lambda m: values.get(m.group(1), m.group(0)), text)
 
 
@@ -772,12 +774,18 @@ def approvers():
     return [a.lower() for a in source.get("approvers") or ([source["assignee"]] if source.get("assignee") else [])]
 
 
+def may_approve(who):
+    """`"*"` lets anyone who can comment on the issue approve: only for a private sandbox project."""
+    names = approvers()
+    return "*" in names or who.lower() in names
+
+
 def approval(item, notes):
     """(who, skips) from the first `/approve` comment an approver wrote since the gate opened, or None.
 
     Comments are untrusted: only an approver's counts, and only one written after the item reached this gate."""
     for note in notes:
-        if note["who"].lower() not in approvers() or note["when"][:19] < item["waiting_since"]:
+        if not may_approve(note["who"]) or note["when"][:19] < item["waiting_since"]:
             continue
         words = (note["text"].strip().splitlines() or [""])[0].split()
         if words and words[0] == "/approve":
@@ -835,23 +843,132 @@ def cmd_gates(args):
         body = ["**The factory is waiting for you** at `{}`.".format(stage["id"]), ""]
         docs = links(item)
         body += ["Read first: " + " · ".join(docs), ""] if docs else []
+        preview = latest_preview(item)
+        body += ["**Try it:** " + preview, ""] if preview else []
         body += ["To approve, reply `/approve`."]
         body += ["To approve and skip an optional stage: `/approve skip {}`.".format(optional[0])] if optional else []
-        body += ["", "Only {} can approve. <!-- software-factory:gate {} {} -->".format(
-            ", ".join("@" + a for a in approvers()), item["id"], stage["id"])]
-        note = STATE / "items" / "{}.note.md".format(item["id"])
-        note.write_text("\n".join(body) + "\n")
-        source, cmd = DEFINITION["source"], ["python3", str(SCRIPTS / "post_issue_note.py"), "--source", DEFINITION["source"]["type"]]
-        cmd += [a for key in ("project", "host", "repo", "token_env") if source.get(key)
-                for a in ("--" + key.replace("_", "-"), source[key])]
-        proc = subprocess.run(cmd + ["--ref", item["ref"], "--file", str(note)], text=True, capture_output=True)
-        note.unlink()
-        if proc.returncode:
-            print("{}: could not post the gate notice - {}".format(item["id"], (proc.stderr or proc.stdout).strip()))
+        who = "Any member of this project" if "*" in approvers() else "Only " + ", ".join("@" + a for a in approvers())
+        body += ["", "{} can approve. <!-- software-factory:gate {} {} -->".format(who, item["id"], stage["id"])]
+        ok, output = post_note(item, "\n".join(body) + "\n", "note")
+        if not ok:
+            print("{}: could not post the gate notice - {}".format(item["id"], output))
             continue
         item["notified"] = stage["id"]
         log(item, "asked for approval on the issue", stage["id"])
         print("{}: asked for approval at `{}`".format(item["id"], stage["id"]))
+
+
+def post_note(item, body, name):
+    """Comment on the item's issue. Returns (ok, output)."""
+    note = STATE / "items" / "{}.{}.md".format(item["id"], name)
+    note.write_text(body)
+    source = DEFINITION["source"]
+    cmd = ["python3", str(SCRIPTS / "post_issue_note.py"), "--source", source["type"]]
+    cmd += [a for key in ("project", "host", "repo", "token_env") if source.get(key)
+            for a in ("--" + key.replace("_", "-"), source[key])]
+    try:
+        proc = subprocess.run(cmd + ["--ref", item["ref"], "--file", str(note)], text=True, capture_output=True)
+    finally:
+        note.unlink()
+    return proc.returncode == 0, (proc.stdout + proc.stderr).strip()
+
+
+def events():
+    path = STATE / "events.jsonl"
+    if not path.exists():
+        return []
+    return [json.loads(line) for line in path.read_text().splitlines() if line.strip()]
+
+
+PREVIEW = re.compile(r"Try it: (https?://\S+)")
+
+
+def latest_preview(item):
+    found = None
+    for record in events():
+        if record["item"] == item["id"]:
+            match = PREVIEW.search(record.get("detail") or "")
+            found = match.group(1) if match else found
+    return found
+
+
+# Bookkeeping a person reading the issue does not need.
+QUIET = {"moved on", "approval by comment open", "asked for approval on the issue", "agent task handed out"}
+SAYS = {
+    "started": "Picked up the issue",
+    "script passed": "Check passed",
+    "script failed": "Check failed; the work goes back",
+    "waiting for a human": "Waiting for a person",
+    "approved by human": "Approved",
+    "all tasks ticked": "Every task built and checked",
+    "maker session handed out": "A maker session started on the next section",
+    "checker session handed out": "A separate checker session started on that section",
+    "maker session finished": "The maker handed the section to the checker",
+    "checker session passed the section": "The checker passed the section",
+    "checker session failed the section": "The checker failed the section; it goes back to a new maker with the findings",
+    "agent stage finished": "Agent finished",
+    "blocked": "Stopped; a person is needed",
+    "stage skipped": "Skipped",
+    "paused: usage limit": "Paused at the Claude usage limit; the next pass carries on",
+    "agent run failed": "The agent run failed; it counts as an attempt",
+    "unblocked by human": "Unblocked by a person",
+}
+
+
+def describe(record):
+    event = record["event"]
+    if event in QUIET:
+        return None
+    text = SAYS.get(event) or ("The harness rejected the result: " if event.endswith("result rejected") else event)
+    detail = (record.get("detail") or "").strip()
+    preview = PREVIEW.search(detail)
+    if preview:
+        detail = "**Try it:** " + preview.group(1)
+    elif event == "started" or event.startswith("checker session passed"):
+        detail = ""
+    else:
+        detail = " ".join(detail.splitlines()[:2])[:220]
+    if detail:
+        text += (": " if not text.endswith(": ") else "") + detail.replace("|", "/")
+    return "| {} | `{}` | {} |".format(record["ts"][11:16], record["stage"], text)
+
+
+def now_line(item):
+    tries = item["attempts"].get(item["stage"], 0)
+    if item["status"] == "done":
+        return "**Done.**"
+    if item["status"] == "blocked":
+        return "**Stopped** at `{}`. A maintainer looks, fixes what stopped it, and runs `flow.py retry`.".format(item["stage"])
+    if item["status"] == "waiting":
+        return "**Now:** waiting for a person at `{}`.".format(item["stage"])
+    limit = DEFINITION.get("limits", {}).get("max_attempts", 3)
+    return "**Now:** at `{}`{}.".format(item["stage"], ", attempt {} of {}".format(tries + 1, limit) if tries else "")
+
+
+def cmd_report(args):
+    """Comment what happened to each item since the last report, so the issue shows the work as it goes."""
+    source = DEFINITION["source"]
+    if not source.get("progress") or source["type"] not in ("gitlab", "github"):
+        return print("report: progress comments are off (set source.progress to true)")
+    records = events()
+    for item in all_items():
+        if item.get("source") == "file":
+            continue
+        start = item.get("reported", 0)
+        rows = [row for row in (describe(r) for r in records[start:] if r["item"] == item["id"]) if row]
+        if rows:
+            hidden = len(rows) - 25
+            body = ["**Factory progress**", "", "| UTC | Stage | What happened |", "| --- | --- | --- |"]
+            body += (["| | | …{} earlier steps are in the factory's log |".format(hidden)] if hidden > 0 else []) + rows[-25:]
+            body += ["", now_line(item), "<!-- software-factory:progress {} -->".format(item["id"])]
+            ok, output = post_note(item, "\n".join(body) + "\n", "progress")
+            if not ok:
+                print("{}: could not post progress - {}".format(item["id"], output))
+                continue
+            print("{}: reported {} step(s)".format(item["id"], len(rows)))
+        # Saved without log(): recording that we reported is not itself progress.
+        item["reported"] = len(records)
+        item_path(item["id"]).write_text(json.dumps(item, indent=2))
 
 
 def cmd_publish(args):
@@ -934,7 +1051,7 @@ def main():
     p = sub.add_parser("start"); p.add_argument("--issue"); p.add_argument("--file"); p.add_argument("--title")
     p.set_defaults(fn=cmd_start)
     for name, fn in (("poll", cmd_poll), ("status", cmd_status), ("validate", cmd_validate), ("show", cmd_show),
-                     ("gates", cmd_gates), ("publish", cmd_publish)):
+                     ("gates", cmd_gates), ("publish", cmd_publish), ("report", cmd_report)):
         sub.add_parser(name).set_defaults(fn=fn)
     sub.add_parser("scheduled").set_defaults(fn=cmd_scheduled)
     p = sub.add_parser("init"); p.add_argument("name"); p.add_argument("--sample", required=True)

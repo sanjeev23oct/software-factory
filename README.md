@@ -28,6 +28,16 @@ It ran on [factory-demo-ui](https://github.com/sanjeev23oct/factory-demo-ui)
 and [factory-demo-api](https://github.com/sanjeev23oct/factory-demo-api): one
 factory, two repositories, five pipelines.
 
+## Take the test drive
+
+[docs/test-drive/](docs/test-drive/index.html) is a five-minute hands-on page
+for people deciding whether to adopt the factory: file an issue, approve at
+the gates, and watch a failed check go back and get fixed. Its last step is
+the real thing: [sandbox/](sandbox/) sets up a private GitLab project where
+filing an issue starts the factory on the server, the issue shows the work as
+it happens, a **Try it** link opens the change in a browser, and `/approve`
+ends in a merge request.
+
 ## The pipeline
 
     filed ─▶ triage ─▶ [maintainer: ready-to-spec] ─▶ spec ─▶ spec review ─▶ [maintainer: plan-approved]

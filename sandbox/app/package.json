@@ -1,0 +1,6 @@
+{
+  "name": "factory-demo-ui",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node --test" }
+}

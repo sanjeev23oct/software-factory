@@ -16,6 +16,7 @@ factory:
   rules:
     - if: $CI_PIPELINE_SOURCE == "schedule"
     - if: $CI_PIPELINE_SOURCE == "web"       # "Run pipeline" by hand
+    - if: $CI_PIPELINE_SOURCE == "trigger"   # a webhook: someone filed an issue or commented
   before_script:
     - npm install -g --silent @anthropic-ai/claude-code
     - git clone -q "$FACTORY_CODE" /opt/software-factory

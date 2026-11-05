@@ -6,7 +6,8 @@
 #
 #   1. pull the progress from the `factory-state` branch
 #   2. for each pipeline: pick up new issues, apply `/approve` comments, run the agents,
-#      push the work branches, and ask for approval on gates that just opened
+#      push the work branches, comment progress on each issue (when the pipeline
+#      asks for it), and ask for approval on gates that just opened
 #   3. push the progress back
 #
 # Run it from the factory project: a repository that holds targets/ (your pipelines).
@@ -25,6 +26,16 @@ fi
 
 flow() { python3 "$SF/factory/flow.py" --target "$target" "$@"; }
 
+# A webhook starts a pass when someone files an issue or comments. The factory's
+# own comments fire the same webhook; acting on them would only start another pass.
+if [ -n "${TRIGGER_PAYLOAD:-}" ] && [ -f "$TRIGGER_PAYLOAD" ] && [ -n "${FACTORY_BOT_USER:-}" ]; then
+  who=$(python3 -c 'import json, sys; print((json.load(open(sys.argv[1])).get("user") or {}).get("username", ""))' "$TRIGGER_PAYLOAD" 2>/dev/null)
+  if [ "$who" = "$FACTORY_BOT_USER" ]; then
+    echo "skipped: started by the factory's own comment"
+    exit 0
+  fi
+fi
+
 python3 "$SF/factory/cloud.py" state-pull || exit 1
 if [ $# -eq 0 ]; then
   set -- $(python3 "$SF/factory/flow.py" scheduled)
@@ -37,6 +48,7 @@ for target in "$@"; do
   flow gates || echo "$target: reading approvals failed"
   flow run || echo "$target: run failed"
   flow publish || echo "$target: pushing work branches failed"
+  flow report || echo "$target: posting progress failed"
   flow gates || echo "$target: asking for approval failed"
   flow status
 done
