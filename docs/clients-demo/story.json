@@ -36,23 +36,119 @@
    "kind": "title",
    "kicker": "A software factory, for people who are not engineers",
    "title": "Ask. <em>Approve.</em><br>Try it.",
-   "seconds": 13,
+   "seconds": 12,
    "say": "A client asks for software in plain words. A factory of AI agents builds it, checks it, and shows it to them.",
-   "voice": "Ask. Approve. Try it. This is a software factory, seen from the client's side: someone who is not an engineer asks for software in plain words, and gets it."
+   "voice": "Ask. Approve. Try it. Let me show you a different way to get software built... from the client's side."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "The problem",
+   "title": "Sound familiar?",
+   "one_column": true,
+   "points": [
+    [
+     "Lost in translation",
+     "What you asked for isn't quite what gets built.",
+     "var(--r3)"
+    ],
+    [
+     "Weeks of waiting",
+     "You find out at the very end, when changes cost the most.",
+     "var(--r4)"
+    ],
+    [
+     "Fast, but unchecked",
+     "AI writes code in seconds. But who checks it?",
+     "var(--r1)"
+    ]
+   ],
+   "seconds": 17,
+   "voice": "You've probably been here. You ask for something, and what gets built isn't quite what you meant. It takes weeks, and you only find out at the very end. And now AI can write code in seconds... but who's actually checking it?"
   },
   {
    "kind": "chapter",
    "kicker": "What is a software factory?",
-   "title": "A factory, for software",
+   "title": "An assembly line for software",
    "seconds": 17,
-   "define": "Every request follows the same <b>written pipeline</b>. <b>AI agents</b> do the work, a <b>second agent</b> checks every piece, and a <b>person</b> approves at two moments.",
-   "voice": "A software factory is a written pipeline that every request follows. AI agents do the work. A second agent checks every piece of it. And a person approves at two moments: before anything is built, and before it ships."
+   "define": "Like a car on a production line, every request moves through the same <b>written stages</b>. <b>AI agents</b> do the work at each stage, and <b>people</b> step in at the two moments that matter.",
+   "voice": "That's where a software factory comes in. Think of an assembly line. Every request moves through the same written stages, like a car on a production line. AI agents do the work at each stage... and people step in at the two moments that really matter."
+  },
+  {
+   "kind": "flow",
+   "kicker": "The pipeline",
+   "title": "Every request, the same way",
+   "stages": [
+    [
+     "Read the request",
+     "agent"
+    ],
+    [
+     "Write requirements",
+     "agent"
+    ],
+    [
+     "Approve",
+     "person"
+    ],
+    [
+     "Plan",
+     "agent"
+    ],
+    [
+     "Build",
+     "agent"
+    ],
+    [
+     "Check",
+     "agent"
+    ],
+    [
+     "Put it online",
+     "agent"
+    ],
+    [
+     "Try it and approve",
+     "person"
+    ],
+    [
+     "Hand over",
+     "agent"
+    ]
+   ],
+   "seconds": 20,
+   "voice": "Here's the whole pipeline. The factory reads the request and writes the requirements. You approve. Then it plans, builds, checks, and puts it online. You try it, and approve again. And then it's handed over. Agents do every step... except the two that are yours.",
+   "say": "The pipeline: agents do every stage except the two that are yours"
+  },
+  {
+   "kind": "chapter",
+   "kicker": "Why you can trust it",
+   "title": "Checked, recorded, approved",
+   "one_column": true,
+   "points": [
+    [
+     "Checked twice",
+     "A second agent verifies everything the first one built.",
+     "var(--r2)"
+    ],
+    [
+     "Recorded",
+     "Every check leaves written evidence you can read.",
+     "var(--r1)"
+    ],
+    [
+     "Approved",
+     "Nothing is built, or shipped, without a person saying yes.",
+     "var(--r4)"
+    ]
+   ],
+   "seconds": 19,
+   "voice": "So why should you trust it? Three reasons. Everything is checked twice: a second agent verifies whatever the first one built. Everything is recorded: every check leaves evidence you can actually read. And nothing gets built, or shipped, without a person saying yes."
   },
   {
    "kind": "chapter",
    "kicker": "Who does what",
    "title": "Three parts to play",
-   "seconds": 17,
+   "seconds": 16,
    "one_column": true,
    "points": [
     [
@@ -71,50 +167,59 @@
      "var(--r2)"
     ]
    ],
-   "voice": "Three parts to play. The client asks, approves, and tries the result. The factory writes the request down, plans it, builds it, checks it, and puts it online. Your team sets the factory up once, and decides what ships."
+   "voice": "There are three parts to play. The client asks, approves, and tries the result. The factory writes it down, plans it, builds it, checks it, and puts it online. And your team sets the factory up once... and decides what ships."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "Now, a real run",
+   "title": "Watch one request, start to finish",
+   "colour": "var(--r4)",
+   "say": "A client asks for a CRM dashboard. Everything you see next is real.",
+   "seconds": 12,
+   "voice": "Enough talk. Let's watch one real request, from start to finish. A client wants a CRM dashboard... and everything you're about to see actually happened."
   },
   {
    "kind": "chapter",
    "kicker": "Chapter 1 · Ask",
    "title": "Ask in plain words",
-   "seconds": 5,
+   "seconds": 4,
    "colour": "var(--r4)",
    "say": "The client has a GitLab login and a project of their own.",
-   "voice": "Chapter one. Ask."
+   "voice": "Let's start where the client starts. Asking."
   },
   {
    "kind": "step",
    "n": 1,
    "of": 9,
    "title": "Start from an empty app",
-   "seconds": 5,
+   "seconds": 4,
    "say": "Each client gets a private project. It starts as an empty page.",
-   "voice": "Each client gets a private project of their own."
+   "voice": "Every client gets a private project of their own."
   },
   {
    "kind": "image",
    "image": "c01-empty-app.png",
    "n": 1,
-   "seconds": 10,
+   "seconds": 11,
    "say": "The client's app, before the first request",
-   "voice": "This is their app today: an empty page, waiting for the first request. It sits behind a login only they have."
+   "voice": "This is their app today. Just an empty page, waiting for its first request. And it sits behind a login only they have."
   },
   {
    "kind": "image",
    "image": "c02-project.png",
    "n": 1,
-   "seconds": 8,
+   "seconds": 7,
    "say": "Their own private project in GitLab",
-   "voice": "And this is their project in GitLab. They see this project, and nothing else on the server."
+   "voice": "And here's their project in GitLab. This one project is all they see on the server."
   },
   {
    "kind": "step",
    "n": 2,
    "of": 9,
    "title": "Ask for something",
-   "seconds": 5,
+   "seconds": 4,
    "say": "A new issue, written the way you would message a colleague.",
-   "voice": "Step two: ask for something."
+   "voice": "Now, they ask for something."
   },
   {
    "kind": "image",
@@ -122,7 +227,7 @@
    "n": 2,
    "seconds": 15,
    "say": "A title, and what they want, in their own words",
-   "voice": "They open a new issue. The template asks two things: what should change, and how they will know it works. Here: a CRM dashboard, with customers in a table and totals at the top."
+   "voice": "They open a new issue. The template asks two simple questions: what should change, and how will you know it works? Here, they want a CRM dashboard, with customers in a table and totals at the top."
   },
   {
    "kind": "image",
@@ -130,33 +235,33 @@
    "n": 2,
    "seconds": 8,
    "say": "Filed. The factory label hands it over.",
-   "voice": "They press Create. The template adds the factory label, and that hands the request over."
+   "voice": "They hit Create. The template adds the factory label... and that's what hands the request over."
   },
   {
    "kind": "chapter",
    "kicker": "Chapter 2 · Write it down",
    "title": "The factory writes it down",
-   "seconds": 5,
+   "seconds": 4,
    "colour": "var(--r1)",
    "say": "Nothing is built until the client agrees with what was understood.",
-   "voice": "Chapter two. The factory writes it down."
+   "voice": "Next, the factory writes it down."
   },
   {
    "kind": "step",
    "n": 3,
    "of": 9,
    "title": "It picks the request up",
-   "seconds": 5,
+   "seconds": 4,
    "say": "Within a minute, it says so on the issue.",
-   "voice": "Step three: the factory picks the request up."
+   "voice": "First, it picks the request up."
   },
   {
    "kind": "image",
    "image": "c05-picked-up.png",
    "n": 3,
-   "seconds": 12,
+   "seconds": 11,
    "say": "It reports each step on the issue as it goes",
-   "voice": "Within a minute it comments on the issue: picked up, requirements written, and now waiting for a person. It reports every step like this, in the open."
+   "voice": "Within a minute, it comments on the issue. Picked up, requirements written, and now it's waiting for a person. It reports every step like this, out in the open."
   },
   {
    "kind": "image",
@@ -164,57 +269,57 @@
    "n": 3,
    "seconds": 9,
    "say": "Its turn is over. Now it is the client's.",
-   "voice": "Then it stops, and says what it needs: read the requirements, and reply approve."
+   "voice": "Then it stops, and says exactly what it needs: read the requirements, and reply approve."
   },
   {
    "kind": "step",
    "n": 4,
    "of": 9,
    "title": "Read what it understood",
-   "seconds": 5,
+   "seconds": 4,
    "say": "The request, turned into stories with checks.",
-   "voice": "Step four: read what it understood."
+   "voice": "So, what did it understand?"
   },
   {
    "kind": "image",
    "image": "c07b-requirements-top.png",
    "n": 4,
-   "seconds": 8,
+   "seconds": 5,
    "say": "Requirements, written from the client's words",
-   "voice": "An agent read the request and the code, and wrote it down as requirements."
+   "voice": "An agent read the request and the code, and wrote it all down as requirements."
   },
   {
    "kind": "image",
    "image": "c07-requirements.png",
    "n": 4,
-   "seconds": 10,
+   "seconds": 9,
    "say": "Each story comes with checks it must pass",
-   "voice": "Each story comes with acceptance checks. Every later stage is held to these, so the client is agreeing to something specific."
+   "voice": "Each story comes with acceptance checks. Every later step is held to these, so the client is agreeing to something specific."
   },
   {
    "kind": "image",
    "image": "c08-status-your-turn.png",
    "n": 4,
-   "seconds": 11,
+   "seconds": 13,
    "say": "The status page: where it stands, and whose turn it is",
-   "voice": "The client also has a status page. Plain words, five steps, and whose turn it is. Right now: theirs. One button opens the conversation."
+   "voice": "The client also gets a status page. Plain words, five steps, and whose turn it is. Right now, it's theirs. And one button takes them straight to the conversation."
   },
   {
    "kind": "step",
    "n": 5,
    "of": 9,
    "title": "Approve with one word",
-   "seconds": 5,
+   "seconds": 4,
    "say": "Reply approve. That is the whole interface.",
-   "voice": "Step five: approve."
+   "voice": "Approving takes one word."
   },
   {
    "kind": "image",
    "image": "c09-approve.png",
    "n": 5,
-   "seconds": 8,
+   "seconds": 7,
    "say": "One word starts the build",
-   "voice": "They reply with one word: approve. The comment starts the next pass straight away."
+   "voice": "They just reply: approve. And that comment kicks off the next step, right away."
   },
   {
    "kind": "chapter",
@@ -223,7 +328,7 @@
    "seconds": 5,
    "colour": "var(--r2)",
    "say": "A maker builds each section. A separate checker verifies it.",
-   "voice": "Chapter three. Build, and check."
+   "voice": "Now the real work. Building, and checking."
   },
   {
    "kind": "step",
@@ -232,7 +337,7 @@
    "title": "Plan, build, check",
    "seconds": 5,
    "say": "Nothing moves on until a second agent says it passed.",
-   "voice": "Step six: plan, build, and check."
+   "voice": "It plans, it builds, and it checks."
   },
   {
    "kind": "image",
@@ -240,73 +345,73 @@
    "n": 6,
    "seconds": 9,
    "say": "The plan: sections, each ending in a check",
-   "voice": "First, a plan. The work is split into sections, and each section ends in a check that can be run."
+   "voice": "First, a plan. The work is split into sections, and every section ends with a check that can actually be run."
   },
   {
    "kind": "image",
    "image": "c10-maker-checker.png",
    "n": 6,
-   "seconds": 14,
+   "seconds": 13,
    "say": "A maker builds. A separate checker verifies.",
-   "voice": "One agent, the maker, builds a section. A different agent, the checker, verifies it. The checker never saw the maker work. If it fails, the work goes back with written findings."
+   "voice": "One agent, the maker, builds a section. A different agent, the checker, verifies it. The checker never saw the maker work. And if something fails, the work goes back with written notes."
   },
   {
    "kind": "image",
    "image": "c14-evidence.png",
    "n": 6,
-   "seconds": 11,
+   "seconds": 10,
    "say": "The checker's evidence: what it ran, expected, and found",
-   "voice": "The checker writes down its evidence: each check it ran, what it expected, and what it found. That evidence travels with the change."
+   "voice": "The checker writes down its evidence: every check it ran, what it expected, and what it found. And that evidence travels with the change."
   },
   {
    "kind": "image",
    "image": "c11-checks.png",
    "n": 6,
-   "seconds": 9,
+   "seconds": 7,
    "say": "Then the whole change is checked again, and put online",
-   "voice": "Then the whole change is checked again, the tests run, and it is put online for the client to try."
+   "voice": "Then the whole change is checked again, the tests run, and it's put online for the client to try."
   },
   {
    "kind": "chapter",
    "kicker": "Chapter 4 · Try it",
    "title": "Try it before it ships",
-   "seconds": 5,
+   "seconds": 4,
    "colour": "var(--r4)",
    "say": "The client uses the real change in a browser.",
-   "voice": "Chapter four. Try it."
+   "voice": "And now, the fun part. Trying it."
   },
   {
    "kind": "step",
    "n": 7,
    "of": 9,
    "title": "Use the change",
-   "seconds": 5,
+   "seconds": 4,
    "say": "A link to the change, running.",
-   "voice": "Step seven: use the change."
+   "voice": "They get to use the real thing."
   },
   {
    "kind": "image",
    "image": "c12-gate-try-it.png",
    "n": 7,
-   "seconds": 8,
+   "seconds": 5,
    "say": "The client's turn again, with a link to try it",
-   "voice": "The factory stops again, and posts a Try it link."
+   "voice": "The factory stops again, and posts a link: Try it."
   },
   {
    "kind": "image",
    "image": "c15-status-try-it.png",
    "n": 7,
-   "seconds": 8,
+   "seconds": 6,
    "say": "The status page says so too",
-   "voice": "The status page shows the same: built and checked, and their turn."
+   "voice": "The status page says the same. Built, checked, and it's their turn."
   },
   {
    "kind": "image",
    "image": "c16-try-it.png",
    "n": 7,
-   "seconds": 11,
+   "seconds": 9,
    "say": "The CRM dashboard they asked for, running",
-   "voice": "And here it is. The CRM dashboard they asked for, running in the browser. Built from one paragraph."
+   "voice": "And here it is. The CRM dashboard they asked for, running right there in the browser. Built from one short paragraph."
   },
   {
    "kind": "image",
@@ -314,42 +419,42 @@
    "n": 7,
    "seconds": 9,
    "say": "Totals at the top, every customer at a glance",
-   "voice": "Totals at the top, and every customer at a glance. Just what the issue said, and what the requirements checked."
+   "voice": "Totals at the top, every customer at a glance. Just what the issue asked for... and just what the requirements checked."
   },
   {
    "kind": "step",
    "n": 8,
    "of": 9,
    "title": "Approve again",
-   "seconds": 5,
+   "seconds": 4,
    "say": "Happy with it? One word again.",
-   "voice": "Step eight: approve again."
+   "voice": "Then, they approve again."
   },
   {
    "kind": "image",
    "image": "c17-approve-again.png",
    "n": 8,
-   "seconds": 7,
+   "seconds": 8,
    "say": "The second and last approval",
-   "voice": "Happy with it, they reply approve. That is the second and last thing they type."
+   "voice": "Happy with it? They reply approve. And that's the second, and last, thing they type."
   },
   {
    "kind": "chapter",
    "kicker": "Chapter 5 · Hand over",
    "title": "Handed over, with proof",
-   "seconds": 5,
+   "seconds": 4,
    "colour": "var(--r3)",
    "say": "A merge request with the code, the tests, the specs and the evidence.",
-   "voice": "Chapter five. Hand over."
+   "voice": "Finally, the hand-over."
   },
   {
    "kind": "step",
    "n": 9,
    "of": 9,
    "title": "A merge request opens",
-   "seconds": 5,
+   "seconds": 4,
    "say": "Merging stays a person's call.",
-   "voice": "Step nine: a merge request opens."
+   "voice": "A merge request opens."
   },
   {
    "kind": "image",
@@ -357,15 +462,15 @@
    "n": 9,
    "seconds": 13,
    "say": "Code, tests, specs and evidence, ready for review",
-   "voice": "The factory opens a merge request: the code, the tests, the specs, and the checker's evidence, linked to the issue. A person on your team reviews it and merges it."
+   "voice": "The factory opens a merge request, with the code, the tests, the specs, and the checker's evidence, all linked to the issue. Then someone on your team reviews it, and merges it."
   },
   {
    "kind": "image",
    "image": "c19-status-done.png",
    "n": 9,
-   "seconds": 10,
+   "seconds": 9,
    "say": "Done. Every step ticked.",
-   "voice": "The status page shows it done, every step ticked, with links to the conversation, the change to try, and the finished work."
+   "voice": "The status page shows it's done. Every step ticked, with links to the conversation, the change, and the finished work."
   },
   {
    "kind": "image",
@@ -373,13 +478,59 @@
    "n": 9,
    "seconds": 9,
    "say": "The whole history stays on the issue",
-   "voice": "And the whole history stays on the issue: every step, every check, every approval, in one place."
+   "voice": "And the whole story stays on the issue. Every step, every check, every approval, all in one place."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "What it means",
+   "title": "Better for everyone",
+   "one_column": true,
+   "points": [
+    [
+     "For clients",
+     "Ask in plain words. See progress any time. Try it before it's final.",
+     "var(--r4)"
+    ],
+    [
+     "For your team",
+     "One consistent process, proof of every check, and you still decide what ships.",
+     "var(--r2)"
+    ]
+   ],
+   "seconds": 19,
+   "voice": "So what does all this mean? For clients: they ask in plain words, they can see progress any time, and they try the result before it's final. For your team: one consistent process, written proof of every check... and you still decide what ships."
+  },
+  {
+   "kind": "stats",
+   "kicker": "This run, in numbers",
+   "title": "From request to review",
+   "numbers": [
+    [
+     "17 min",
+     "from request to merge request, approvals included"
+    ],
+    [
+     "2",
+     "words the client typed to approve"
+    ],
+    [
+     "4 of 4",
+     "sections passed their checker the first time"
+    ],
+    [
+     "0",
+     "frames mocked: all of it is real"
+    ]
+   ],
+   "seconds": 16,
+   "voice": "And this run, in numbers. Seventeen minutes from request to merge request, approvals included. Two words typed by the client. Four sections, and every one passed its checker the first time. And nothing you saw was mocked.",
+   "say": "This run: 17 minutes, two words typed, every section passed first time"
   },
   {
    "kind": "chapter",
    "kicker": "Chapter 6 · Many clients",
    "title": "One factory, many clients",
-   "seconds": 12,
+   "seconds": 10,
    "one_column": true,
    "points": [
     [
@@ -398,13 +549,13 @@
      "var(--r4)"
     ]
    ],
-   "voice": "One factory serves many clients. Each has their own project, their own pipeline, and their own previews and status page, behind their own login."
+   "voice": "And one factory can serve lots of clients. Each one gets their own project, their own pipeline, and their own previews and status page, behind their own login."
   },
   {
    "kind": "terminal",
    "file": "01-add-a-client.txt",
    "where": "on the server",
-   "seconds": 11,
+   "seconds": 8,
    "highlight": [
     "sandbox/setup.sh",
     "login for",
@@ -412,16 +563,16 @@
     "OK: 11 stages"
    ],
    "say": "Adding a client is one command",
-   "voice": "Adding a client is one command. It creates the project, the pipeline, the login, and the links to share."
+   "voice": "Adding a new client takes one command. It creates the project, the pipeline, the login, and the links to share."
   },
   {
    "kind": "chapter",
    "kicker": "Try it yourself",
    "title": "Ask for a project",
-   "seconds": 10,
+   "seconds": 8,
    "colour": "var(--r4)",
    "say": "Get a project of your own, file a small request, and watch it get built.",
-   "voice": "Want to try it? Ask for a project of your own, file a small request, and watch it get built."
+   "voice": "Want to try it yourself? Ask for a project of your own, file a small request... and watch it get built."
   }
  ]
 }

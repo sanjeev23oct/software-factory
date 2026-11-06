@@ -19,6 +19,8 @@ The scenes are listed in story.json. Kinds of scene:
   image     a screenshot; its marks are numbered 1, 2, 3 and listed underneath
   doc       a document an agent wrote, with chosen lines highlighted
   terminal  terminal output, with chosen lines highlighted
+  flow      a pipeline as a row of stages; `stages` is a list of [label, "agent" or "person"]
+  stats     a few big numbers; `numbers` is a list of [number, what it counts]
 
 Needs Google Chrome (to draw the frames) and ffmpeg (to join them).
 """
@@ -64,6 +66,7 @@ html, body { margin: 0; width: 1280px; height: 720px; overflow: hidden; backgrou
 .page.wide { padding: 0 70px; gap: 16px; } .page.wide h1 { font-size: 64px; }
 .points { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 28px; margin-top: 8px; }
 .points.one { grid-template-columns: 1fr; }
+.points.one div { grid-template-columns: 300px 1fr; }
 .points div { display: grid; grid-template-columns: 190px 1fr; gap: 14px; align-items: baseline; border-top: 1px solid var(--line); padding-top: 10px; }
 .points b { font: 700 28px/1 "Barlow Condensed", Arial, sans-serif; text-transform: uppercase; color: var(--c2, var(--r1)); }
 .points span { font-size: 21px; line-height: 1.3; }
@@ -105,6 +108,22 @@ html, body { margin: 0; width: 1280px; height: 720px; overflow: hidden; backgrou
 .doc pre { font: 14px/1.5 "IBM Plex Mono", Menlo, monospace; background: #0f1b2d; color: #e6ecf5; padding: 10px 14px; border-radius: 8px; margin: 6px 0; white-space: pre-wrap; }
 .doc table { border-collapse: collapse; font-size: 15px; margin: 6px 0; } .doc td, .doc th { border: 1px solid #d6dce5; padding: 4px 10px; text-align: left; }
 .doc .hl { background: #ffe9a8; box-shadow: -6px 0 0 #ffe9a8, 6px 0 0 #ffe9a8; border-radius: 2px; }
+/* flow: the pipeline as stages; people's turns stand out */
+.flow { display: flex; flex-wrap: wrap; gap: 14px 10px; align-items: center; margin-top: 18px; }
+.flow .fstage { font: 600 22px/1.15 "Barlow", Arial, sans-serif; padding: 14px 18px; border-radius: 14px; background: var(--panel);
+  border: 2px solid var(--line); color: var(--ink); }
+.flow .fstage.person { border-color: var(--r4); color: var(--r4); background: rgba(255,161,84,.10); }
+.flow .fstage small { display: block; font: 700 13px "Barlow Condensed", Arial, sans-serif; letter-spacing: .12em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: 4px; }
+.flow .fstage.person small { color: var(--r4); }
+.flow .arrow { color: var(--muted); font-size: 26px; }
+.flow-key { display: flex; gap: 28px; color: var(--muted); font-size: 20px; margin-top: 10px; }
+.flow-key b { color: var(--r4); }
+/* stats: a few big numbers */
+.stats { display: grid; grid-template-columns: repeat(var(--n), 1fr); gap: 22px; margin-top: 18px; }
+.stats div { border-top: 3px solid var(--c, var(--r1)); padding-top: 14px; }
+.stats b { display: block; font: 700 96px/1 "Barlow Condensed", Arial, sans-serif; color: var(--c, var(--r1)); }
+.stats span { font-size: 22px; line-height: 1.3; color: var(--ink); }
 """
 FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700'
          '&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">')
@@ -229,6 +248,22 @@ def body_of(scene):
         text = '<p class="define">{}</p>'.format(scene["define"]) if scene.get("define") else "<p>{}</p>".format(e(scene.get("say", "")))
         return '<div class="page" style="--c:{}">{}<div class="kicker">{}</div><h1>{}</h1>{}</div>'.format(
             scene.get("colour", "var(--r1)"), BARS, e(scene["kicker"]), e(scene["title"]), text)
+    if kind == "flow":
+        cells = []
+        for n, (label, who) in enumerate(scene["stages"]):
+            if n:
+                cells.append('<span class="arrow">&rarr;</span>')
+            cells.append('<div class="fstage {}"><small>{}</small>{}</div>'.format(
+                "person" if who == "person" else "", "you" if who == "person" else "agent", e(label)))
+        return ('<div class="page wide"><div class="kicker">{}</div><h1>{}</h1><div class="flow">{}</div>'
+                '<div class="flow-key"><span><b>You</b>: two moments to say yes</span><span>Agent: everything else, checked</span></div></div>').format(
+            e(scene["kicker"]), e(scene["title"]), "".join(cells))
+    if kind == "stats":
+        colours = ["var(--r1)", "var(--r2)", "var(--r4)", "var(--r3)"]
+        cells = "".join('<div style="--c:{}"><b>{}</b><span>{}</span></div>'.format(colours[n % 4], e(number), e(what))
+                        for n, (number, what) in enumerate(scene["numbers"]))
+        return '<div class="page wide"><div class="kicker">{}</div><h1>{}</h1><div class="stats" style="--n:{}">{}</div></div>'.format(
+            e(scene["kicker"]), e(scene["title"]), len(scene["numbers"]), cells)
     if kind == "step":
         return ('<div class="page step"><div class="num">{}</div><div><div class="of">Step {} of {}</div><h1>{}</h1><p>{}</p></div></div>').format(
             scene["n"], scene["n"], scene["of"], e(scene["title"]), e(scene["say"]))

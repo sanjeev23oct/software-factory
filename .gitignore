@@ -17,3 +17,6 @@ site/
 targets/*/
 !targets/example/
 .DS_Store
+
+# Rebuilt by docs/clients-demo/voice.py mix
+docs/clients-demo/voice/track.m4a
