@@ -17,6 +17,10 @@ GitLab, and the factory on the VPS does the rest, in the open, on that issue:
 5. **After the second `approve`**, the factory opens a merge request with the
    code, the tests, the specs and the evidence. Merging stays a person's call.
 
+**Where each request stands** is at `/status/` on the preview host: a read-only page, in plain
+words, with a button to each request's GitLab issue, its **Try it** link and, when done, its merge
+request. It refreshes every minute. Approving stays on the issue.
+
 A typical change takes 20 to 40 minutes of factory time, plus however long the
 gates wait for a person.
 

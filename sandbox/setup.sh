@@ -198,19 +198,28 @@ fi
 # Traefik reaches the preview over the network GitLab is on, so that network must be Traefik's too.
 network=$(docker inspect gitlab -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' | awk '{print $1}')
 D=/data/factory-preview
+expires=$(python3 -c "import datetime; print(datetime.date.today() + datetime.timedelta(days=364))")
 preview_repo="http://gitlab/$SANDBOX_PROJECT.git"
 preview_token=$(sed -n 's/^PREVIEW_TOKEN=//p' "$D/.env" 2>/dev/null || true)
 existing=$(api GET "projects/$sid/access_tokens" | json "[t['id'] for t in d if t['name'] == 'factory-preview' and t['active']]")
 # A token kept from an earlier run may belong to another project; mint one for this project then.
 if [ "$existing" = "[]" ] || [ -z "$preview_token" ] || [ "$(sed -n 's/^PREVIEW_REPO=//p' "$D/.env")" != "$preview_repo" ]; then
-  expires=$(python3 -c "import datetime; print(datetime.date.today() + datetime.timedelta(days=364))")
   preview_token=$(api POST "projects/$sid/access_tokens" -d name=factory-preview -d access_level=20 \
                   -d "scopes[]=read_repository" -d "expires_at=$expires" | json "d['token']")
+fi
+# The status page is read from the factory project's factory-state branch, with a token that can only read.
+status_token=$(sed -n 's/^STATUS_TOKEN=//p' "$D/.env" 2>/dev/null || true)
+existing=$(api GET "projects/$fid/access_tokens" | json "[t['id'] for t in d if t['name'] == 'factory-status' and t['active']]")
+if [ "$existing" = "[]" ] || [ -z "$status_token" ]; then
+  status_token=$(api POST "projects/$fid/access_tokens" -d name=factory-status -d access_level=20 \
+                 -d "scopes[]=read_repository" -d "expires_at=$expires" | json "d['token']")
 fi
 mkdir -p "$D"
 umask 077
 printf 'PREVIEW_REPO=%s\nPREVIEW_TOKEN=%s\nPREVIEW_PORT=%s\nPREVIEW_HOST=%s\nGITLAB_NETWORK=%s\n' \
   "$preview_repo" "$preview_token" "$PREVIEW_PORT" "${PREVIEW_HOST:-}" "$network" > "$D/.env"
+printf 'STATUS_REPO=http://gitlab/%s.git\nSTATUS_TOKEN=%s\nSTATUS_FILE=test-drive/status.html\n' \
+  "$FACTORY_PROJECT" "$status_token" >> "$D/.env"
 umask 022
 cp "$SF/sandbox/preview/compose.yml" "$SF/sandbox/preview/compose.host.yml" "$SF/sandbox/preview/compose.port.yml" \
    "$SF/sandbox/preview/sync.sh" "$D/"
@@ -262,7 +271,8 @@ say "Ready"
 cat <<EOF
 File an issue:     $GITLAB_URL/$SANDBOX_PROJECT/-/issues/new?issuable_template=Feature
 Watch the passes:  $GITLAB_URL/$FACTORY_PROJECT/-/pipelines
-Previews:          ${PREVIEW_URL/\{item\}/}
+Previews:          ${PREVIEW_URL/\{item\}\//}
+Where things stand: ${PREVIEW_URL/\{item\}/status}
 
 Previews are public to anyone with the link; they show only the sandbox app.
 EOF

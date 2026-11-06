@@ -49,6 +49,7 @@ for target in "$@"; do
   flow run || echo "$target: run failed"
   flow publish || echo "$target: pushing work branches failed"
   flow report || echo "$target: posting progress failed"
+  flow page || echo "$target: writing the status page failed"
   flow gates || echo "$target: asking for approval failed"
   flow status
 done

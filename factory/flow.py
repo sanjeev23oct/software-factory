@@ -21,6 +21,7 @@ stages until someone approves.
     flow.py --target NAME retry ITEM              unblock an item after fixing what stopped it
     flow.py --target NAME run [ITEM]              headless: next -> claude -p -> done, until a human is needed
     flow.py --target NAME gates                   approve gates from `/approve` comments; post a notice on new ones
+    flow.py --target NAME page                    write status.html: each request in plain words, for the people who filed them
     flow.py --target NAME report                  comment each item's progress since the last report on its issue
     flow.py --target NAME publish                 push every item's factory/* branch (on a CI runner, after `run`)
 """
@@ -972,6 +973,131 @@ def cmd_report(args):
         item_path(item["id"]).write_text(json.dumps(item, indent=2))
 
 
+# --- the client status page -------------------------------------------------
+
+MERGE_REQUEST = re.compile(r"Merge request opened: (https?://\S+)")
+PAGE_STYLE = """
+:root { --bg: #f5f6f8; --card: #fff; --ink: #172033; --muted: #5f6b7c; --line: #dde2ea;
+        --accent: #1f5fd0; --wait: #b25e00; --wait-bg: #fff3e0; --ok: #1d7a46; --ok-bg: #e6f4ec; --stop-bg: #fdecec; --stop: #b42318; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #11151c; --card: #1a2029; --ink: #e8ecf2; --muted: #9aa5b5; --line: #2c3442;
+          --accent: #7aa7ff; --wait: #ffb867; --wait-bg: #3a2a14; --ok: #6fd39a; --ok-bg: #16301f; --stop-bg: #3a1a1a; --stop: #ff8f86; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, -apple-system, sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 32px 16px 48px; display: grid; gap: 18px; }
+h1 { margin: 0; font-size: 26px; }
+.lead { margin: 0; color: var(--muted); }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 20px; display: grid; gap: 14px; }
+.top { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: baseline; justify-content: space-between; }
+.top h2 { margin: 0; font-size: 19px; }
+.pill { font-size: 14px; font-weight: 600; padding: 3px 12px; border-radius: 99px; background: var(--bg); color: var(--muted); }
+.pill.wait { background: var(--wait-bg); color: var(--wait); }
+.pill.done { background: var(--ok-bg); color: var(--ok); }
+.pill.stop { background: var(--stop-bg); color: var(--stop); }
+.say { margin: 0; }
+ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+li { display: flex; gap: 10px; align-items: center; color: var(--muted); }
+li .dot { width: 22px; height: 22px; flex: none; border-radius: 50%; border: 2px solid var(--line); display: grid; place-items: center; font-size: 12px; }
+li.done { color: var(--ink); }
+li.done .dot { background: var(--ok); border-color: var(--ok); color: #fff; }
+li.now { color: var(--ink); font-weight: 600; }
+li.now .dot { border-color: var(--accent); background: var(--accent); }
+li.now.you .dot { border-color: var(--wait); background: var(--wait); }
+.links { display: flex; flex-wrap: wrap; gap: 10px; }
+.links a { text-decoration: none; font-weight: 600; padding: 8px 14px; border-radius: 10px; border: 1px solid var(--line); color: var(--accent); }
+.links a.main { background: var(--accent); border-color: var(--accent); color: var(--card); }
+.when { margin: 0; font-size: 14px; color: var(--muted); }
+.empty { color: var(--muted); }
+"""
+
+
+def page_steps(item):
+    """The pipeline told as a few steps a client follows: our work between gates, and each gate as their turn."""
+    steps, ours = [], []
+    for stage in stages(item):
+        if stage["by"] == "human":
+            if ours:
+                steps.append({"label": "We build and check it" if steps else "We write down what you asked for",
+                              "stages": ours, "you": False})
+                ours = []
+            gate = stage["id"].replace("approve-", "")
+            label = {"requirements": "You approve what we wrote down",
+                     "screens": "You try it and approve"}.get(gate, "You approve the " + gate.replace("-", " "))
+            steps.append({"label": label, "stages": [stage["id"]], "you": True})
+        else:
+            ours.append(stage["id"])
+    if ours:
+        steps.append({"label": "We hand it over for release", "stages": ours, "you": False})
+    return steps
+
+
+def page_card(item, records):
+    from html import escape
+    mine = [r for r in records if r["item"] == item["id"]]
+    preview = merge_request = None
+    for record in mine:
+        detail = record.get("detail") or ""
+        found = PREVIEW.search(detail)
+        preview = found.group(1) if found else preview
+        found = MERGE_REQUEST.search(detail)
+        merge_request = found.group(1) if found else merge_request
+    steps = page_steps(item)
+    at = next((n for n, s in enumerate(steps) if item["stage"] in s["stages"]), len(steps))
+    done = item["status"] == "done"
+    if done:
+        pill, say = ("done", "Done"), "Finished. The change is ready to be released."
+    elif item["status"] == "blocked":
+        pill, say = ("stop", "Paused"), "Paused while our team looks at something. Nothing is needed from you."
+    elif item["status"] == "waiting":
+        pill, say = ("wait", "Your turn"), "Waiting for you. Open the conversation in GitLab and reply <b>approve</b> when you are happy."
+    else:
+        pill, say = ("", "In progress"), "We are working on it. This page updates by itself."
+    rows = []
+    for n, step in enumerate(steps):
+        state = "done" if done or n < at else ("now" if n == at else "")
+        state += " you" if step["you"] and state == "now" else ""
+        rows.append('<li{}><span class="dot">{}</span>{}</li>'.format(
+            ' class="{}"'.format(state) if state else "", "&#10003;" if state == "done" else "", escape(step["label"])))
+    links = []
+    url = source_issue_url(item)
+    if url:
+        links.append('<a class="main" href="{}">Open the conversation in GitLab</a>'.format(escape(url)))
+    if preview:
+        links.append('<a href="{}">Try it</a>'.format(escape(preview)))
+    if merge_request:
+        links.append('<a href="{}">See the finished change</a>'.format(escape(merge_request)))
+    when = mine[-1]["ts"].replace("T", " ")[:16] + " UTC" if mine else ""
+    return "\n".join([
+        '<section class="card">',
+        '<div class="top"><h2>{}</h2><span class="pill {}">{}</span></div>'.format(escape(item["title"]), pill[0], pill[1]),
+        '<p class="say">{}</p>'.format(say),
+        "<ol>{}</ol>".format("".join(rows)),
+        '<div class="links">{}</div>'.format("".join(links)) if links else "",
+        '<p class="when">Last update: {}</p>'.format(when) if when else "",
+        "</section>"])
+
+
+def cmd_page(args):
+    """Write status.html: every request and where it stands, in plain words, for the people who filed them.
+
+    It holds no buttons that change anything; approving stays on the issue, where the source checks who may."""
+    items = [i for i in all_items() if i.get("source") != "file"]
+    items.sort(key=lambda i: (i["status"] == "done", -i.get("n", 0)))
+    records = events()
+    cards = [page_card(item, records) for item in items] or ['<p class="empty">No requests yet.</p>']
+    page = "\n".join([
+        "<!doctype html>", '<html lang="en">', "<head>", '<meta charset="utf-8">',
+        '<meta name="viewport" content="width=device-width, initial-scale=1">',
+        '<meta http-equiv="refresh" content="60">', "<title>Your requests</title>",
+        "<style>{}</style>".format(PAGE_STYLE), "</head>", "<body>", "<main>",
+        "<h1>Your requests</h1>",
+        '<p class="lead">Where each request stands. The full conversation, and your approvals, are on each GitLab issue.</p>',
+        *cards, "</main>", "</body>", "</html>", ""])
+    (STATE / "status.html").write_text(page)
+    print("page: {} request(s) on status.html".format(len(items)))
+
+
 def cmd_publish(args):
     """Push each item's `factory/*` branch, so a pass on another machine can carry on from here."""
     import cloud
@@ -1052,7 +1178,8 @@ def main():
     p = sub.add_parser("start"); p.add_argument("--issue"); p.add_argument("--file"); p.add_argument("--title")
     p.set_defaults(fn=cmd_start)
     for name, fn in (("poll", cmd_poll), ("status", cmd_status), ("validate", cmd_validate), ("show", cmd_show),
-                     ("gates", cmd_gates), ("publish", cmd_publish), ("report", cmd_report)):
+                     ("gates", cmd_gates), ("publish", cmd_publish), ("report", cmd_report),
+                     ("page", cmd_page)):
         sub.add_parser(name).set_defaults(fn=fn)
     sub.add_parser("scheduled").set_defaults(fn=cmd_scheduled)
     p = sub.add_parser("init"); p.add_argument("name"); p.add_argument("--sample", required=True)

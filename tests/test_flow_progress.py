@@ -64,6 +64,34 @@ class ProgressTest(unittest.TestCase):
         notes = [{"who": "exec1", "when": "2026-11-05T10:05:00Z", "text": "approved, thanks"}]
         self.assertIsNone(flow.approval(item, notes))
 
+    def page(self):
+        flow.cmd_page(None)
+        return (self.state / "status.html").read_text()
+
+    def test_page_links_the_issue_and_says_whose_turn_it_is(self):
+        self.definition["stages"] = [{"id": "requirements", "by": "agent"}, {"id": "approve-requirements", "by": "human"},
+                                     {"id": "build", "by": "agent"}, {"id": "approve-screens", "by": "human"},
+                                     {"id": "merge-request", "by": "script"}]
+        waiting = dict(self.item, stage="approve-screens", status="waiting", title="Search <b>box</b>")
+        flow.item_path("GL5").write_text(json.dumps(waiting))
+        self.write_events(record("GL5", "preview", "script passed", "Try it: https://preview.example.test/GL5/"))
+        html = self.page()
+        self.assertIn('href="https://gitlab.example.test/sandbox/app/-/issues/5"', html)
+        self.assertIn('href="https://preview.example.test/GL5/"', html)
+        self.assertIn("Your turn", html)
+        self.assertIn("Search &lt;b&gt;box&lt;/b&gt;", html)
+        self.assertIn('<li class="now you"><span class="dot"></span>You try it and approve</li>', html)
+        self.assertEqual(3, html.count('<li class="done">'))
+        self.assertNotIn("<form", html)
+
+    def test_page_shows_the_merge_request_when_done(self):
+        flow.item_path("GL5").write_text(json.dumps(dict(self.item, status="done")))
+        self.write_events(record("GL5", "merge-request", "script passed",
+                                 "Merge request opened: https://gitlab.example.test/sandbox/app/-/merge_requests/1"))
+        html = self.page()
+        self.assertIn('href="https://gitlab.example.test/sandbox/app/-/merge_requests/1"', html)
+        self.assertIn("Done", html)
+
     def test_named_approvers_still_exclude_others(self):
         self.definition["source"]["approvers"] = ["lead"]
         item = dict(self.item, waiting_since="2026-11-05T10:00:00")

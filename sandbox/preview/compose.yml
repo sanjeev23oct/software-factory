@@ -9,6 +9,9 @@ services:
     environment:
       PREVIEW_REPO: ${PREVIEW_REPO}
       PREVIEW_TOKEN: ${PREVIEW_TOKEN}
+      STATUS_REPO: ${STATUS_REPO:-}
+      STATUS_TOKEN: ${STATUS_TOKEN:-}
+      STATUS_FILE: ${STATUS_FILE:-}
     volumes:
       - ./sync.sh:/docker-entrypoint.d/90-preview-sync.sh:ro
     networks:
