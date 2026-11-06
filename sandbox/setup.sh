@@ -271,8 +271,9 @@ if [ -z "$trigger" ] || [ "${#trigger}" -lt 20 ]; then
 fi
 # GitLab calls itself: allow requests to 127.0.0.1 from webhooks, and nothing wider.
 # Newer GitLab names the setting allowlist; older names it whitelist.
-allow=$(api GET application/settings | json "d.get('outbound_local_requests_allowlist') or d.get('outbound_local_requests_whitelist') or []")
-if ! echo "$allow" | grep -q "127.0.0.1"; then
+settings=$(api GET application/settings)
+allow=$(echo "$settings" | json "d.get('outbound_local_requests_allowlist') or d.get('outbound_local_requests_whitelist') or []")
+if ! { echo "$allow"; echo "$settings" | json "d.get('outbound_local_requests_allowlist_raw') or ''"; } | grep -q "127.0.0.1"; then
   raw=$(echo "$allow" | python3 -c "import ast,sys; print(','.join(ast.literal_eval(sys.stdin.read()) + ['127.0.0.1']))")
   if api PUT application/settings --data-urlencode "outbound_local_requests_allowlist_raw=$raw" >/dev/null; then
     echo "allowed webhooks to call 127.0.0.1"
