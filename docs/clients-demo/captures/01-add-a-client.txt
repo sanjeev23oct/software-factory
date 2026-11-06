@@ -1,0 +1,15 @@
+$ GITLAB_TOKEN=glpat-… SANDBOX_PROJECT=clients/factory-demo SEED=sandbox/playground/app \
+    PREVIEW_HOST=factory.justpush.cloud AUTH_USER=demo INVITE="<username>:<email>" sandbox/setup.sh
+== Sandbox project clients/factory-demo
+created project clients/factory-demo, pushed the seed app
+== Members
+added the client as Developer
+== The factory-demo pipeline in ai-sdlc/software-factory
+OK: 11 stages, source gitlab
+== Preview server
+login for https://factory.justpush.cloud/factory-demo/   user: demo   password: ••••••••   (shown once)
+== Webhook: start a pass when someone files an issue or comments
+issues and comments on clients/factory-demo now start a pass
+== Ready
+File an issue:      https://gitlab.justpush.cloud/clients/factory-demo/-/issues/new
+Where things stand: https://factory.justpush.cloud/factory-demo/status/

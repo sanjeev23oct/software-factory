@@ -17,6 +17,8 @@ import { fileURLToPath } from 'node:url';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const CHROME = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+// Another video keeps its screenshots in its own folder: DEMO_SHOTS=docs/clients-demo/shots.
+const SHOTS = process.env.DEMO_SHOTS || join(HERE, 'shots');
 export const WIDTH = 1208, HEIGHT = 596;   // the picture area of one video frame
 const sleep = (ms) => new Promise((done) => setTimeout(done, ms));
 
@@ -84,10 +86,12 @@ export async function open(port = 9333) {
         if (box) boxes.push({ label, box }); else console.error(`  (no element for mark "${label}")`);
       }
       const picture = await send('Page.captureScreenshot', { format: 'png' });
-      writeFileSync(join(HERE, 'shots', `${name}.png`), Buffer.from(picture.data, 'base64'));
-      writeFileSync(join(HERE, 'shots', `${name}.json`), JSON.stringify(boxes));
+      writeFileSync(join(SHOTS, `${name}.png`), Buffer.from(picture.data, 'base64'));
+      writeFileSync(join(SHOTS, `${name}.json`), JSON.stringify(boxes));
       console.log(`shot ${name}  (${boxes.length} marks)`);
     },
+    // Headers sent with every request from now on, e.g. a basic-auth login for a preview area.
+    async headers(extra) { await send('Network.enable'); await send('Network.setExtraHTTPHeaders', { headers: extra }); },
     async close() { socket.close(); chrome.kill(); await sleep(300); },
   };
 }

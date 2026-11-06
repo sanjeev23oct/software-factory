@@ -28,6 +28,16 @@ It ran on [factory-demo-ui](https://github.com/sanjeev23oct/factory-demo-ui)
 and [factory-demo-api](https://github.com/sanjeev23oct/factory-demo-api): one
 factory, two repositories, five pipelines.
 
+### The client's side: Ask, approve, try it
+
+[docs/clients-demo/](docs/clients-demo/) is a six-minute video of a client
+who is not an engineer asking for a CRM dashboard in plain words, approving
+twice, and getting working, tested software waiting for review 17 minutes
+later: [clients-demo.mp4](docs/clients-demo/clients-demo.mp4). It has no sound;
+[narration.md](docs/clients-demo/narration.md) is the voice-over, timed scene
+by scene. Every frame is a screenshot of a real run, taken by the `act-*.mjs`
+scripts and laid out by `python3 docs/demo/build.py docs/clients-demo`.
+
 ## Take the test drive
 
 [docs/test-drive/](docs/test-drive/index.html) is a five-minute hands-on page

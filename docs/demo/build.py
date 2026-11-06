@@ -1,7 +1,10 @@
 #!/usr/bin/env python3
 """Build the demo video and the walkthrough page from the captures of a real run.
 
-    python3 docs/demo/build.py
+    python3 docs/demo/build.py [FOLDER]
+
+FOLDER holds another video's story.json, captures/ and shots/ (default: this
+folder). Its story may name the video ("video") and the page's title ("name").
 
 Everything shown comes from docs/demo/captures/ (real terminal output and the
 documents agents wrote) and docs/demo/shots/ (real screenshots, taken by
@@ -29,6 +32,15 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
 CAPTURES, SHOTS, FRAMES = HERE / "captures", HERE / "shots", HERE / "frames"
+VIDEO, NAME = "factory-demo.mp4", "Idea to Value"
+
+
+def use_folder(folder, story):
+    """Point every path at FOLDER, so one script builds any number of videos."""
+    global HERE, CAPTURES, SHOTS, FRAMES, VIDEO, NAME
+    HERE = folder
+    CAPTURES, SHOTS, FRAMES = folder / "captures", folder / "shots", folder / "frames"
+    VIDEO, NAME = story.get("video", VIDEO), story.get("name", NAME)
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PIC_W, PIC_H = 1208, 596   # the picture area; drive.mjs takes screenshots at exactly this size
 
@@ -261,7 +273,7 @@ def video(scenes):
         lines += ["file '{}'".format(scene["frame"]), "duration {}".format(scene.get("seconds", 6))]
     lines.append("file '{}'".format(scenes[-1]["frame"]))  # the concat demuxer needs the last frame named twice
     listing.write_text("\n".join(lines) + "\n")
-    out = HERE / "factory-demo.mp4"
+    out = HERE / VIDEO
     proc = subprocess.run(["ffmpeg", "-y", "-loglevel", "error", "-f", "concat", "-safe", "0", "-i", str(listing),
                            "-vf", "fps=30,format=yuv420p", "-c:v", "libx264", "-crf", "20", "-movflags", "+faststart", str(out)],
                           capture_output=True, text=True)
@@ -336,17 +348,36 @@ def page(story):
     links = "".join('<li><a href="{}">{}</a></li>'.format(e(u), e(t)) for t, u in story["links"])
     first = story["scenes"][0]
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
-            "<title>Idea to Value</title>{}<style>{}</style></head><body><div class=\"wrap\">"
-            "<header><span class=\"part\">{}</span><h1>Idea to Value</h1><p>{}</p>"
-            '<video src="factory-demo.mp4" controls preload="metadata" poster="frames/{}"></video></header>'
+            "<title>{name}</title>{}<style>{}</style></head><body><div class=\"wrap\">"
+            "<header><span class=\"part\">{}</span><h1>{name}</h1><p>{}</p>"
+            '<video src="{video}" controls preload="metadata" poster="frames/{}"></video></header>'
             '<div class="facts">{}</div>{}'
             "<section><h2>See it for yourself</h2><ul>{}</ul></section>"
             "<footer>Frames and video are built by docs/demo/build.py from the captured output of a real run. Nothing is mocked.</footer>"
-            "</div></body></html>\n").format(FONTS, PAGE_CSS, e(first["kicker"]), e(story["intro"]), first["frame"], facts, "".join(out), links)
+            "</div></body></html>\n").format(FONTS, PAGE_CSS, e(first["kicker"]), e(story["intro"]), first["frame"], facts, "".join(out), links,
+                                    name=e(NAME), video=e(VIDEO))
+
+
+def narration(story, seconds):
+    """The voice-over script: one line per scene, with when it starts and how long it has."""
+    out = ["# {}: narration".format(NAME), "",
+           "One line per scene, timed to `{}` ({}:{:02d}). \"Starts\" is when the scene appears; each line fits "
+           "its scene at about 150 words a minute.".format(VIDEO, seconds // 60, seconds % 60), "",
+           "| # | Starts | Length | On screen | Narration |", "|---|---|---|---|---|"]
+    at = 0
+    for n, scene in enumerate(story["scenes"], 1):
+        length = scene.get("seconds", 6)
+        shown = re.sub("<[^>]+>", "", re.sub("<br>", " ", scene.get("title") if scene["kind"] in ("title", "chapter", "step") else scene["say"]))
+        out.append("| {} | {}:{:02d} | {}s | {} | {} |".format(n, at // 60, at % 60, length, shown.replace("|", "/"),
+                                                                scene.get("voice", "").replace("|", "/")))
+        at += length
+    return "\n".join(out) + "\n"
 
 
 def main():
-    story = json.loads((HERE / "story.json").read_text())
+    folder = Path(sys.argv[1]).resolve() if len(sys.argv) > 1 else HERE
+    story = json.loads((folder / "story.json").read_text())
+    use_folder(folder, story)
     scenes = story["scenes"]
     for scene in scenes:
         if "file" in scene:
@@ -355,6 +386,8 @@ def main():
     out = video(scenes)
     (HERE / "index.html").write_text(page(story))
     seconds = sum(s.get("seconds", 6) for s in scenes)
+    if story.get("narration"):
+        (HERE / "narration.md").write_text(narration(story, seconds))
     print("{} scenes, {}:{:02d}  {}  {:.1f} MB".format(len(scenes), seconds // 60, seconds % 60, out.name, out.stat().st_size / 1e6))
 
 
