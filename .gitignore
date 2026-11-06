@@ -20,3 +20,6 @@ targets/*/
 
 # Rebuilt by docs/clients-demo/voice.py mix
 docs/clients-demo/voice/track.m4a
+
+# Client instructions and logins: never committed.
+private/

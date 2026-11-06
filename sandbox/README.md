@@ -67,6 +67,12 @@ that login, and the first GitLab password of anyone it creates, once: keep
 them somewhere safe, never in this repository. The client sees only the GitLab
 projects they are a member of.
 
+To give the client their getting-started page, run
+`python3 sandbox/onboarding.py --client <name> --project clients/<project>`.
+It fills in [client-onboarding.md](client-onboarding.md) with their links and
+writes `private/<name>-onboarding.md`, which git ignores. The page holds no
+usernames or passwords; send those separately.
+
 The script prints the link to file an issue and the client's status page.
 Without `PREVIEW_HOST` previews are served on port 8090, and the script says
 whether that port needs opening.
