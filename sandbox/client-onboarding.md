@@ -2,10 +2,35 @@
 
 You already build with Claude Code on your laptop: you describe a change in
 the terminal, Claude edits the files, you check the result and push it. The
-software factory does the same kind of work with Claude agents, but on our
-server, in fixed steps, with a second agent checking every piece. You take
-part at two points: you approve what will be built, and you approve what was
-built.
+software factory uses the same Claude agents, but organises the work
+differently: every request goes through the same written steps, each step is
+done by an agent with one job, a second agent checks every piece and writes
+down what it found, and you approve at two points: what will be built, and
+what was built.
+
+## A factory is a process, not a place
+
+It's easy to read the factory as "Claude Code, moved to a server". It isn't.
+What makes it a factory is **how the work is organised**, not where it runs.
+
+- **The idea is old.** The term "software factory" goes back to 1968, and in
+  the 1970s and 80s Hitachi, Toshiba and NEC built theirs around standard
+  methods, a division of labour, and quality checks at every step. Nothing
+  about it was ever a location.
+- **Today, the workers are AI agents.** The same principles apply: a request
+  becomes a written spec, then a plan, then work that is built, checked and
+  handed over. The agents propose; checks that don't take an agent's word for
+  it, and people at the gates, decide what goes forward.
+- **What makes it a factory:**
+  1. **One written pipeline:** every request goes through the same steps, in the same order.
+  2. **One job per agent:** each step has its own agent and its own written instructions.
+  3. **Checked separately:** a second agent, who never saw the work being done, verifies it.
+  4. **Evidence:** every check is written down: what was run, what was expected, what was found.
+  5. **People decide:** nothing is built or handed over without someone saying yes.
+- **Where it runs doesn't matter.** This same factory runs from Claude Code on a
+  laptop, as a background job on a laptop, or on a server. We run yours on our
+  server only for convenience: you have nothing to install, and it keeps
+  working when your laptop is closed.
 
 ## See a finished example first
 
@@ -46,6 +71,9 @@ project, not there.
 
 ## What changes for you
 
+The biggest change isn't where the work runs, it's how it's organised. Here
+is the same request, step by step, both ways.
+
 | | Claude Code on your laptop | Factory: where | Factory: how |
 |---|---|---|---|
 | **Ask** | A prompt in your terminal | A new **issue** in your GitLab project | Fill in the Feature form: what should change, and how you'll know it works. Press **Create issue**. |
@@ -57,7 +85,7 @@ project, not there.
 | **See where it stands** | Your terminal window | Your **status page**, and the comments on your issue | Open the status page any time: each request, its step, and an orange **Your turn** when it waits for you. |
 | **Hand over** | You commit, push and open a merge request | A **merge request** in your project, linked from the issue and the status page | The factory opens it after your second `approve`. Our team reviews and merges it, and your app updates. |
 | **What's recorded** | Your chat history, on your laptop | The issue, and `specs/` on the branch | Every step, check and approval stays on the issue. The requirements, plan and evidence stay in the repository. |
-| **What you install** | Claude Code and a subscription | Nothing | A browser is enough. |
+| **What you install** | Claude Code and a subscription | Nothing | A browser is enough: we host your factory. The same factory can also run from Claude Code on a laptop. |
 
 ## The flow, in short
 
