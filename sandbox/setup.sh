@@ -145,6 +145,9 @@ definition["source"].update(host=host, project=project)
 target = json.loads((home / "target.json").read_text())
 target.pop("repo", None)
 target.update(remote="{}/{}.git".format(url, project), protected=sorted(set(target["protected"]) | {".gitlab/"}))
+# The checker runs the app's tests (node --test) and its gate scripts (awk); a command
+# outside this list is refused, and the section can never pass.
+target["allowed_tools"] = sorted(set(target.get("allowed_tools", [])) | {"Bash(node:*)", "Bash(awk:*)"})
 (home / "target.json").write_text(json.dumps(target, indent=2) + "\n")
 EOF
 chmod +x "$T/presubmit"
