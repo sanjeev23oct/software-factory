@@ -92,7 +92,8 @@ api_or_empty POST "projects/$sid/labels" -d name=factory --data-urlencode "color
 
 say "Members"
 add_member() {   # user id, label
-  if api_or_empty GET "projects/$sid/members/$1" | grep -q '"id"'; then echo "$2 is already a member"; return; fi
+  # members/all counts access inherited from the group; adding a lower role than that is refused with a 400.
+  if api_or_empty GET "projects/$sid/members/all/$1" | grep -q '"id"'; then echo "$2 is already a member"; return; fi
   api POST "projects/$sid/members" -d "user_id=$1" -d access_level=30 >/dev/null && echo "added $2 as Developer"
 }
 fid=$(api GET "projects/$(enc "$FACTORY_PROJECT")" | json "d['id']")
