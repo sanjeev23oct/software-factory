@@ -14,8 +14,15 @@ below happened here. Someone asked for a CRM dashboard in plain words,
 approved twice, and 17 minutes later it was built, checked and waiting for
 review.
 
-**The result, live.** This uses the sample's login, which we send you
-separately.
+> **Before you click: you'll be asked to sign in.** The links below need two
+> logins, both sent to you separately:
+>
+> - **The sample's login**, for the three live links. Your browser shows a
+>   small sign-in box; enter it there.
+> - **Your own GitLab login**, for the GitLab links. You'll see the GitLab
+>   sign-in page first.
+
+**The result, live** (the sample's login):
 
 | What | Link |
 |---|---|
@@ -23,8 +30,8 @@ separately.
 | **Try it**: the CRM dashboard that was built | {{SAMPLE_SITE}}/GL1/ |
 | The app before the request: an empty page | {{SAMPLE_SITE}}/main/ |
 
-**The conversation and the paperwork, in GitLab.** This uses your own GitLab
-login; we give you read-only access to the sample project.
+**The conversation and the paperwork, in GitLab** (your own GitLab login;
+anyone signed in to our GitLab can read the sample):
 
 | What | Link |
 |---|---|
@@ -83,29 +90,32 @@ You have two, and we send them to you separately. Keep them private.
 
 - **GitLab**, where you ask and approve: {{GITLAB}}. GitLab asks you to choose
   your own password the first time you sign in.
-- **Your app and status page**, where you see results. Your browser asks for
-  this login once, then remembers it.
+- **Your app and status page**, where you see results: your status page, your
+  app, and every **Try it** link. Your browser shows a small sign-in box the
+  first time, then remembers it.
 
 ## Your links
 
-| What | Link |
-|---|---|
-| Your project | {{GITLAB}}/{{PROJECT}} |
-| Ask for something | {{GITLAB}}/{{PROJECT}}/-/issues/new?issuable_template=Feature |
-| Where your requests stand | {{SITE}}/status/ |
-| Your app, as it is now | {{SITE}}/main/ |
+Each link asks for one of your two logins the first time you open it.
+
+| What | Link | Login it asks for |
+|---|---|---|
+| Your project | {{GITLAB}}/{{PROJECT}} | GitLab |
+| Ask for something | {{GITLAB}}/{{PROJECT}}/-/issues/new?issuable_template=Feature | GitLab |
+| Where your requests stand | {{SITE}}/status/ | App and status page |
+| Your app, as it is now | {{SITE}}/main/ | App and status page |
 
 ### The links each request gets
 
 Each request has its own links, made from its issue number. For your first
 issue, **#1**, they are:
 
-| What | Link for issue #1 | Where you'll find it |
-|---|---|---|
-| The conversation | {{GITLAB}}/{{PROJECT}}/-/issues/1 | Your project's **Issues** list, and the status page |
-| What the factory understood | `{{GITLAB}}/{{PROJECT}}/-/blob/factory/GL1/specs/1-<your-title>/requirements.md` | The first **The factory is waiting for you** comment (the end of the link follows your issue's title) |
-| **Try it** | {{SITE}}/GL1/ | The second **The factory is waiting for you** comment, and the status page |
-| The finished work | {{GITLAB}}/{{PROJECT}}/-/merge_requests/1 | The last **Factory progress** comment, and the status page's **See the finished change** button |
+| What | Link for issue #1 | Where you'll find it | Login |
+|---|---|---|---|
+| The conversation | {{GITLAB}}/{{PROJECT}}/-/issues/1 | Your project's **Issues** list, and the status page | GitLab |
+| What the factory understood | `{{GITLAB}}/{{PROJECT}}/-/blob/factory/GL1/specs/1-<your-title>/requirements.md` | The first **The factory is waiting for you** comment (the end of the link follows your issue's title) | GitLab |
+| **Try it** | {{SITE}}/GL1/ | The second **The factory is waiting for you** comment, and the status page | App and status page |
+| The finished work | {{GITLAB}}/{{PROJECT}}/-/merge_requests/1 | The last **Factory progress** comment, and the status page's **See the finished change** button | GitLab |
 
 For issue #2, change `1` to `2` (so `GL1` becomes `GL2`, and so on). The one
 exception is the merge request: GitLab numbers those separately, so always
