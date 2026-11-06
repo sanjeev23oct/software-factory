@@ -7,14 +7,14 @@ GitLab, and the factory on the VPS does the rest, in the open, on that issue:
    starts a pass as soon as an issue is filed or someone comments, so nobody
    waits for the 10-minute schedule.
 2. **A few minutes later**, the requirements are on the issue's branch, and a
-   comment asks for `/approve`.
-3. **After `/approve`**, agents plan the work and build it section by section.
+   comment asks for `approve`.
+3. **After `approve`**, agents plan the work and build it section by section.
    A separate checker session verifies each section, and a failed check goes
    back to a new maker with written findings. Each pass comments what happened,
    including every rejection.
 4. **When every check passes**, a comment carries a **Try it** link to the
-   change running in a browser, and asks for `/approve` again.
-5. **After the second `/approve`**, the factory opens a merge request with the
+   change running in a browser, and asks for `approve` again.
+5. **After the second `approve`**, the factory opens a merge request with the
    code, the tests, the specs and the evidence. Merging stays a person's call.
 
 A typical change takes 20 to 40 minutes of factory time, plus however long the
@@ -43,7 +43,7 @@ You need an admin personal access token with the `api` scope
 
 `INVITE` is optional. It creates the GitLab users that do not exist yet,
 prints each first password once, and adds everyone to the sandbox project as
-Developer. Any member of the sandbox project may `/approve`, so keep it
+Developer. Any member of the sandbox project may `approve`, so keep it
 private and invite only the people taking the drive.
 
 ### A client project instead
@@ -90,8 +90,8 @@ Do one run yourself:
 1. File "Add a search box that narrows the list as I type" with the Feature template.
 2. Check that a pipeline starts in the factory project within a minute, and
    that the issue gets a progress comment and then the gate notice.
-3. Reply `/approve`, wait for the **Try it** link, and open it.
-4. Reply `/approve` again and check that the merge request opens.
+3. Reply `approve` (without a slash: GitLab swallows `/approve` on an issue), wait for the **Try it** link, and open it.
+4. Reply `approve` again and check that the merge request opens.
 
 ## Reset between drives
 

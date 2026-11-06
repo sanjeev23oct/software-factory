@@ -788,7 +788,8 @@ def approval(item, notes):
         if not may_approve(note["who"]) or note["when"][:19] < item["waiting_since"]:
             continue
         words = (note["text"].strip().splitlines() or [""])[0].split()
-        if words and words[0] == "/approve":
+        # GitLab swallows a comment that is only `/approve` as a quick action, so the bare word counts too.
+        if words and words[0].lower() in ("/approve", "approve"):
             return note["who"], [w for w in words[1:] if w not in ("skip", "--skip")]
     return None
 
@@ -845,8 +846,8 @@ def cmd_gates(args):
         body += ["Read first: " + " · ".join(docs), ""] if docs else []
         preview = latest_preview(item)
         body += ["**Try it:** " + preview, ""] if preview else []
-        body += ["To approve, reply `/approve`."]
-        body += ["To approve and skip an optional stage: `/approve skip {}`.".format(optional[0])] if optional else []
+        body += ["To approve, reply `approve`."]
+        body += ["To approve and skip an optional stage: `approve skip {}`.".format(optional[0])] if optional else []
         who = "Any member of this project" if "*" in approvers() else "Only " + ", ".join("@" + a for a in approvers())
         body += ["", "{} can approve. <!-- software-factory:gate {} {} -->".format(who, item["id"], stage["id"])]
         ok, output = post_note(item, "\n".join(body) + "\n", "note")

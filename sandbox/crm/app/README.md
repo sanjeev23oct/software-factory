@@ -3,7 +3,7 @@
 Your CRM, built by the [software factory](https://github.com/sanjeev23oct/software-factory)
 one issue at a time. File an issue with the **Feature** template and the
 factory takes it from there: it writes the requirements, waits for your
-`/approve`, builds the change with a separate checker, posts a link where you
+`approve`, builds the change with a separate checker, posts a link where you
 can try it, and opens a merge request when you approve again.
 
 Everything the factory does shows up as comments on your issue.

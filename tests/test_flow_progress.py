@@ -57,6 +57,13 @@ class ProgressTest(unittest.TestCase):
         notes = [{"who": "exec1", "when": "2026-11-05T10:05:00Z", "text": "/approve"}]
         self.assertEqual(("exec1", []), flow.approval(item, notes))
 
+    def test_bare_approve_counts_because_gitlab_swallows_slash_approve(self):
+        item = dict(self.item, waiting_since="2026-11-05T10:00:00")
+        notes = [{"who": "exec1", "when": "2026-11-05T10:05:00Z", "text": "Approve skip lint\nlooks good"}]
+        self.assertEqual(("exec1", ["lint"]), flow.approval(item, notes))
+        notes = [{"who": "exec1", "when": "2026-11-05T10:05:00Z", "text": "approved, thanks"}]
+        self.assertIsNone(flow.approval(item, notes))
+
     def test_named_approvers_still_exclude_others(self):
         self.definition["source"]["approvers"] = ["lead"]
         item = dict(self.item, waiting_since="2026-11-05T10:00:00")
