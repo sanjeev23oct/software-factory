@@ -17,7 +17,7 @@ GitLab, and the factory on the VPS does the rest, in the open, on that issue:
 5. **After the second `approve`**, the factory opens a merge request with the
    code, the tests, the specs and the evidence. Merging stays a person's call.
 
-**Where each request stands** is at `/status/` on the preview host: a read-only page, in plain
+**Where each request stands** is at `/<project>/status/` on the preview host: a read-only page, in plain
 words, with a button to each request's GitLab issue, its **Try it** link and, when done, its merge
 request. It refreshes every minute. Approving stays on the issue.
 
@@ -31,7 +31,7 @@ gates wait for a person.
 | `app/` | The seed app: a small task board in plain HTML and JavaScript, with `node --test` tests and issue templates that label new issues `factory`. |
 | `target/` | The rules agents follow on that app (`AGENTS.md`) and its checks (`presubmit`). |
 | `preview/` | A small nginx container that serves `main` and each `factory/<item>` branch at `/<item>/`, refreshed every 20 seconds, on a hostname through Traefik or on a port. |
-| `crm/` | An empty CRM seed (`crm/app/`) and its agent rules (`crm/target/`), for a client project. |
+| `playground/` | An empty app for a client project (`playground/app/`) and its agent rules (`playground/target/`). |
 | `setup.sh` | Sets all of it up on the VPS. Safe to run again. |
 | `../factories/test-drive/` | The pipeline: read issue, requirements, **you**, tasks, lint, maker-checker build, evidence re-check, presubmit, preview, **you**, merge request. |
 
@@ -52,17 +52,18 @@ private and invite only the people taking the drive.
 
 ### A client project instead
 
-To give a client their own project that starts as an empty CRM, with previews
+To give a client their own project that starts as an empty page, with previews
 under a hostname that the server's Traefik already routes:
 
-    GITLAB_TOKEN=glpat-... SANDBOX_PROJECT=clients/client-crm \
-      SEED=sandbox/crm/app RULES=sandbox/crm/target \
+    GITLAB_TOKEN=glpat-... SANDBOX_PROJECT=clients/software-factory-playground \
+      SEED=sandbox/playground/app RULES=sandbox/playground/target \
       PREVIEW_HOST=factory.example.com \
       INVITE="chris.conway:chris@example.com" sandbox/setup.sh
 
-The client sees only the projects they are a member of, and files issues
-there. The factory works one project at a time: running the script for a
-second project moves the pipeline to it.
+Run it once per client. Each project gets its own pipeline, named after the
+project, and its own area on the preview server, `/<project>/`, with its
+previews and its status page behind a login of its own. The script prints
+that login once. The client sees only the GitLab projects they are a member of.
 
 The script prints the link to file an issue. It also says whether port 8090
 needs opening for previews. To serve previews under a hostname instead, route

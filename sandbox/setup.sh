@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
-# Set up the leadership test drive on the self-hosted GitLab, from the VPS.
+# Give one client (or the leadership test drive) a project the factory works on,
+# on the self-hosted GitLab, from the VPS. Run it once per project; each gets its
+# own pipeline and its own area on the preview server.
 #
 #   cd /path/to/software-factory && git pull
 #   GITLAB_TOKEN=glpat-... sandbox/setup.sh
@@ -7,25 +9,31 @@
 # It is safe to run again: every step checks what is already there.
 #
 # What it does:
-#   1. creates the private project sandbox/test-drive-app, seeded with a small
-#      task board and an issue template that hands issues to the factory
+#   1. creates the private project SANDBOX_PROJECT, seeded with an app and an
+#      issue template that hands issues to the factory
 #   2. adds the factory's bot user, and anyone in INVITE, to that project
-#   3. adds the `test-drive` pipeline to the factory project's targets/
+#   3. adds a pipeline for it, named after the project, to the factory project's targets/
 #   4. lets a webhook start a factory pass the moment someone files an issue
 #      or comments, instead of waiting for the 10-minute schedule
-#   5. starts the preview server, so each issue's branch can be tried in a browser
+#   5. serves the project's previews and status page at /<pipeline>/ on the preview
+#      server, behind a basic-auth login of its own
 #
 # Settings (environment):
 #   GITLAB_TOKEN      required. An admin's personal access token with the `api` scope.
 #   GITLAB_URL        default https://gitlab.justpush.cloud
 #   FACTORY_PROJECT   default ai-sdlc/software-factory
 #   SANDBOX_PROJECT   default sandbox/test-drive-app
-#   SEED              the app the project starts from. Default sandbox/app (the task board); sandbox/crm/app is an empty CRM.
+#   TARGET            the pipeline's name, and the project's path on the preview server. Default: the project's name.
+#   SEED              the app the project starts from. Default sandbox/app (the task board);
+#                     sandbox/playground/app is an empty page for a client to build on.
 #   RULES             the folder holding the agents' AGENTS.md and presubmit for that app. Default sandbox/target.
 #   PREVIEW_HOST      a hostname the server's Traefik routes, e.g. factory.example.com. Previews are then
 #                     served there instead of on a port.
-#   PREVIEW_URL       where people open previews, with {item}. Default https://<PREVIEW_HOST>/{item}/, or
-#                     http://<this server's IP>:<PREVIEW_PORT>/{item}/ without PREVIEW_HOST
+#   PREVIEW_URL       where people open previews, with {target} and {item}. Default https://<PREVIEW_HOST>/{target}/{item}/,
+#                     or http://<this server's IP>:<PREVIEW_PORT>/{target}/{item}/ without PREVIEW_HOST. Every
+#                     pipeline shares it, so keep {target} in it.
+#   AUTH_USER         the login for this project's previews and status page. Default: client. The password is
+#                     made the first time and printed once. AUTH=off serves them without a login.
 #   PREVIEW_PORT      default 8090, used only without PREVIEW_HOST
 #   FACTORY_REF       the factory code the runner uses. Default: this checkout's commit, which must be pushed.
 #   FACTORY_BOT_USER  the username behind FACTORY_GITLAB_TOKEN, if that variable is hidden.
@@ -39,6 +47,8 @@ GITLAB_URL=${GITLAB_URL%/}
 HOST=${GITLAB_URL#https://}; HOST=${HOST#http://}
 FACTORY_PROJECT=${FACTORY_PROJECT:-ai-sdlc/software-factory}
 SANDBOX_PROJECT=${SANDBOX_PROJECT:-sandbox/test-drive-app}
+TARGET=${TARGET:-${SANDBOX_PROJECT##*/}}
+case "$TARGET" in *[!a-z0-9-]*|"") echo "error: TARGET must be lowercase letters, digits and dashes: $TARGET" >&2; exit 1 ;; esac
 PREVIEW_PORT=${PREVIEW_PORT:-8090}
 SF="$(cd "$(dirname "$0")/.." && pwd)"
 SEED=$(cd "$SF" && cd "${SEED:-sandbox/app}" && pwd)
@@ -49,7 +59,7 @@ trap 'rm -rf "$WORK"' EXIT
 
 say() { printf '\n== %s\n' "$*"; }
 need() { command -v "$1" >/dev/null || { echo "error: $1 is not installed" >&2; exit 1; }; }
-for tool in curl git python3 docker; do need "$tool"; done
+for tool in curl git python3 docker openssl; do need "$tool"; done
 
 # Python's urllib is refused by Cloudflare in front of this GitLab, so every API call goes through curl.
 api() {
@@ -127,12 +137,12 @@ for entry in ${INVITE:-}; do
   add_member "$uid" "@$user"
 done
 
-say "The test-drive pipeline in $FACTORY_PROJECT"
+say "The $TARGET pipeline in $FACTORY_PROJECT"
 gitauth clone -q "$GITLAB_URL/$FACTORY_PROJECT.git" "$WORK/factory"
 gitauth clone -q "$GITLAB_URL/$SANDBOX_PROJECT.git" "$WORK/sandbox"
-rm -rf "$WORK/factory/targets/test-drive"
-FACTORY_TARGETS_DIR="$WORK/factory/targets" python3 "$SF/factory/flow.py" init test-drive --sample test-drive --repo "$WORK/sandbox" >/dev/null
-T="$WORK/factory/targets/test-drive"
+rm -rf "$WORK/factory/targets/$TARGET"
+FACTORY_TARGETS_DIR="$WORK/factory/targets" python3 "$SF/factory/flow.py" init "$TARGET" --sample test-drive --repo "$WORK/sandbox" >/dev/null
+T="$WORK/factory/targets/$TARGET"
 cp "$RULES/AGENTS.md" "$RULES/presubmit" "$T/"
 python3 - "$T" "$HOST" "$SANDBOX_PROJECT" "$GITLAB_URL" <<'EOF'
 import json, sys
@@ -152,7 +162,7 @@ target["allowed_tools"] = sorted(set(target.get("allowed_tools", [])) | {"Bash(n
 EOF
 chmod +x "$T/presubmit"
 FACTORY_TARGETS_DIR="$WORK/factory/targets" FACTORY_REPOS_DIR="$WORK/repos" FACTORY_STATE_DIR="$WORK/state" \
-  FACTORY_GIT_TOKEN="$GITLAB_TOKEN" python3 "$SF/factory/flow.py" --target test-drive validate
+  FACTORY_GIT_TOKEN="$GITLAB_TOKEN" python3 "$SF/factory/flow.py" --target "$TARGET" validate
 
 # Let a webhook start a pass. Edit the job's rules only if the trigger is not allowed yet.
 ci="$WORK/factory/.gitlab-ci.yml"
@@ -173,59 +183,72 @@ EOF
   else echo "warning: could not find the \"web\" rule in .gitlab-ci.yml. Add: - if: \$CI_PIPELINE_SOURCE == \"trigger\""
   fi
 fi
-git -C "$WORK/factory" add -A targets/test-drive .gitlab-ci.yml
-git -C "$WORK/factory" update-index --chmod=+x targets/test-drive/presubmit
+git -C "$WORK/factory" add -A "targets/$TARGET" .gitlab-ci.yml
+git -C "$WORK/factory" update-index --chmod=+x "targets/$TARGET/presubmit"
 if git -C "$WORK/factory" diff --cached --quiet; then
   echo "no change to the factory project"
 else
   git -C "$WORK/factory" diff --cached --stat
-  git -C "$WORK/factory" -c user.name="software factory" -c user.email=factory@localhost commit -qm "Add the test-drive pipeline"
+  git -C "$WORK/factory" -c user.name="software factory" -c user.email=factory@localhost commit -qm "Add the $TARGET pipeline"
   gitauth -C "$WORK/factory" push -q origin HEAD
   echo "pushed to $FACTORY_PROJECT"
 fi
 
 say "Preview server"
 if [ -n "${PREVIEW_HOST:-}" ]; then
-  PREVIEW_URL=${PREVIEW_URL:-https://$PREVIEW_HOST/\{item\}/}
+  PREVIEW_URL=${PREVIEW_URL:-https://$PREVIEW_HOST/\{target\}/\{item\}/}
   layout=compose.host.yml
 else
   if [ -z "${PREVIEW_URL:-}" ]; then
     ip=$(curl -sS -4 --max-time 5 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-    PREVIEW_URL="http://$ip:$PREVIEW_PORT/{item}/"
+    PREVIEW_URL="http://$ip:$PREVIEW_PORT/{target}/{item}/"
   fi
   layout=compose.port.yml
 fi
+SITE_URL=$(printf '%s' "$PREVIEW_URL" | sed "s/{target}/$TARGET/; s/{item}\/\{0,1\}//")
 # Traefik reaches the preview over the network GitLab is on, so that network must be Traefik's too.
 network=$(docker inspect gitlab -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' | awk '{print $1}')
 D=/data/factory-preview
+mkdir -p "$D/sites"
+chmod 755 "$D/sites"
 expires=$(python3 -c "import datetime; print(datetime.date.today() + datetime.timedelta(days=364))")
+site="$D/sites/$TARGET"
 preview_repo="http://gitlab/$SANDBOX_PROJECT.git"
-preview_token=$(sed -n 's/^PREVIEW_TOKEN=//p' "$D/.env" 2>/dev/null || true)
+preview_token=$(sed -n 's/^TOKEN=//p' "$site.env" 2>/dev/null || true)
 existing=$(api GET "projects/$sid/access_tokens" | json "[t['id'] for t in d if t['name'] == 'factory-preview' and t['active']]")
 # A token kept from an earlier run may belong to another project; mint one for this project then.
-if [ "$existing" = "[]" ] || [ -z "$preview_token" ] || [ "$(sed -n 's/^PREVIEW_REPO=//p' "$D/.env")" != "$preview_repo" ]; then
+if [ "$existing" = "[]" ] || [ -z "$preview_token" ] || [ "$(sed -n 's/^REPO=//p' "$site.env")" != "$preview_repo" ]; then
   preview_token=$(api POST "projects/$sid/access_tokens" -d name=factory-preview -d access_level=20 \
                   -d "scopes[]=read_repository" -d "expires_at=$expires" | json "d['token']")
 fi
-# The status page is read from the factory project's factory-state branch, with a token that can only read.
+(umask 077; printf 'REPO=%s\nTOKEN=%s\n' "$preview_repo" "$preview_token" > "$site.env")
+if [ "${AUTH:-on}" = off ]; then
+  rm -f "$site.htpasswd"
+  echo "$SITE_URL is open to anyone with the link"
+elif [ ! -s "$site.htpasswd" ]; then
+  auth_user=${AUTH_USER:-client}
+  auth_password=$(python3 -c "import secrets; print(secrets.token_urlsafe(12))")
+  printf '%s:%s\n' "$auth_user" "$(openssl passwd -apr1 "$auth_password")" > "$site.htpasswd"
+  echo "login for $SITE_URL   user: $auth_user   password: $auth_password   (shown once)"
+else
+  echo "login for $SITE_URL is kept from before (user: $(cut -d: -f1 "$site.htpasswd" | head -1))"
+fi
+# nginx's workers read the logins; the file holds only hashes.
+[ -f "$site.htpasswd" ] && chmod 644 "$site.htpasswd"
+# The status pages are read from the factory project's factory-state branch, with a token that can only read.
 status_token=$(sed -n 's/^STATUS_TOKEN=//p' "$D/.env" 2>/dev/null || true)
 existing=$(api GET "projects/$fid/access_tokens" | json "[t['id'] for t in d if t['name'] == 'factory-status' and t['active']]")
 if [ "$existing" = "[]" ] || [ -z "$status_token" ]; then
   status_token=$(api POST "projects/$fid/access_tokens" -d name=factory-status -d access_level=20 \
                  -d "scopes[]=read_repository" -d "expires_at=$expires" | json "d['token']")
 fi
-mkdir -p "$D"
-umask 077
-printf 'PREVIEW_REPO=%s\nPREVIEW_TOKEN=%s\nPREVIEW_PORT=%s\nPREVIEW_HOST=%s\nGITLAB_NETWORK=%s\n' \
-  "$preview_repo" "$preview_token" "$PREVIEW_PORT" "${PREVIEW_HOST:-}" "$network" > "$D/.env"
-printf 'STATUS_REPO=http://gitlab/%s.git\nSTATUS_TOKEN=%s\nSTATUS_FILE=test-drive/status.html\n' \
-  "$FACTORY_PROJECT" "$status_token" >> "$D/.env"
-umask 022
+(umask 077; printf 'STATUS_REPO=http://gitlab/%s.git\nSTATUS_TOKEN=%s\nPREVIEW_PORT=%s\nPREVIEW_HOST=%s\nGITLAB_NETWORK=%s\n' \
+  "$FACTORY_PROJECT" "$status_token" "$PREVIEW_PORT" "${PREVIEW_HOST:-}" "$network" > "$D/.env")
 cp "$SF/sandbox/preview/compose.yml" "$SF/sandbox/preview/compose.host.yml" "$SF/sandbox/preview/compose.port.yml" \
    "$SF/sandbox/preview/sync.sh" "$D/"
 chmod 755 "$D/sync.sh"
 docker compose -f "$D/compose.yml" -f "$D/$layout" --env-file "$D/.env" up -d --force-recreate
-echo "previews: ${PREVIEW_URL/\{item\}/main} shows the app as it is on main"
+echo "previews: ${SITE_URL}main/ shows the app as it is on main"
 
 say "CI variables on $FACTORY_PROJECT"
 setvar() {   # name, value
@@ -247,7 +270,8 @@ if [ -z "$trigger" ] || [ "${#trigger}" -lt 20 ]; then
   trigger=$(api POST "projects/$fid/triggers" --data-urlencode "description=test-drive webhook" | json "d['token']")
 fi
 # GitLab calls itself: allow requests to 127.0.0.1 from webhooks, and nothing wider.
-allow=$(api GET application/settings | json "d.get('outbound_local_requests_whitelist') or []")
+# Newer GitLab names the setting allowlist; older names it whitelist.
+allow=$(api GET application/settings | json "d.get('outbound_local_requests_allowlist') or d.get('outbound_local_requests_whitelist') or []")
 if ! echo "$allow" | grep -q "127.0.0.1"; then
   raw=$(echo "$allow" | python3 -c "import ast,sys; print(','.join(ast.literal_eval(sys.stdin.read()) + ['127.0.0.1']))")
   if api PUT application/settings --data-urlencode "outbound_local_requests_allowlist_raw=$raw" >/dev/null; then
@@ -269,12 +293,10 @@ echo "issues and comments on $SANDBOX_PROJECT now start a pass of $FACTORY_PROJE
 
 say "Ready"
 cat <<EOF
-File an issue:     $GITLAB_URL/$SANDBOX_PROJECT/-/issues/new?issuable_template=Feature
-Watch the passes:  $GITLAB_URL/$FACTORY_PROJECT/-/pipelines
-Previews:          ${PREVIEW_URL/\{item\}\//}
-Where things stand: ${PREVIEW_URL/\{item\}/status}
-
-Previews are public to anyone with the link; they show only the sandbox app.
+File an issue:      $GITLAB_URL/$SANDBOX_PROJECT/-/issues/new?issuable_template=Feature
+Where things stand: ${SITE_URL}status/
+Previews:           $SITE_URL
+Watch the passes:   $GITLAB_URL/$FACTORY_PROJECT/-/pipelines
 EOF
 if [ -z "${PREVIEW_HOST:-}" ]; then
   echo "Previews are served on port $PREVIEW_PORT. Open it in the firewall if it is closed,"

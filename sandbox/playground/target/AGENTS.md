@@ -2,10 +2,11 @@
 
 ## What this repository is
 
-A client's CRM in plain HTML, CSS and JavaScript modules, with no build step
-and no dependencies. It starts as an empty page. The client is not an
-engineer: they file issues in their own words, so read the issue for what
-they want, not for how they phrase it.
+A client's web app in plain HTML, CSS and JavaScript modules, with no build
+step and no dependencies. It starts as an empty page and grows one request at
+a time; the first request decides what kind of app it is. The client is not an
+engineer: they file issues in their own words, so read the issue for what they
+want, not for how they phrase it.
 
 ## Layout
 
@@ -17,7 +18,7 @@ they want, not for how they phrase it.
   data passes through `escapeHtml`.
 - `src/main.js`: the only file that touches the page.
 - `data/`: the sample data the page loads, as JSON. Make it realistic enough
-  to show every state: several customers, several deal stages, an empty case.
+  to show every state, including an empty one.
 - `test/`: `node --test` tests, one file per module.
 
 ## Rules

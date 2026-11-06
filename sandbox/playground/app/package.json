@@ -1,5 +1,5 @@
 {
-  "name": "client-crm",
+  "name": "software-factory-playground",
   "private": true,
   "type": "module",
   "scripts": { "test": "node --test" }

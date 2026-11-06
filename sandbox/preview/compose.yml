@@ -1,19 +1,18 @@
-# The preview server for the leadership test drive. setup.sh writes .env next
-# to this file and starts it with `docker compose up -d`, adding compose.host.yml
-# when previews have a hostname, or compose.port.yml when they are served on a port.
+# The preview server for the factory's client projects. setup.sh writes .env and
+# sites/ next to this file and starts it with `docker compose up -d`, adding
+# compose.host.yml when previews have a hostname, or compose.port.yml when they
+# are served on a port.
 services:
   factory-preview:
     image: nginx:1.27-alpine
     container_name: factory-preview
     restart: unless-stopped
     environment:
-      PREVIEW_REPO: ${PREVIEW_REPO}
-      PREVIEW_TOKEN: ${PREVIEW_TOKEN}
       STATUS_REPO: ${STATUS_REPO:-}
       STATUS_TOKEN: ${STATUS_TOKEN:-}
-      STATUS_FILE: ${STATUS_FILE:-}
     volumes:
       - ./sync.sh:/docker-entrypoint.d/90-preview-sync.sh:ro
+      - ./sites:/etc/factory-sites:ro
     networks:
       - gitlab
 
