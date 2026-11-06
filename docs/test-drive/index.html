@@ -285,7 +285,7 @@ footer { padding-block: 24px 40px; color: var(--muted); font-size: 14px; }
       <div class="forreal">
         <span class="kind"><span class="tag live">The real factory</span></span>
         <h3>Drive it for real in GitLab</h3>
-        <p class="hint">File a real issue in the sandbox project. The factory on our server picks it up within a minute, comments its progress on the issue, and waits for your <code>/approve</code>. You get a link to try the change, then a merge request. A run takes 20 to 40 minutes.</p>
+        <p class="hint">File a real issue in the sandbox project. The factory on our server picks it up within a minute, comments its progress on the issue, and waits for your <code>approve</code>. You get a link to try the change, then a merge request. A run takes 20 to 40 minutes.</p>
         <a class="btn approve" id="real-link" href="#">File a real issue</a>
       </div>
     </div>
@@ -827,11 +827,11 @@ async function step(id, sec, stage, who, text, cls, pause = 1150) {
 }
 
 async function approveGate1(id, sc, next) {
-  comment("factory-bot", `Requirements are ready: \`specs/${sc.n}-${slug(sc.title)}/requirements.md\`. Reply \`/approve\` to continue, or reply with what to change.`);
+  comment("factory-bot", `Requirements are ready: \`specs/${sc.n}-${slug(sc.title)}/requirements.md\`. Reply \`approve\` to continue, or reply with what to change.`);
   const r = await gate({ stage: "g1", title: "Do these requirements say what you meant?", docKey: "req",
-    body: "The requirements agent read the code and turned your issue into user stories with testable acceptance criteria. Every later stage is checked against these. In a real run you approve by replying <code>/approve</code> on the issue, from the browser or the GitHub or GitLab app." });
+    body: "The requirements agent read the code and turned your issue into user stories with testable acceptance criteria. Every later stage is checked against these. In a real run you approve by replying <code>approve</code> on the issue, from the browser or the GitHub or GitLab app." });
   alive(id);
-  comment("You", "/approve", true); guard("gates");
+  comment("You", "approve", true); guard("gates");
   setStage("g1", "done"); log("g1", "human", `Approved by you. Next stage: ${next}.`);
   return r;
 }
@@ -946,12 +946,12 @@ async function flowUi(id) {
   await step(id, 1, "verify", "script", "`node --test`: 7 pass, 0 fail.", "", 900);
   guard("presubmit");
   Object.assign(S.stats, { checks: 9 + 7, retries: 0, stages: 10 });
-  comment("factory-bot", "The build passed every check. The screens are ready for you to look at. Reply `/approve` to open the request.");
+  comment("factory-bot", "The build passed every check. The screens are ready for you to look at. Reply `approve` to open the request.");
   await gate({ stage: "g2", title: "Try the screen before it goes further", ok: "Approve the screens",
     body: "This is the board the factory built, running here. Type in the search box, switch between All, Open and Done, and watch the counts: they keep counting every task. Try <code>MILK</code> or <code>xyz</code>.",
     extra: boardApp });
   alive(id);
-  comment("You", "/approve", true); guard("gates"); setStage("g2", "done");
+  comment("You", "approve", true); guard("gates"); setStage("g2", "done");
   log("approve-screens", "human", "Approved by you.");
   setStage("pr", "active");
   await step(id, 3, "merge-request", "script", `${T().Req} ${T().ref(sc.mr)} opened, linked to the issue, with the specs and evidence.`, "", 900);
@@ -1039,7 +1039,7 @@ Reply with the Markdown only.`;
   log("requirements", "agent", `Wrote \`${spec}/requirements.md\`: ${stories} ${stories === 1 ? "story" : "stories"}, ${acs} acceptance criteria.`);
   guard("surface");
   for (let round = 1; ; round++) {
-    comment("factory-bot", `Requirements are ready: \`${spec}/requirements.md\`. Reply \`/approve\` to continue, or reply with what to change.`);
+    comment("factory-bot", `Requirements are ready: \`${spec}/requirements.md\`. Reply \`approve\` to continue, or reply with what to change.`);
     stop();
     const r = await gate({ stage: "g1", title: "Do these requirements say what you meant?", docKey: "req", change: round < 4,
       body: "Claude, as the requirements agent, turned your issue into user stories with testable acceptance criteria. Everything after this is checked against them. Approve, or ask for a change and the agent rewrites them." });
@@ -1054,7 +1054,7 @@ Reply with the Markdown only.`;
     addDoc("req", "requirements.md", reqText);
     log("requirements", "agent", `Rewrote \`requirements.md\` (round ${round + 1}).`);
   }
-  comment("You", "/approve", true); guard("gates");
+  comment("You", "approve", true); guard("gates");
   setStage("g1", "done"); log("g1", "human", "Approved by you. Next stage: tasks.");
   const stop2 = liveClock(id);
 
@@ -1174,12 +1174,12 @@ ${html.slice(0, 60000)}`, { cache: false, modelTier: "quick" }));
   if (checks.some(([ok]) => !ok)) log("presubmit", "script", "The prototype runs in a locked sandbox, so a failed check here cannot reach the network.");
   stop2();
   Object.assign(S.stats, { checks: allChecks.length + checks.length, stages: sc.track.length - 1 });
-  comment("factory-bot", "The build passed its checks. The prototype is ready for you to try. Reply `/approve` to open the request.");
+  comment("factory-bot", "The build passed its checks. The prototype is ready for you to try. Reply `approve` to open the request.");
   await gate({ stage: "g2", title: "Try what the factory built", ok: "Approve and open the request",
     body: "This is the prototype the maker wrote and the checker passed, running in a locked sandbox. Click around. If it is not right, start over and say so in the issue.",
     extra: (el) => { const f = document.createElement("iframe"); f.className = "proto"; f.title = "Prototype built by the factory"; f.setAttribute("sandbox", "allow-scripts allow-forms allow-modals"); f.srcdoc = html; el.append(f); } });
   alive(id);
-  comment("You", "/approve", true); guard("gates"); setStage("g2", "done");
+  comment("You", "approve", true); guard("gates"); setStage("g2", "done");
   log("approve", "human", "Approved by you.");
   setStage("pr", "active");
   log("merge-request", "script", `${T().Req} ${T().ref(sc.mr)} opened, linked to the issue, with the specs and evidence.`);
@@ -1321,12 +1321,12 @@ function finish(id, kind) {
     <div class="panel"><div class="panel-head"><h3>Now drive it for real</h3></div><div class="panel-body real">
       <div><b>1 · File an issue</b><span>Open the <a href="${REAL_ISSUE}">sandbox project</a> and describe a change to its task board, for example a search box. The template hands it to the factory.</span></div>
       <div><b>2 · Watch the issue</b><span>The factory comments as it works: the requirements, each build attempt, every check, and any rejection that sends work back.</span></div>
-      <div><b>3 · Approve twice</b><span>Reply <code>/approve</code> to the requirements. Later, open the <b>Try it</b> link, use the change, and reply <code>/approve</code> again for the merge request.</span></div>
+      <div><b>3 · Approve twice</b><span>Reply <code>approve</code> to the requirements. Later, open the <b>Try it</b> link, use the change, and reply <code>approve</code> again for the merge request.</span></div>
     </div></div>
     <div class="panel"><div class="panel-head"><h3>Run it on your own repository</h3></div><div class="panel-body real">
       <div><b>1 · Define the pipeline</b><span>Pick a sample (feature, API, UI or bugfix), or arrange stages and gates in the editor: <code>python3 factory/editor.py</code>.</span></div>
       <div><b>2 · Connect the tracker</b><span>Point it at a GitHub or GitLab project and a label such as <code>factory</code>. A scheduled CI job runs a pass every 10 minutes.</span></div>
-      <div><b>3 · File issues</b><span>Anyone labels an issue. Approvers reply <code>/approve</code> on the issue from the browser or the phone app.</span></div>
+      <div><b>3 · File issues</b><span>Anyone labels an issue. Approvers reply <code>approve</code> on the issue from the browser or the phone app.</span></div>
       <div><b>Setup guide</b><span><a href="https://github.com/sanjeev23oct/software-factory/blob/main/docs/run-in-gitlab.md">Run the factory in GitLab</a> · <a href="https://github.com/sanjeev23oct/software-factory">the repository</a></span></div>
     </div></div>
     <div><button class="btn solid" id="again">Take another drive</button></div>`;

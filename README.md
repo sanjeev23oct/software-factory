@@ -35,7 +35,7 @@ for people deciding whether to adopt the factory: file an issue, approve at
 the gates, and watch a failed check go back and get fixed. Its last step is
 the real thing: [sandbox/](sandbox/) sets up a private GitLab project where
 filing an issue starts the factory on the server, the issue shows the work as
-it happens, a **Try it** link opens the change in a browser, and `/approve`
+it happens, a **Try it** link opens the change in a browser, and `approve`
 ends in a merge request.
 
 ## The pipeline
@@ -82,11 +82,46 @@ wrote. It stops at every maintainer gate and waits for you.
 This is the same loop with `claude -p` in place of subagents. `FACTORY_MODEL`
 picks the model. `FACTORY_MAX_BUDGET_USD` caps one agent run (default 3).
 
+## Give a client their own project
+
+The same server can run the factory for several clients at once, each in
+their own private GitLab project. A client who is not an engineer files a
+request in plain words, approves twice, and gets a working change:
+
+1. **They ask.** They file an issue with the **Feature** template, the way
+   they would message a colleague.
+2. **The factory writes down what it understood** and comments on the issue.
+   The client reads it and replies `approve`.
+3. **A maker builds it and a separate checker verifies it**, section by
+   section. A failed check goes back with written findings.
+4. **They try it.** A comment carries a **Try it** link to the change running
+   in a browser. Happy with it, they reply `approve` again.
+5. **A merge request opens** with the code, the tests, the specs and the
+   evidence. Merging stays a person's call.
+
+Each client gets:
+
+- a project that starts as an empty page,
+  [sandbox/playground/app/](sandbox/playground/app/), which their first
+  request shapes;
+- a pipeline of their own, named after the project; every factory pass works
+  through all of them;
+- an area of their own on the preview server, `/<project>/`, with the app as
+  it is on `main`, a preview of each request, and a **status page** at
+  `/<project>/status/`: every request in plain words, the step it is on,
+  whose turn it is, and buttons to its GitLab issue, its preview and its merge
+  request. The status page is read-only; approving stays on the issue;
+- a basic-auth login for that area, made when the project is set up and
+  printed once. Keep it with the client's GitLab login, not in the repository.
+
+One command per client, run on the server, sets all of it up. See
+[sandbox/README.md](sandbox/README.md).
+
 ## Run it in the cloud
 
 The factory can run on a GitLab runner on a schedule, with nothing on your
 machine. Progress is kept on a `factory-state` branch, the work branches are
-pushed after every pass, and you approve a gate by replying `/approve` on the
+pushed after every pass, and you approve a gate by replying `approve` on the
 issue. A Claude subscription works, through `claude setup-token`. Setup is in
 [docs/run-in-gitlab.md](docs/run-in-gitlab.md), and the job file is
 [factories/ci/gitlab-ci.yml](factories/ci/gitlab-ci.yml).

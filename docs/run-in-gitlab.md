@@ -1,7 +1,7 @@
 # Run the factory in GitLab
 
 The factory can run on a GitLab runner on a schedule, with nothing running on
-your machine. You approve gates by replying `/approve` on the issue, from the
+your machine. You approve gates by replying `approve` on the issue, from the
 browser or the GitLab app.
 
 ## How it works
@@ -11,7 +11,7 @@ Every ten minutes a scheduled pipeline runs one pass:
 1. It restores the factory's progress from the `factory-state` branch of your factory project.
 2. For each pipeline that is switched on, it:
    - picks up new issues that carry the label and are assigned to the right person;
-   - applies any `/approve` replies;
+   - applies any `approve` replies;
    - runs the agents until a person is needed;
    - pushes the `factory/*` work branches;
    - comments on the issue when a gate opens.
@@ -129,12 +129,15 @@ When work reaches a gate, the factory comments on the issue:
 
 > **The factory is waiting for you** at `approve-requirements`.
 > Read first: [requirements.md](#)
-> To approve, reply `/approve`. To approve and skip an optional stage: `/approve skip visual-spec`.
+> To approve, reply `approve`. To approve and skip an optional stage: `approve skip visual-spec`.
 
-Reply `/approve`. The next pass, within ten minutes, carries on.
+Reply `approve`. The next pass, within ten minutes, carries on. Write it without
+a slash: GitLab takes a comment that is only `/approve` as one of its own quick
+actions and never saves it, so the factory would not see it. `/approve` still
+counts where it survives, on GitHub for example.
 
 Only people listed in `approvers` count, or the `assignee` if there is no list.
-Only replies written after the gate opened count, so an old `/approve` cannot pass a later gate.
+Only replies written after the gate opened count, so an old `approve` cannot pass a later gate.
 Anyone else's reply is ignored.
 
 ## See what it is doing

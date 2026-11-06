@@ -55,21 +55,21 @@ private and invite only the people taking the drive.
 To give a client their own project that starts as an empty page, with previews
 under a hostname that the server's Traefik already routes:
 
-    GITLAB_TOKEN=glpat-... SANDBOX_PROJECT=clients/software-factory-playground \
+    GITLAB_TOKEN=glpat-... SANDBOX_PROJECT=clients/<project> \
       SEED=sandbox/playground/app RULES=sandbox/playground/target \
-      PREVIEW_HOST=factory.example.com \
-      INVITE="chris.conway:chris@example.com" sandbox/setup.sh
+      PREVIEW_HOST=factory.example.com AUTH_USER=<login name> \
+      INVITE="<gitlab username>:<email>" sandbox/setup.sh
 
 Run it once per client. Each project gets its own pipeline, named after the
 project, and its own area on the preview server, `/<project>/`, with its
 previews and its status page behind a login of its own. The script prints
-that login once. The client sees only the GitLab projects they are a member of.
+that login, and the first GitLab password of anyone it creates, once: keep
+them somewhere safe, never in this repository. The client sees only the GitLab
+projects they are a member of.
 
-The script prints the link to file an issue. It also says whether port 8090
-needs opening for previews. To serve previews under a hostname instead, route
-the hostname to the `factory-preview` container the way GitLab's hostname is
-routed, add the DNS record in Cloudflare, and run the script again with
-`PREVIEW_URL=https://preview.example.com/{item}/`.
+The script prints the link to file an issue and the client's status page.
+Without `PREVIEW_HOST` previews are served on port 8090, and the script says
+whether that port needs opening.
 
 ### What the script changes
 
