@@ -30,13 +30,16 @@ factory, two repositories, five pipelines.
 
 ### The client's side: Ask, approve, try it
 
-[docs/clients-demo/](docs/clients-demo/) is a six-minute video of a client
-who is not an engineer asking for a CRM dashboard in plain words, approving
-twice, and getting working, tested software waiting for review 17 minutes
-later: [clients-demo.mp4](docs/clients-demo/clients-demo.mp4). It has no sound;
-[narration.md](docs/clients-demo/narration.md) is the voice-over, timed scene
-by scene. Every frame is a screenshot of a real run, taken by the `act-*.mjs`
-scripts and laid out by `python3 docs/demo/build.py docs/clients-demo`.
+[docs/clients-demo/](docs/clients-demo/) is a seven-minute video for people
+who are not engineers: what a software factory is and why it can be trusted,
+then a client asking for a CRM dashboard in plain words, approving twice, and
+getting working, tested software waiting for review 17 minutes later.
+[clients-demo-voiced.mp4](docs/clients-demo/clients-demo-voiced.mp4) has the
+voice-over; [clients-demo.mp4](docs/clients-demo/clients-demo.mp4) is silent,
+with [narration.md](docs/clients-demo/narration.md) timed scene by scene for
+your own voice. Every screenshot is of a real run, taken by the `act-*.mjs`
+scripts and laid out by `python3 docs/demo/build.py docs/clients-demo`;
+`voice.py` makes the voice-over.
 
 ## Take the test drive
 
