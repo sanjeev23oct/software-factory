@@ -26,7 +26,8 @@ gates wait for a person.
 | --- | --- |
 | `app/` | The seed app: a small task board in plain HTML and JavaScript, with `node --test` tests and issue templates that label new issues `factory`. |
 | `target/` | The rules agents follow on that app (`AGENTS.md`) and its checks (`presubmit`). |
-| `preview/` | A small nginx container that serves `main` and each `factory/<item>` branch at `/<item>/`, refreshed every 20 seconds. |
+| `preview/` | A small nginx container that serves `main` and each `factory/<item>` branch at `/<item>/`, refreshed every 20 seconds, on a hostname through Traefik or on a port. |
+| `crm/` | An empty CRM seed (`crm/app/`) and its agent rules (`crm/target/`), for a client project. |
 | `setup.sh` | Sets all of it up on the VPS. Safe to run again. |
 | `../factories/test-drive/` | The pipeline: read issue, requirements, **you**, tasks, lint, maker-checker build, evidence re-check, presubmit, preview, **you**, merge request. |
 
@@ -44,6 +45,20 @@ You need an admin personal access token with the `api` scope
 prints each first password once, and adds everyone to the sandbox project as
 Developer. Any member of the sandbox project may `/approve`, so keep it
 private and invite only the people taking the drive.
+
+### A client project instead
+
+To give a client their own project that starts as an empty CRM, with previews
+under a hostname that the server's Traefik already routes:
+
+    GITLAB_TOKEN=glpat-... SANDBOX_PROJECT=clients/client-crm \
+      SEED=sandbox/crm/app RULES=sandbox/crm/target \
+      PREVIEW_HOST=factory.example.com \
+      INVITE="chris.conway:chris@example.com" sandbox/setup.sh
+
+The client sees only the projects they are a member of, and files issues
+there. The factory works one project at a time: running the script for a
+second project moves the pipeline to it.
 
 The script prints the link to file an issue. It also says whether port 8090
 needs opening for previews. To serve previews under a hostname instead, route

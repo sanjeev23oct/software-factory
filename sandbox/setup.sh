@@ -20,8 +20,13 @@
 #   GITLAB_URL        default https://gitlab.justpush.cloud
 #   FACTORY_PROJECT   default ai-sdlc/software-factory
 #   SANDBOX_PROJECT   default sandbox/test-drive-app
-#   PREVIEW_URL       where people open previews, with {item}. Default http://<this server's IP>:8090/{item}/
-#   PREVIEW_PORT      default 8090
+#   SEED              the app the project starts from. Default sandbox/app (the task board); sandbox/crm/app is an empty CRM.
+#   RULES             the folder holding the agents' AGENTS.md and presubmit for that app. Default sandbox/target.
+#   PREVIEW_HOST      a hostname the server's Traefik routes, e.g. factory.example.com. Previews are then
+#                     served there instead of on a port.
+#   PREVIEW_URL       where people open previews, with {item}. Default https://<PREVIEW_HOST>/{item}/, or
+#                     http://<this server's IP>:<PREVIEW_PORT>/{item}/ without PREVIEW_HOST
+#   PREVIEW_PORT      default 8090, used only without PREVIEW_HOST
 #   FACTORY_REF       the factory code the runner uses. Default: this checkout's commit, which must be pushed.
 #   FACTORY_BOT_USER  the username behind FACTORY_GITLAB_TOKEN, if that variable is hidden.
 #   INVITE            optional. "username:email username:email". Creates the GitLab users that do
@@ -36,6 +41,8 @@ FACTORY_PROJECT=${FACTORY_PROJECT:-ai-sdlc/software-factory}
 SANDBOX_PROJECT=${SANDBOX_PROJECT:-sandbox/test-drive-app}
 PREVIEW_PORT=${PREVIEW_PORT:-8090}
 SF="$(cd "$(dirname "$0")/.." && pwd)"
+SEED=$(cd "$SF" && cd "${SEED:-sandbox/app}" && pwd)
+RULES=$(cd "$SF" && cd "${RULES:-sandbox/target}" && pwd)
 FACTORY_REF=${FACTORY_REF:-$(git -C "$SF" rev-parse HEAD)}
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
@@ -78,7 +85,7 @@ if [ -z "$sid" ]; then
   echo "created project $SANDBOX_PROJECT"
 fi
 if [ "$(api GET "projects/$sid/repository/branches" | json 'len(d)')" = "0" ]; then
-  cp -r "$SF/sandbox/app/." "$WORK/app"
+  cp -r "$SEED/." "$WORK/app"
   git -C "$WORK/app" init -q -b main
   git -C "$WORK/app" add -A
   git -C "$WORK/app" -c user.name="software factory" -c user.email=factory@localhost commit -qm "Seed the test drive app"
@@ -126,7 +133,7 @@ gitauth clone -q "$GITLAB_URL/$SANDBOX_PROJECT.git" "$WORK/sandbox"
 rm -rf "$WORK/factory/targets/test-drive"
 FACTORY_TARGETS_DIR="$WORK/factory/targets" python3 "$SF/factory/flow.py" init test-drive --sample test-drive --repo "$WORK/sandbox" >/dev/null
 T="$WORK/factory/targets/test-drive"
-cp "$SF/sandbox/target/AGENTS.md" "$SF/sandbox/target/presubmit" "$T/"
+cp "$RULES/AGENTS.md" "$RULES/presubmit" "$T/"
 python3 - "$T" "$HOST" "$SANDBOX_PROJECT" "$GITLAB_URL" <<'EOF'
 import json, sys
 from pathlib import Path
@@ -175,25 +182,37 @@ else
 fi
 
 say "Preview server"
-if [ -z "${PREVIEW_URL:-}" ]; then
-  ip=$(curl -sS -4 --max-time 5 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
-  PREVIEW_URL="http://$ip:$PREVIEW_PORT/{item}/"
+if [ -n "${PREVIEW_HOST:-}" ]; then
+  PREVIEW_URL=${PREVIEW_URL:-https://$PREVIEW_HOST/\{item\}/}
+  layout=compose.host.yml
+else
+  if [ -z "${PREVIEW_URL:-}" ]; then
+    ip=$(curl -sS -4 --max-time 5 https://ifconfig.me 2>/dev/null || hostname -I | awk '{print $1}')
+    PREVIEW_URL="http://$ip:$PREVIEW_PORT/{item}/"
+  fi
+  layout=compose.port.yml
 fi
+# Traefik reaches the preview over the network GitLab is on, so that network must be Traefik's too.
 network=$(docker inspect gitlab -f '{{range $k, $v := .NetworkSettings.Networks}}{{$k}} {{end}}' | awk '{print $1}')
+D=/data/factory-preview
+preview_repo="http://gitlab/$SANDBOX_PROJECT.git"
+preview_token=$(sed -n 's/^PREVIEW_TOKEN=//p' "$D/.env" 2>/dev/null || true)
 existing=$(api GET "projects/$sid/access_tokens" | json "[t['id'] for t in d if t['name'] == 'factory-preview' and t['active']]")
-if [ "$existing" = "[]" ] || [ ! -f /data/factory-preview/.env ]; then
+# A token kept from an earlier run may belong to another project; mint one for this project then.
+if [ "$existing" = "[]" ] || [ -z "$preview_token" ] || [ "$(sed -n 's/^PREVIEW_REPO=//p' "$D/.env")" != "$preview_repo" ]; then
   expires=$(python3 -c "import datetime; print(datetime.date.today() + datetime.timedelta(days=364))")
   preview_token=$(api POST "projects/$sid/access_tokens" -d name=factory-preview -d access_level=20 \
                   -d "scopes[]=read_repository" -d "expires_at=$expires" | json "d['token']")
-  mkdir -p /data/factory-preview
-  umask 077
-  printf 'PREVIEW_REPO=http://gitlab/%s.git\nPREVIEW_TOKEN=%s\nPREVIEW_PORT=%s\nGITLAB_NETWORK=%s\n' \
-    "$SANDBOX_PROJECT" "$preview_token" "$PREVIEW_PORT" "$network" > /data/factory-preview/.env
-  umask 022
 fi
-cp "$SF/sandbox/preview/compose.yml" "$SF/sandbox/preview/sync.sh" /data/factory-preview/
-chmod 755 /data/factory-preview/sync.sh
-docker compose -f /data/factory-preview/compose.yml --env-file /data/factory-preview/.env up -d
+mkdir -p "$D"
+umask 077
+printf 'PREVIEW_REPO=%s\nPREVIEW_TOKEN=%s\nPREVIEW_PORT=%s\nPREVIEW_HOST=%s\nGITLAB_NETWORK=%s\n' \
+  "$preview_repo" "$preview_token" "$PREVIEW_PORT" "${PREVIEW_HOST:-}" "$network" > "$D/.env"
+umask 022
+cp "$SF/sandbox/preview/compose.yml" "$SF/sandbox/preview/compose.host.yml" "$SF/sandbox/preview/compose.port.yml" \
+   "$SF/sandbox/preview/sync.sh" "$D/"
+chmod 755 "$D/sync.sh"
+docker compose -f "$D/compose.yml" -f "$D/$layout" --env-file "$D/.env" up -d --force-recreate
 echo "previews: ${PREVIEW_URL/\{item\}/main} shows the app as it is on main"
 
 say "CI variables on $FACTORY_PROJECT"
@@ -242,7 +261,9 @@ File an issue:     $GITLAB_URL/$SANDBOX_PROJECT/-/issues/new?issuable_template=F
 Watch the passes:  $GITLAB_URL/$FACTORY_PROJECT/-/pipelines
 Previews:          ${PREVIEW_URL/\{item\}/}
 
-Previews are served on port $PREVIEW_PORT. Open it in the firewall if it is closed,
-or put a hostname in front of it and run this again with PREVIEW_URL set.
 Previews are public to anyone with the link; they show only the sandbox app.
 EOF
+if [ -z "${PREVIEW_HOST:-}" ]; then
+  echo "Previews are served on port $PREVIEW_PORT. Open it in the firewall if it is closed,"
+  echo "or route a hostname to this server's Traefik and run this again with PREVIEW_HOST set."
+fi

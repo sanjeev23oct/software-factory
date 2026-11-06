@@ -1,0 +1,5 @@
+# Previews on a port of this server, for when no hostname is routed to it.
+services:
+  factory-preview:
+    ports:
+      - "${PREVIEW_PORT:-8090}:80"

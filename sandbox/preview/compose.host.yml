@@ -1,0 +1,10 @@
+# Previews under a hostname, routed by the Traefik that already serves the
+# other apps on this server. It must share a network with that Traefik.
+services:
+  factory-preview:
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: ${GITLAB_NETWORK}
+      traefik.http.routers.factory-preview.entryPoints: ${PREVIEW_ENTRYPOINT:-http}
+      traefik.http.routers.factory-preview.rule: Host(`${PREVIEW_HOST}`)
+      traefik.http.services.factory-preview.loadbalancer.server.port: "80"
