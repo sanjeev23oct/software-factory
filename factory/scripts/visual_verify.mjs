@@ -67,8 +67,11 @@ function serve(root) {
 
 async function launch() {
   const profile = mkdtempSync(join(tmpdir(), 'visual-verify-'));
+  // In a CI container Chrome can't set up its sandbox and /dev/shm is tiny; on a laptop it keeps both.
+  const container = process.env.CI || (process.getuid && process.getuid() === 0);
   const chrome = spawn(chromePath(), ['--headless=new', '--remote-debugging-port=0', '--hide-scrollbars', '--disable-gpu',
-    '--font-render-hinting=none', '--force-color-profile=srgb', '--no-first-run', `--user-data-dir=${profile}`, 'about:blank'],
+    '--font-render-hinting=none', '--force-color-profile=srgb', '--no-first-run', `--user-data-dir=${profile}`,
+    ...(container ? ['--no-sandbox', '--disable-dev-shm-usage'] : []), 'about:blank'],
   { stdio: 'ignore' });
   let port;
   for (let i = 0; i < 100 && !port; i++) {
