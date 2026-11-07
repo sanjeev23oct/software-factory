@@ -1,10 +1,13 @@
 #!/usr/bin/env python3
 """Give the video a voice-over: one ElevenLabs clip per scene, each scene as long as its clip.
 
-    python3 docs/clients-demo/voice.py speak   # voice every line in voice.json that has no clip yet
+    python3 docs/clients-demo/voice.py speak [FOLDER]   # voice every line in voice.json that has no clip yet
     python3 docs/clients-demo/voice.py fit     # set each scene's length to its clip, and its narration to the line
     python3 docs/demo/build.py docs/clients-demo
     python3 docs/clients-demo/voice.py mix     # lay the clips on the video: clients-demo-voiced.mp4
+
+FOLDER is another video's folder (default: this one). voice.json names the voice, the model, and
+optionally its stability; without one, the voice's own saved settings apply, as on the ElevenLabs site.
 
 The API key comes from ELEVENLABS_API_KEY, or from ~/.config/elevenlabs/key. It is never
 written into this folder. Delete voice/NN.mp3 to voice one line again.
@@ -19,7 +22,7 @@ import sys
 import urllib.request
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
+HERE = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else Path(__file__).resolve().parent
 CLIPS = HERE / "voice"
 LEAD, BREATH = 0.3, 0.7   # seconds of quiet before each line, and after it before the next scene
 
@@ -47,7 +50,10 @@ def speak(voice):
     for n, line in enumerate(voice["lines"], 1):
         if clip(n).exists():
             continue
-        body = json.dumps({"text": line, "model_id": voice["model_id"], "voice_settings": {"stability": voice["stability"]}}).encode()
+        request_body = {"text": line, "model_id": voice["model_id"]}
+        if voice.get("stability") is not None:
+            request_body["voice_settings"] = {"stability": voice["stability"]}
+        body = json.dumps(request_body).encode()
         request = urllib.request.Request("https://api.elevenlabs.io/v1/text-to-speech/" + voice["voice_id"], data=body, method="POST",
                                          headers={"xi-api-key": secret, "Content-Type": "application/json"})
         try:
@@ -92,6 +98,6 @@ def mix(voice):
 
 if __name__ == "__main__":
     commands = {"speak": speak, "fit": fit, "mix": mix}
-    if len(sys.argv) != 2 or sys.argv[1] not in commands:
+    if len(sys.argv) not in (2, 3) or sys.argv[1] not in commands:
         sys.exit(__doc__)
     commands[sys.argv[1]](json.loads((HERE / "voice.json").read_text()))
