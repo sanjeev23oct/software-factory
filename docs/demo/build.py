@@ -21,6 +21,9 @@ The scenes are listed in story.json. Kinds of scene:
   terminal  terminal output, with chosen lines highlighted
   flow      a pipeline as a row of stages; `stages` is a list of [label, "agent" or "person"]
   stats     a few big numbers; `numbers` is a list of [number, what it counts]
+  compare   a table; `columns` names them (the last is highlighted), `rows` is a list of [label, cell, cell, ...]
+
+A story may borrow another video's screenshots with "shots": "../other-folder/shots".
 
 Needs Google Chrome (to draw the frames) and ffmpeg (to join them).
 """
@@ -41,7 +44,7 @@ def use_folder(folder, story):
     """Point every path at FOLDER, so one script builds any number of videos."""
     global HERE, CAPTURES, SHOTS, FRAMES, VIDEO, NAME
     HERE = folder
-    CAPTURES, SHOTS, FRAMES = folder / "captures", folder / "shots", folder / "frames"
+    CAPTURES, SHOTS, FRAMES = folder / "captures", (folder / story.get("shots", "shots")).resolve(), folder / "frames"
     VIDEO, NAME = story.get("video", VIDEO), story.get("name", NAME)
 CHROME = "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 PIC_W, PIC_H = 1208, 596   # the picture area; drive.mjs takes screenshots at exactly this size
@@ -124,6 +127,16 @@ html, body { margin: 0; width: 1280px; height: 720px; overflow: hidden; backgrou
 .stats div { border-top: 3px solid var(--c, var(--r1)); padding-top: 14px; }
 .stats b { display: block; font: 700 96px/1 "Barlow Condensed", Arial, sans-serif; color: var(--c, var(--r1)); }
 .stats span { font-size: 22px; line-height: 1.3; color: var(--ink); }
+/* compare: a table, its last column the one that matters */
+.page.cmp { gap: 10px; padding: 0 44px; } .page.cmp h1 { font-size: 46px; }
+.cmp table { border-collapse: collapse; width: 100%; font-size: 15.5px; line-height: 1.3; }
+.cmp th { font: 700 19px "Barlow Condensed", Arial, sans-serif; text-transform: uppercase; text-align: left; padding: 8px 10px;
+  color: var(--muted); border-bottom: 2px solid var(--line); }
+.cmp th.hot { color: var(--r4); }
+.cmp td { padding: 7px 10px; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink); }
+.cmp td:first-child { color: var(--muted); font-weight: 600; width: 170px; }
+.cmp td.hot, .cmp th.hot { background: rgba(255,161,84,.09); }
+.cmp td.hot b { color: var(--r4); font-weight: 600; }
 """
 FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700'
          '&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">')
@@ -254,10 +267,18 @@ def body_of(scene):
             if n:
                 cells.append('<span class="arrow">&rarr;</span>')
             cells.append('<div class="fstage {}"><small>{}</small>{}</div>'.format(
-                "person" if who == "person" else "", "you" if who == "person" else "agent", e(label)))
+                "person" if who == "person" else "", "you" if who == "person" else e(who), e(label)))
+        key = scene.get("key", "<span><b>You</b>: two moments to say yes</span><span>Agent: everything else, checked</span>")
         return ('<div class="page wide"><div class="kicker">{}</div><h1>{}</h1><div class="flow">{}</div>'
-                '<div class="flow-key"><span><b>You</b>: two moments to say yes</span><span>Agent: everything else, checked</span></div></div>').format(
-            e(scene["kicker"]), e(scene["title"]), "".join(cells))
+                '<div class="flow-key">{}</div></div>').format(e(scene["kicker"]), e(scene["title"]), "".join(cells), key)
+    if kind == "compare":
+        head = "".join('<th class="{}">{}</th>'.format("hot" if n == len(scene["columns"]) - 1 else "", e(c))
+                       for n, c in enumerate(scene["columns"]))
+        rows = "".join("<tr><td>{}</td>{}</tr>".format(e(r[0]), "".join(
+            '<td class="{}">{}</td>'.format("hot" if n == len(r) - 2 else "", c) for n, c in enumerate(r[1:])))
+            for r in scene["rows"])
+        return ('<div class="page wide cmp"><div class="kicker">{}</div><h1>{}</h1>'
+                '<table><tr><th></th>{}</tr>{}</table></div>').format(e(scene["kicker"]), e(scene["title"]), head, rows)
     if kind == "stats":
         colours = ["var(--r1)", "var(--r2)", "var(--r4)", "var(--r3)"]
         cells = "".join('<div style="--c:{}"><b>{}</b><span>{}</span></div>'.format(colours[n % 4], e(number), e(what))
@@ -276,7 +297,7 @@ def body_of(scene):
         inner = '<div class="doc">{}</div>'.format(markdown(scene["text"], scene.get("highlight", ())))
     else:
         overlay, legend = marks_for(scene)
-        inner = '<div class="shot"><img src="../shots/{}" style="margin-top:-{}px">{}</div>'.format(scene["image"], scene.get("offset", 0), overlay)
+        inner = '<div class="shot"><img src="{}" style="margin-top:-{}px">{}</div>'.format((SHOTS / scene["image"]).as_uri(), scene.get("offset", 0), overlay)
     number = '<span class="num">{}</span>'.format(scene["n"]) if scene.get("n") else ""
     keys = "".join('<span><i class="num">{}</i>{}</span>'.format(i, e(label)) for i, label in enumerate(legend, 1))
     badge = '<span class="badge"><i></i>running in the background</span>' if scene.get("background") else ""

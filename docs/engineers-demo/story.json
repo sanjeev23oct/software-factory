@@ -1,0 +1,503 @@
+{
+ "name": "Inside a software factory",
+ "video": "engineers-demo.mp4",
+ "narration": true,
+ "shots": "../clients-demo/shots",
+ "intro": "For engineers who already use Claude Code: what a software factory is, why verification and the three loops matter, and one real request traced through an eleven-stage pipeline on GitLab.",
+ "facts": [
+  [
+   "Issue to merge request",
+   "17 min"
+  ],
+  [
+   "Agent sessions",
+   "10"
+  ],
+  [
+   "At API prices",
+   "~$1.24"
+  ],
+  [
+   "Sections passed first time",
+   "4 of 4"
+  ]
+ ],
+ "links": [
+  [
+   "The factory (open source)",
+   "https://github.com/sanjeev23oct/software-factory"
+  ],
+  [
+   "Software Factories: The Next Step in AI Coding Isn't the Cloud (Medium)",
+   "https://medium.com/@sanjeev23oct/software-factories-the-next-step-in-ai-coding-isnt-the-cloud-53ed5c8f3115?sk=d76dfce33d9df814acf3b82309796c56"
+  ]
+ ],
+ "scenes": [
+  {
+   "kind": "title",
+   "kicker": "For engineers who already use Claude Code",
+   "title": "Inside a <em>software</em><br>factory",
+   "say": "What changes when you stop driving every session, and build the machine that does it.",
+   "voice": "You already use Claude Code. This is what happens when you stop driving every session yourself, and build a factory that does it: how it's organised, what it checks, and how it gets better.",
+   "seconds": 16
+  },
+  {
+   "kind": "chapter",
+   "kicker": "How AI coding evolved",
+   "title": "Three steps",
+   "one_column": true,
+   "points": [
+    [
+     "Local",
+     "An assistant on your laptop. You prompt, you check every edit, the laptop stays on.",
+     "var(--muted)"
+    ],
+    [
+     "Remote",
+     "A prompt from the app on your phone or desktop, a browser or Slack. One agent, in a cloud sandbox.",
+     "var(--r1)"
+    ],
+    [
+     "Factory",
+     "Not where the agent runs: how the work is organised, so it can be trusted to run alone.",
+     "var(--r4)"
+    ]
+   ],
+   "voice": "AI coding has moved in three steps. First, an assistant on your laptop: you prompt, you check every edit. Then remote agents: you type a prompt in the Claude app on your phone, and it builds in a cloud sandbox. And in parallel, factories: not about where the agent runs, but how the work is organised.",
+   "seconds": 24
+  },
+  {
+   "kind": "compare",
+   "kicker": "Side by side",
+   "title": "Three ways of working",
+   "columns": [
+    "Assistant on your laptop",
+    "Remote agent",
+    "Software factory"
+   ],
+   "rows": [
+    [
+     "Where it runs",
+     "Your laptop, which stays on",
+     "The vendor's cloud sandbox",
+     "Usually CI runners (GitLab, GitHub Actions); can run from Claude Code on a laptop"
+    ],
+    [
+     "How you ask",
+     "A prompt in your terminal",
+     "A prompt from the app, a browser or Slack; or an issue assigned to it",
+     "An issue in GitLab, GitHub or Jira"
+    ],
+    [
+     "Who decides what to build",
+     "You and the AI, in the chat",
+     "The agent, from your prompt",
+     "An agent writes requirements; <b>you approve them first</b>"
+    ],
+    [
+     "Who plans it",
+     "You, as you go",
+     "The agent; some show the plan in the PR",
+     "An agent writes a plan, in sections, each with runnable checks"
+    ],
+    [
+     "Who checks it",
+     "You read every edit",
+     "The agent tests its own work; you review the PR",
+     "<b>A separate checker agent</b>, then scripts and tests"
+    ],
+    [
+     "What's recorded",
+     "Chat history on your machine",
+     "Session log and the PR",
+     "Requirements, plan, and <b>evidence for every check</b>"
+    ],
+    [
+     "When you say yes",
+     "Each edit",
+     "Once, at the PR",
+     "<b>Twice:</b> the requirements, then the change you've tried"
+    ]
+   ],
+   "say": "A factory changes who decides, who checks, and what's recorded",
+   "voice": "Side by side. Local and remote agents differ mostly in where they run. A factory changes who decides, who checks, and what's recorded: requirements you approve before anything is built, a separate checker agent, evidence for every check, and two approvals instead of one.",
+   "seconds": 20
+  },
+  {
+   "kind": "chapter",
+   "kicker": "The definition",
+   "title": "Agents write all the code",
+   "define": "A software factory is any agentic system where <b>agents write all of the code you ship</b>. Engineers stop building the product, and build <b>the machine that builds it</b>.",
+   "voice": "Here's the definition I find most useful, from Dru Knox at Tessl. A software factory is any agentic system where all of the code you ship is written by agents. Your job changes: you stop building the product, and build the machine that builds it.",
+   "seconds": 20
+  },
+  {
+   "kind": "chapter",
+   "kicker": "What you measure",
+   "title": "Autonomy first",
+   "one_column": true,
+   "points": [
+    [
+     "Autonomy",
+     "How often a person has to correct or nudge the agents.",
+     "var(--r2)"
+    ],
+    [
+     "Automation",
+     "How much can run without anyone reviewing it.",
+     "var(--r1)"
+    ],
+    [
+     "Quality",
+     "How good the result is for the people who use it.",
+     "var(--r4)"
+    ]
+   ],
+   "voice": "How do you measure a factory? Three numbers, in order. Autonomy: how often a person has to correct or nudge the agents. Automation: how much runs without anyone reviewing it. And quality. You earn automation by proving autonomy first.",
+   "seconds": 18
+  },
+  {
+   "kind": "chapter",
+   "kicker": "The part that matters",
+   "title": "Verification makes it safe",
+   "colour": "var(--r2)",
+   "define": "You can stop reading every line only when <b>something else checks it</b>, every time, and leaves <b>evidence you can inspect</b>. Without that, a factory is a faster way to ship mistakes.",
+   "voice": "What makes autonomy safe is verification. You can only stop reading every line if something else checks it, every time, and leaves a record you can inspect. Without that, a factory is just a faster way to ship mistakes.",
+   "seconds": 18
+  },
+  {
+   "kind": "chapter",
+   "kicker": "How it improves",
+   "title": "Three loops",
+   "one_column": true,
+   "points": [
+    [
+     "Inner loop",
+     "Agents iterate before review. Fast and cheap. Raises autonomy.",
+     "var(--r2)"
+    ],
+    [
+     "Outer loop",
+     "Thorough checks after the change is up. Replaces review time.",
+     "var(--r1)"
+    ],
+    [
+     "Meta loop",
+     "Learns from every correction, and fixes the other two loops.",
+     "var(--r4)"
+    ]
+   ],
+   "voice": "And a factory runs in three loops. The inner loop: agents iterate before anything goes up for review, fast and cheap. The outer loop: the thorough checks that replace review time. And the meta loop: it reads the corrections and failures, and fixes the factory itself, so the same mistake doesn't happen twice.",
+   "seconds": 23
+  },
+  {
+   "kind": "flow",
+   "kicker": "Under the hood",
+   "title": "One pipeline, eleven stages",
+   "stages": [
+    [
+     "Read issue",
+     "script"
+    ],
+    [
+     "Requirements",
+     "agent"
+    ],
+    [
+     "Approve",
+     "person"
+    ],
+    [
+     "Plan",
+     "agent"
+    ],
+    [
+     "Lint plan",
+     "script"
+    ],
+    [
+     "Build: maker + checker",
+     "agents"
+    ],
+    [
+     "Re-check evidence",
+     "script"
+    ],
+    [
+     "Tests",
+     "script"
+    ],
+    [
+     "Preview",
+     "script"
+    ],
+    [
+     "Try it, approve",
+     "person"
+    ],
+    [
+     "Merge request",
+     "script"
+    ]
+   ],
+   "key": "<span><b>You</b>: two approvals</span><span>Agents: requirements, plan, code</span><span>Scripts: everything checkable</span>",
+   "say": "Eleven stages: agents write, scripts check, a person approves twice",
+   "voice": "Here's the factory I built, on Claude Code. Eleven stages. Scripts read the issue, lint the plan, re-check the evidence, run the tests, publish a preview, and open the merge request. Agents write the requirements, the plan, and the code. And a person approves twice.",
+   "seconds": 20
+  },
+  {
+   "kind": "terminal",
+   "file": "01-pipeline.txt",
+   "where": "the pipeline definition",
+   "highlight": [
+    "\"by\": \"human\"",
+    "\"agent\": \"builder\"",
+    "max_attempts"
+   ],
+   "say": "The pipeline is data: who does each stage, and how",
+   "voice": "The pipeline is just data. Each stage says who does it, an agent, a script or a human, which skill it follows, and what it may write. A stage can fail three times before the factory stops and asks a person.",
+   "seconds": 18
+  },
+  {
+   "kind": "terminal",
+   "file": "02-skill.txt",
+   "where": "a maker skill",
+   "highlight": [
+    "You are the maker",
+    "Logic is pure functions"
+   ],
+   "say": "A skill: how one kind of job is done",
+   "voice": "And each kind of job has a skill: a short written instruction the agent follows. This one is for UI logic. Pure functions, no DOM, no clock. And notice the last line: the maker doesn't tick its own task or write its own evidence.",
+   "seconds": 20
+  },
+  {
+   "kind": "chapter",
+   "kicker": "A real run",
+   "title": "One request, start to finish",
+   "colour": "var(--r4)",
+   "say": "A CRM dashboard, asked for in plain words on a GitLab issue.",
+   "voice": "Let's watch one real request go through it.",
+   "seconds": 5
+  },
+  {
+   "kind": "image",
+   "image": "c04-issue-filed.png",
+   "say": "An issue in plain words, labelled for the factory",
+   "voice": "It starts as an issue in GitLab, in plain words, with the factory label. A webhook starts a pass straight away.",
+   "seconds": 10
+  },
+  {
+   "kind": "image",
+   "image": "c06-gate.png",
+   "say": "The first gate: approve the requirements",
+   "voice": "Within a minute the requirements agent has written the request up, and the factory stops at the first gate.",
+   "seconds": 10
+  },
+  {
+   "kind": "image",
+   "image": "c07-requirements.png",
+   "say": "Stories with acceptance criteria every later stage is held to",
+   "voice": "Requirements are user stories with acceptance criteria. Everything downstream is checked against these, so this approval actually means something.",
+   "seconds": 10
+  },
+  {
+   "kind": "image",
+   "image": "c09-approve.png",
+   "say": "Approve: one word on the issue",
+   "voice": "The reply is one word on the issue. No slash: GitLab swallows a comment that's only slash-approve.",
+   "seconds": 9
+  },
+  {
+   "kind": "image",
+   "image": "c13-tasks.png",
+   "say": "The plan: sections, skills, and a gate for each",
+   "voice": "Then the plan. The work is split into sections, each naming the skill to use, and each ending in a gate the checker must pass.",
+   "seconds": 12
+  },
+  {
+   "kind": "terminal",
+   "file": "03-checker.txt",
+   "where": "the checker's checks, written in the plan",
+   "highlight": [
+    "EXPECTED: 4",
+    "EXPECTED: 0",
+    "formatCurrency(12500)"
+   ],
+   "say": "Runnable checks, written before the code",
+   "voice": "And these are the checker's gates, written in the plan before any code exists. Runnable commands with expected results: the module's exports, no DOM or network access, currency formatting, and totals exact to the cent.",
+   "seconds": 14
+  },
+  {
+   "kind": "image",
+   "image": "c10-maker-checker.png",
+   "say": "Inner loop: maker builds, a separate checker verifies",
+   "voice": "This is the inner loop. A maker session builds a section. A separate checker session, which never saw the maker work, runs the gate. Pass, and the next section starts. Fail, and a fresh maker gets the written findings.",
+   "seconds": 18
+  },
+  {
+   "kind": "image",
+   "image": "c14-evidence.png",
+   "say": "Evidence: what was run, expected, and found",
+   "voice": "The checker writes its evidence: each check, expected, found, and a verdict. Four sections in this run, four passes, first time.",
+   "seconds": 10
+  },
+  {
+   "kind": "image",
+   "image": "c11-checks.png",
+   "say": "Outer loop: evidence re-checked, tests, preview",
+   "voice": "Then the outer loop: a script re-runs the evidence checks rather than trusting them, the full test suite runs, and a preview goes up.",
+   "seconds": 12
+  },
+  {
+   "kind": "image",
+   "image": "c16b-try-it-totals.png",
+   "say": "Try it: the real change, running",
+   "voice": "The person who asked tries the real thing in a browser, and approves again.",
+   "seconds": 8
+  },
+  {
+   "kind": "image",
+   "image": "c18-merge-request.png",
+   "say": "A merge request with the specs and evidence",
+   "voice": "And a merge request opens, with the specs and every evidence file linked. Merging stays with a human.",
+   "seconds": 9
+  },
+  {
+   "kind": "flow",
+   "kicker": "How it runs",
+   "title": "Issue in, merge request out",
+   "stages": [
+    [
+     "GitLab issue",
+     "trigger"
+    ],
+    [
+     "Webhook",
+     "trigger"
+    ],
+    [
+     "CI runner",
+     "runner"
+    ],
+    [
+     "flow.py pass",
+     "factory"
+    ],
+    [
+     "claude -p per stage",
+     "agents"
+    ],
+    [
+     "Work branch",
+     "git"
+    ],
+    [
+     "factory-state branch",
+     "git"
+    ],
+    [
+     "Comments + status page",
+     "issue"
+    ],
+    [
+     "Preview",
+     "nginx"
+    ]
+   ],
+   "key": "<span>Nothing on your laptop. Each pass is stateless; its state lives in git.</span>",
+   "say": "Webhook, runner, flow.py, claude -p, state in git",
+   "voice": "How it runs. A GitLab issue or comment fires a webhook. That starts a pipeline on a runner. Each pass restores the factory's state from a branch, runs flow dot py through the stages, launches claude dash p for each agent stage, pushes the work branch, comments on the issue, and saves its state again.",
+   "seconds": 24
+  },
+  {
+   "kind": "chapter",
+   "kicker": "In this factory",
+   "title": "The loops, made concrete",
+   "one_column": true,
+   "points": [
+    [
+     "Inner",
+     "Maker and checker per section; a failed gate goes back with findings, up to three tries.",
+     "var(--r2)"
+    ],
+    [
+     "Outer",
+     "Evidence re-checked by script, presubmit, preview, then a person tries it.",
+     "var(--r1)"
+    ],
+    [
+     "Meta",
+     "Every intervention is recorded; fixes go into skills and rules. By hand, for now.",
+     "var(--r4)"
+    ]
+   ],
+   "voice": "Mapped to the loops. Inner loop: maker and checker per section, three attempts. Outer loop: scripts and tests, then a person tries it. And the meta loop: every time a person has to step in, it's recorded on the issue, and the fix goes into a skill or the rules. Honestly, today that loop is me, by hand.",
+   "seconds": 25
+  },
+  {
+   "kind": "stats",
+   "kicker": "This run, in numbers",
+   "title": "Issue to merge request",
+   "numbers": [
+    [
+     "17 min",
+     "issue to merge request, approvals included"
+    ],
+    [
+     "10",
+     "agent sessions"
+    ],
+    [
+     "~$1.24",
+     "at API prices"
+    ],
+    [
+     "4 of 4",
+     "sections passed their checker first time"
+    ]
+   ],
+   "say": "17 minutes, 10 agent sessions, about $1.24, 4 of 4 first time",
+   "voice": "The numbers from that run. Seventeen minutes from issue to merge request, approvals included. Ten agent runs. About a dollar twenty at API prices. And every section passed its checker first time.",
+   "seconds": 15
+  },
+  {
+   "kind": "chapter",
+   "kicker": "Honest limits",
+   "title": "What it doesn't do yet",
+   "one_column": true,
+   "points": [
+    [
+     "Spec",
+     "Checks prove the checks pass, not that the spec was right.",
+     "var(--r3)"
+    ],
+    [
+     "Meta loop",
+     "Still run by hand: interventions are recorded, fixes are manual.",
+     "var(--r4)"
+    ],
+    [
+     "Throughput",
+     "One request at a time on the runner.",
+     "var(--r1)"
+    ],
+    [
+     "Scope",
+     "Best on small, clear requests.",
+     "var(--r2)"
+    ]
+   ],
+   "voice": "And the limits. Checks prove the checks pass, not that the spec was right, which is why a person approves it. The meta loop is still manual. The runner works one request at a time. And it's best on small, clear requests.",
+   "seconds": 19
+  },
+  {
+   "kind": "chapter",
+   "kicker": "Try it",
+   "title": "Get a playground",
+   "colour": "var(--r4)",
+   "say": "Your own GitLab project, nothing to install. The code: github.com/sanjeev23oct/software-factory",
+   "voice": "Want to try it? There's a playground: your own GitLab project, nothing to install. File an issue and watch it go through. The code is open source, and the longer read is on Medium.",
+   "seconds": 16
+  }
+ ]
+}

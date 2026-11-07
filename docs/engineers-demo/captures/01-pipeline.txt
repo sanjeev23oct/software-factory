@@ -1,0 +1,15 @@
+$ cat targets/factory-demo/factory.json      # the pipeline, as data
+"limits": { "max_attempts": 3 },
+"stages": [
+  { "id": "read-issue",           "by": "script", "skill": "read-issue" },
+  { "id": "requirements",         "by": "agent",  "skill": "write-requirements", "writes": ["{spec}/requirements.md"] },
+  { "id": "approve-requirements", "by": "human" },
+  { "id": "tasks",                "by": "agent",  "skill": "write-tasks",        "writes": ["{spec}/"] },
+  { "id": "lint-tasks",           "by": "script", "run": ["python3", "{scripts}/lint_tasks.py", "{spec}/tasks.md"] },
+  { "id": "build",                "by": "agent",  "skill": "build-tasks",        "agent": "builder" },
+  { "id": "check-evidence",       "by": "script", "run": ["python3", "{scripts}/check_evidence.py", "--cat1"] },
+  { "id": "verify",               "by": "script", "run": ["{presubmit}"] },
+  { "id": "preview",              "by": "script", "run": ["python3", "{scripts}/preview_link.py"] },
+  { "id": "approve-screens",      "by": "human" },
+  { "id": "merge-request",        "by": "script", "run": ["python3", "{scripts}/open_merge_request.py"] }
+]

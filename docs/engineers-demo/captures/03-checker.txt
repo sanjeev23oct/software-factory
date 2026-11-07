@@ -1,0 +1,15 @@
+$ cat specs/1-build-a-crm-dashboard-for-my-customers/loop/logic-checker.md
+# Checker: Section 1 — Logic
+1. Module exports the four names.
+   `grep -cE "export (const|function) (OPEN_STAGES|isOpenStage|formatCurrency|computeTotals)\b" src/customers.js`
+   # EXPECTED: 4
+2. Open stages are listed.
+   `grep -cE "Lead|Qualified|Proposal|Negotiation" src/customers.js`
+   # EXPECTED: at least 1
+3. Logic is free of the DOM and network.
+   `grep -cE "document|window|fetch\(" src/customers.js`
+   # EXPECTED: 0
+4. Currency formatting (AC 1.4).
+   `node -e "import('./src/customers.js').then(m=>console.log(m.formatCurrency(12500)))" | grep -c '^\$12,500$'`
+   # EXPECTED: 1
+5. Totals with Lost excluded and cents exact (AC 2.3–2.5, P7).
