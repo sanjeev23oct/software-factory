@@ -28,8 +28,14 @@ For each image `reference/<screen>.png` (or `.jpg`), write `reference/<screen>.j
 2. **Regions.** Name the 3 to 8 areas the request is about: a heading, a row of summary cards, a table, a form, a toolbar. Not every element; the ones whose place, words or colour matter. For each:
    - `name`: short, lowercase, with dashes
    - `testid`: the `data-testid` the visual spec gives that area (or `selector`, a CSS selector, for an element that has an id or is unique)
-   - `box`: `[x, y, width, height]` in viewport pixels, measured on the reference image, to the nearest 8 pixels
-   - `text`: the exact words that must appear in it, when they matter
+   - `box`: `[x, y, width, height]` in viewport pixels, measured on the reference image, to the nearest 8 pixels.
+     It is the box of the **element**, not of the ink inside it: a heading, a paragraph, a card row or a table
+     is a block that spans the width of its column, even when its words are short. Measure from the column's
+     left edge to its right edge. Measure a card or a panel from its border, not from its text.
+   - `text`: the exact interface words that must appear in it: headings, labels, column titles, button text.
+     **Never a data value** (an amount, a count, a name from a table): the builder's sample data will differ,
+     and the check would fail a correct screen. Put data areas in `mask` instead.
+   - one region per element: never two regions with the same `testid` or `selector`
    - `color` and `background`: `#rrggbb`, only where the colour is part of the design (an accent, a status colour)
 3. **Thresholds.** You estimated the boxes from an image, so set `"iou": 0.6` on each region. Set `"similarity": false` on each region: a design and a browser render pixels differently, so similarity is for baselines, which the factory writes itself.
 4. **Mask.** List in `mask` the boxes whose content is sample data that will differ, such as table rows.
