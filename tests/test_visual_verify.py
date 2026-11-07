@@ -53,6 +53,22 @@ class VisualVerifyTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         cls.tmp = Path(tempfile.mkdtemp(prefix="visual-suite-"))
+        # Fonts render differently from one machine to the next, so the accepted screen is rendered and
+        # measured here, on the machine running the suite: the suite tests what the verifier can tell
+        # apart, not whether two operating systems draw text alike.
+        contract = json.loads((HERE / "crm-contract.json").read_text())
+        contract["reference"] = str(cls.tmp / "reference.png")
+        draft = cls.tmp / "draft-contract.json"
+        draft.write_text(json.dumps(contract))
+        proc = subprocess.run(["node", str(SCRIPT), "--root", str(HERE / "crm"), "--contract", str(draft),
+                               "--capture", contract["reference"]], capture_output=True, text=True, timeout=120)
+        if proc.returncode:
+            raise RuntimeError(proc.stderr)
+        boxes = {r["name"]: r["box"] for r in json.loads(proc.stdout)}
+        for region in contract["regions"]:
+            region["box"] = boxes[region["name"]]
+        cls.contract = contract
+        (cls.tmp / "contract.json").write_text(json.dumps(contract))
 
     @classmethod
     def tearDownClass(cls):
@@ -72,8 +88,7 @@ class VisualVerifyTest(unittest.TestCase):
         """A copy of the accepted screen with one change, and the contract to check it with."""
         app = self.tmp / name.replace(" ", "-").replace("%", "pc").replace(":", "")
         shutil.copytree(HERE / "crm", app)
-        contract = json.loads((HERE / "crm-contract.json").read_text())
-        contract["reference"] = str(HERE / contract["reference"])
+        contract = json.loads(json.dumps(self.contract))
         if kind == "css":
             with open(app / "styles.css", "a") as f:
                 f.write("\n" + change + "\n")
@@ -91,7 +106,7 @@ class VisualVerifyTest(unittest.TestCase):
         return app, contract_path, (Path(keep) if keep else app.parent) / (app.name + "-evidence")
 
     def test_the_accepted_screen_passes(self):
-        code, report = verify(HERE / "crm", HERE / "crm-contract.json", self.tmp / "accepted")
+        code, report = verify(HERE / "crm", self.tmp / "contract.json", self.tmp / "accepted")
         self.assertEqual(0, code, report["failures"])
         self.assertTrue(all(r["similarity"] == 1 and r["iou"] == 1 for r in report["regions"]))
 
@@ -113,8 +128,8 @@ class VisualVerifyTest(unittest.TestCase):
                 self.assertEqual(0, code, "{} raised a false alarm: {}".format(name, report["failures"]))
 
     def test_the_same_build_gives_the_same_report(self):
-        _, first = verify(HERE / "crm", HERE / "crm-contract.json", self.tmp / "run-1")
-        _, second = verify(HERE / "crm", HERE / "crm-contract.json", self.tmp / "run-2")
+        _, first = verify(HERE / "crm", self.tmp / "contract.json", self.tmp / "run-1")
+        _, second = verify(HERE / "crm", self.tmp / "contract.json", self.tmp / "run-2")
         self.assertEqual(first, second)
         self.assertEqual((self.tmp / "run-1" / "actual.png").read_bytes(), (self.tmp / "run-2" / "actual.png").read_bytes())
 
