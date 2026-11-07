@@ -1,0 +1,13 @@
+$ python3 -m unittest tests.test_visual_verify      # planted defects (same result on the runner)
+  element moved 24px                 caught    totals: geometry, similarity
+  accent colour swapped              caught    open-value: color
+  heading font 20% smaller           caught    heading: geometry
+  component removed                  caught    totals: present
+  label changed                      caught    totals: text
+  row wraps to two lines             caught    customer-table: similarity
+  different data in a masked area    passed    no region failed
+  sub-pixel shift                    passed    no region failed
+  near-identical page background     passed    no region failed
+visual verifier: caught 6/6 planted defects; 0/3 false alarms
+Ran 4 tests in 24.070s
+OK

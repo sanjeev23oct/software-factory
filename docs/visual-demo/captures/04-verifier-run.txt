@@ -1,0 +1,17 @@
+$ node visual_verify.mjs --root . --contract reference/customers.json --out evidence/visual/customers
+PASS  heading
+PASS  totals
+PASS  open-value
+PASS  customer-table
+visual-verify: PASS
+
+$ cat evidence/visual/customers/report.json     # one region
+  name           "open-value"
+  selector       "[data-testid=\"total-open-value\"]"
+  reference_box  [505.7, 138, 268.7, 42]
+  box            [505.7, 138, 268.7, 42]
+  iou            1
+  colors         [{"property": "color", "expected": "#1f5fd0", "actual": "rgb(31, 95, 208)", "delta_e": 0}]
+  similarity     1
+  checks         {"present": true, "geometry": true, "color": true, "similarity": true}
+  pass           true

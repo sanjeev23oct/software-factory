@@ -1,0 +1,391 @@
+{
+ "name": "Proving it looks right",
+ "video": "visual-demo.mp4",
+ "narration": true,
+ "intro": "For engineers: how the software factory checks built screens against a reference screenshot (measured, judged, accepted), how the checker itself is proven with planted defects, and one real request run end to end.",
+ "facts": [
+  [
+   "Planted defects caught",
+   "6 of 6"
+  ],
+  [
+   "False alarms",
+   "0 of 3"
+  ],
+  [
+   "Checker failures before pass",
+   "2"
+  ],
+  [
+   "Real bugs found by running it",
+   "2"
+  ]
+ ],
+ "links": [
+  [
+   "The factory (open source)",
+   "https://github.com/sanjeev23oct/software-factory"
+  ],
+  [
+   "Visual verification spec",
+   "https://github.com/sanjeev23oct/software-factory/tree/test-drive/docs/visual-verification"
+  ]
+ ],
+ "scenes": [
+  {
+   "kind": "title",
+   "kicker": "Software factories, for engineers",
+   "title": "Proving it <em>looks</em><br>right",
+   "say": "Checking built screens against a reference screenshot, and proving the checker works.",
+   "seconds": 10,
+   "voice": "In a software factory, verification is everything. And for user interfaces, it's been the weakest link. So... let's fix that, and then prove it actually works."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "The gap",
+   "title": "Scripts can't see",
+   "colour": "var(--r3)",
+   "define": "The factory could prove the <b>text</b>, the <b>test ids</b> and the <b>tests</b>. It couldn't prove a screen <b>looks like the design</b>. So a person looked, and where verification stops, autonomy stops.",
+   "seconds": 16,
+   "voice": "Here's the honest starting point. The factory could already prove a screen had the right text and the right test ids, and that the tests passed. But it couldn't tell you whether the screen actually looked right. So, a person had to look. And wherever verification stops... autonomy stops too."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "The design",
+   "title": "Three layers",
+   "one_column": true,
+   "points": [
+    [
+     "Measured",
+     "A script: position, size, words, colour, similarity. Same input, same answer.",
+     "var(--r2)"
+    ],
+    [
+     "Judged",
+     "A separate checker agent, by eye, against a checklist. Every finding cites evidence.",
+     "var(--r1)"
+    ],
+    [
+     "Accepted",
+     "A person sees reference, built and difference side by side, then approves.",
+     "var(--r4)"
+    ]
+   ],
+   "seconds": 20,
+   "voice": "So the idea is three layers. First, measured. A script checks what can be measured, and gives the same answer every time. Second, judged. A separate agent looks at the images, and has to cite evidence for every finding. And third, accepted. A person sees the reference, the result, and the difference, side by side."
+  },
+  {
+   "kind": "flow",
+   "kicker": "In the pipeline",
+   "title": "From screenshot to baseline",
+   "stages": [
+    [
+     "Screenshot on the issue",
+     "you"
+    ],
+    [
+     "Reference saved",
+     "script"
+    ],
+    [
+     "Contract written",
+     "agent"
+    ],
+    [
+     "Approve",
+     "person"
+    ],
+    [
+     "Visual gate in the plan",
+     "agent"
+    ],
+    [
+     "Maker builds",
+     "agent"
+    ],
+    [
+     "Checker: measure + judge",
+     "agent"
+    ],
+    [
+     "visual-verify",
+     "script"
+    ],
+    [
+     "Reference vs built",
+     "person"
+    ],
+    [
+     "Baselines",
+     "script"
+    ]
+   ],
+   "key": "<span><b>You</b>: approve the contract, then the result</span><span>Scripts measure; agents build and judge</span>",
+   "say": "Screenshot in, baselines out",
+   "seconds": 22,
+   "voice": "Here's how it fits into the pipeline. A screenshot attached to the issue becomes the reference. The visual spec turns it into a contract, and a person approves that, before anything is built. The plan gives the page a visual gate. The checker measures, and judges. After the tests, the verifier runs again. And when the person approves the result, those screens become baselines."
+  },
+  {
+   "kind": "terminal",
+   "file": "04-verifier-run.txt",
+   "where": "the measured layer",
+   "highlight": [
+    "visual-verify: PASS",
+    "iou",
+    "delta_e",
+    "checks"
+   ],
+   "say": "Present, geometry, text, colour, similarity: every number in a report",
+   "seconds": 18,
+   "voice": "The measured layer is one small script. It renders the screen in headless Chrome, then for each region in the contract, it checks five things. Is it there. Is it in the right place. Does it say the right words. Is it the right colour. And does it look similar. Every number goes into a report."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "Verify the verifier",
+   "title": "Plant the defects",
+   "colour": "var(--r2)",
+   "say": "A verifier nobody has tested is an opinion.",
+   "seconds": 10,
+   "voice": "Now, here's the part most teams skip. A verifier nobody has tested... is just an opinion. So I tested it the way you'd test any other code."
+  },
+  {
+   "kind": "image",
+   "image": "pd-element-moved-24px.png",
+   "say": "Planted: an element moved 24px. Caught: geometry and similarity",
+   "seconds": 15,
+   "voice": "I took a screen the factory had already built, and planted one defect at a time. Like this one. The totals moved twenty-four pixels. The region goes red on both sides, and the difference panel shows exactly what moved."
+  },
+  {
+   "kind": "image",
+   "image": "pd-accent-colour-swapped.png",
+   "say": "Planted: the accent colour swapped. Caught: colour",
+   "seconds": 6,
+   "voice": "A swapped accent colour. Caught by the colour check. The difference is measured, not eyeballed."
+  },
+  {
+   "kind": "image",
+   "image": "pd-row-wraps-to-two-lines.png",
+   "say": "Planted: a row wraps. Caught: similarity",
+   "seconds": 6,
+   "voice": "A table row that wraps onto two lines. The box barely moved... but similarity caught it."
+  },
+  {
+   "kind": "terminal",
+   "file": "05-suite.txt",
+   "where": "the proof suite, in presubmit",
+   "highlight": [
+    "caught 6/6",
+    "0/3 false alarms"
+   ],
+   "say": "Six of six defects caught, zero of three false alarms",
+   "seconds": 15,
+   "voice": "Six planted defects, and all six were caught. And just as important, three harmless changes, like different sample data or a sub-pixel shift... and zero false alarms. It runs in presubmit, so if anyone weakens the verifier, the build fails."
+  },
+  {
+   "kind": "stats",
+   "kicker": "The verifier, proven",
+   "title": "Before it gates anything",
+   "numbers": [
+    [
+     "6 of 6",
+     "planted defects caught"
+    ],
+    [
+     "0 of 3",
+     "false alarms on harmless changes"
+    ],
+    [
+     "identical",
+     "reports, same build twice"
+    ],
+    [
+     "~2 s",
+     "to verify a screen"
+    ]
+   ],
+   "say": "6 of 6 caught, 0 false alarms, identical reports",
+   "seconds": 6,
+   "voice": "And it's deterministic. The same build, verified twice, gives a byte-for-byte identical report."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "A real request",
+   "title": "Build this, matching the screenshot",
+   "colour": "var(--r4)",
+   "say": "A request with a reference screenshot attached.",
+   "seconds": 5,
+   "voice": "Okay. Now, let's run a real request through it... end to end."
+  },
+  {
+   "kind": "image",
+   "image": "v02-issue-with-reference.png",
+   "say": "A screenshot attached to the issue: the reference",
+   "seconds": 7,
+   "voice": "The client attaches a screenshot to the issue, and then writes what they want, in plain words."
+  },
+  {
+   "kind": "image",
+   "image": "v03-progress.png",
+   "say": "Reference saved; contract written",
+   "seconds": 7,
+   "voice": "The intake saves that screenshot with the spec, and the visual spec agent writes a contract from it."
+  },
+  {
+   "kind": "terminal",
+   "file": "06-first-contract.txt",
+   "where": "the first contract, not approved",
+   "highlight": [
+    "152, 48",
+    "48,250.50"
+   ],
+   "say": "The first contract: the heading's ink, not the heading; a sample-data total",
+   "seconds": 15,
+   "voice": "And here's something I didn't plan for. The first contract the agent wrote was wrong. It measured the heading's text instead of the heading itself, and it demanded a total that only existed in the sample data. Approve that, and a correct build would have failed three times."
+  },
+  {
+   "kind": "image",
+   "image": "v05-contract.png",
+   "say": "Fixed in the skill, not in the result: the meta loop",
+   "seconds": 10,
+   "voice": "So I didn't patch the contract. I fixed the skill that writes contracts. That's the meta loop, working. And the second contract got it right."
+  },
+  {
+   "kind": "image",
+   "image": "v07-approve.png",
+   "say": "Approved before any code exists",
+   "seconds": 7,
+   "voice": "The client approves the contract, along with the requirements, before a single line of code exists."
+  },
+  {
+   "kind": "image",
+   "image": "v11-visual-gate.png",
+   "say": "The plan's visual gate: Cat 4",
+   "seconds": 6,
+   "voice": "The plan gives the page section a fourth gate. A visual check, against the reference."
+  },
+  {
+   "kind": "image",
+   "image": "v08-inner-loop.png",
+   "say": "The inner loop: failed, failed, passed",
+   "seconds": 7,
+   "voice": "And this is where it gets interesting. The checker failed the page twice, for two completely different reasons."
+  },
+  {
+   "kind": "terminal",
+   "file": "02-checker-fail-measured.txt",
+   "where": "first failure: measured",
+   "highlight": [
+    "465.5px tall against 320px"
+   ],
+   "say": "First failure, measured: the table 465px tall against 320px",
+   "seconds": 11,
+   "voice": "The first time, the measured layer caught it. Names were wrapping, and the table was four hundred and sixty five pixels tall, against three hundred and twenty in the reference."
+  },
+  {
+   "kind": "terminal",
+   "file": "03-checker-fail-judged.txt",
+   "where": "second failure: judged by eye",
+   "highlight": [
+    "The verifier passes, but only barely",
+    "Table too small"
+   ],
+   "say": "Second failure, judged: the verifier passed, the checker's eye didn't",
+   "seconds": 12,
+   "voice": "The second time... the verifier actually passed. The maker had overcorrected. Tiny text, cramped rows. The numbers squeaked through, but the checker's judgement didn't. That's exactly why there are two layers."
+  },
+  {
+   "kind": "image",
+   "image": "v09-outer-loop.png",
+   "say": "Outer loop: evidence, tests, visual-verify, preview",
+   "seconds": 9,
+   "voice": "On the third try, it passed. Then the outer loop ran everything again. The evidence, the tests, and the verifier, on its own."
+  },
+  {
+   "kind": "image",
+   "image": "v12-compare.png",
+   "say": "Reference, built, difference: every region passes",
+   "seconds": 9,
+   "voice": "Reference, built, and difference. Every region green. The only differences left are font rendering, because the runner draws text with Linux fonts."
+  },
+  {
+   "kind": "image",
+   "image": "v10-gate.png",
+   "say": "The gate notice shows reference vs built",
+   "seconds": 7,
+   "voice": "And that image goes straight into the gate notice. The person approving doesn't have to dig for anything."
+  },
+  {
+   "kind": "image",
+   "image": "v14-built.png",
+   "say": "The built screen, running",
+   "seconds": 4,
+   "voice": "Here's the dashboard, running."
+  },
+  {
+   "kind": "image",
+   "image": "v18-mr-baselines.png",
+   "say": "Approved screens become baselines, in the merge request",
+   "seconds": 9,
+   "voice": "And when it's approved, those screens become baselines. The merge request carries them, so the next change to this screen gets checked against them, strictly."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "What running it for real taught me",
+   "title": "Three lessons",
+   "one_column": true,
+   "points": [
+    [
+     "A guardrail",
+     "A git quirk dropped the reference. 'This stage may not write that file' is what exposed it.",
+     "var(--r2)"
+    ],
+    [
+     "The contract",
+     "The agent's first contract was wrong. Fixed in the skill, and caught at the gate.",
+     "var(--r4)"
+    ],
+    [
+     "Fonts",
+     "macOS and Linux draw text differently: designs are measured, baselines compared.",
+     "var(--r1)"
+    ]
+   ],
+   "seconds": 16,
+   "voice": "Running it for real taught me three things. A git quirk silently dropped the reference. The factory's own guardrail is what exposed it. An agent's contract can be wrong, and that's exactly why a person approves it. And a screenshot from one machine never matches pixels from another."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "Honest limits",
+   "title": "What it doesn't do yet",
+   "one_column": true,
+   "points": [
+    [
+     "Estimates",
+     "Boxes read from an image are approximate: IoU 0.6, not 0.95.",
+     "var(--r3)"
+    ],
+    [
+     "Judgement",
+     "The checker's eye is a model's opinion, forced to cite evidence.",
+     "var(--r4)"
+    ],
+    [
+     "Coverage",
+     "Proven on one dashboard so far. More screens, more evidence.",
+     "var(--r1)"
+    ]
+   ],
+   "seconds": 15,
+   "voice": "Now, the limits. Boxes estimated from an image are approximate, so the tolerance is generous. The judged layer is still a model's opinion, it's just forced to show its evidence. And so far, it's been proven on one kind of screen."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "Try it",
+   "title": "Verification makes it a factory",
+   "colour": "var(--r4)",
+   "say": "The code: github.com/sanjeev23oct/software-factory · test drive: login testdrive",
+   "seconds": 12,
+   "voice": "Verification is what turns agents writing code into a factory you can trust. The code is open source, and there's a test drive account if you want to look around. Thanks for watching."
+  }
+ ]
+}

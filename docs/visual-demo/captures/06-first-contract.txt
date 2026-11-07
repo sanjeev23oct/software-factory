@@ -1,0 +1,8 @@
+# The first contract the agent wrote. Not approved.
+  "regions": [
+{"name": "heading", "testid": "page-heading", "box": [160, 40, 152, 48], "text": ["Customers"], "iou": 0.6, "similarity": false},
+{"name": "totals", "testid": "totals", "box": [160, 96, 960, 104], "text": ["Customers", "Open deal value", "Deals won"], "iou": 0.6, "similarity": false},
+{"name": "open-value", "testid": "total-open-value", "box": [488, 96, 312, 104], "text": ["$48,250.50"], "iou": 0.6, "similarity": false},
+{"name": "open-value-number", "testid": "total-open-value", "box": [488, 96, 312, 104], "color": "#1f5fd0", "iou": 0.6, "similarity": false},
+{"name": "table", "testid": "customer-table", "box": [160, 208, 960, 320], "text": ["Customer", "Company", "Deal stage", "Deal value"], "iou": 0.6, "similarity": false}
+  ]

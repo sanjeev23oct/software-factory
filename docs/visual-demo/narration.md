@@ -1,0 +1,35 @@
+# Proving it looks right: narration
+
+One line per scene, timed to `visual-demo.mp4` (5:12). "Starts" is when the scene appears; each line fits its scene at about 150 words a minute.
+
+| # | Starts | Length | On screen | Narration |
+|---|---|---|---|---|
+| 1 | 0:00 | 10s | Proving it looks right | In a software factory, verification is everything. And for user interfaces, it's been the weakest link. So... let's fix that, and then prove it actually works. |
+| 2 | 0:10 | 16s | Scripts can't see | Here's the honest starting point. The factory could already prove a screen had the right text and the right test ids, and that the tests passed. But it couldn't tell you whether the screen actually looked right. So, a person had to look. And wherever verification stops... autonomy stops too. |
+| 3 | 0:26 | 20s | Three layers | So the idea is three layers. First, measured. A script checks what can be measured, and gives the same answer every time. Second, judged. A separate agent looks at the images, and has to cite evidence for every finding. And third, accepted. A person sees the reference, the result, and the difference, side by side. |
+| 4 | 0:46 | 22s | Screenshot in, baselines out | Here's how it fits into the pipeline. A screenshot attached to the issue becomes the reference. The visual spec turns it into a contract, and a person approves that, before anything is built. The plan gives the page a visual gate. The checker measures, and judges. After the tests, the verifier runs again. And when the person approves the result, those screens become baselines. |
+| 5 | 1:08 | 18s | Present, geometry, text, colour, similarity: every number in a report | The measured layer is one small script. It renders the screen in headless Chrome, then for each region in the contract, it checks five things. Is it there. Is it in the right place. Does it say the right words. Is it the right colour. And does it look similar. Every number goes into a report. |
+| 6 | 1:26 | 10s | Plant the defects | Now, here's the part most teams skip. A verifier nobody has tested... is just an opinion. So I tested it the way you'd test any other code. |
+| 7 | 1:36 | 15s | Planted: an element moved 24px. Caught: geometry and similarity | I took a screen the factory had already built, and planted one defect at a time. Like this one. The totals moved twenty-four pixels. The region goes red on both sides, and the difference panel shows exactly what moved. |
+| 8 | 1:51 | 6s | Planted: the accent colour swapped. Caught: colour | A swapped accent colour. Caught by the colour check. The difference is measured, not eyeballed. |
+| 9 | 1:57 | 6s | Planted: a row wraps. Caught: similarity | A table row that wraps onto two lines. The box barely moved... but similarity caught it. |
+| 10 | 2:03 | 15s | Six of six defects caught, zero of three false alarms | Six planted defects, and all six were caught. And just as important, three harmless changes, like different sample data or a sub-pixel shift... and zero false alarms. It runs in presubmit, so if anyone weakens the verifier, the build fails. |
+| 11 | 2:18 | 6s | 6 of 6 caught, 0 false alarms, identical reports | And it's deterministic. The same build, verified twice, gives a byte-for-byte identical report. |
+| 12 | 2:24 | 5s | Build this, matching the screenshot | Okay. Now, let's run a real request through it... end to end. |
+| 13 | 2:29 | 7s | A screenshot attached to the issue: the reference | The client attaches a screenshot to the issue, and then writes what they want, in plain words. |
+| 14 | 2:36 | 7s | Reference saved; contract written | The intake saves that screenshot with the spec, and the visual spec agent writes a contract from it. |
+| 15 | 2:43 | 15s | The first contract: the heading's ink, not the heading; a sample-data total | And here's something I didn't plan for. The first contract the agent wrote was wrong. It measured the heading's text instead of the heading itself, and it demanded a total that only existed in the sample data. Approve that, and a correct build would have failed three times. |
+| 16 | 2:58 | 10s | Fixed in the skill, not in the result: the meta loop | So I didn't patch the contract. I fixed the skill that writes contracts. That's the meta loop, working. And the second contract got it right. |
+| 17 | 3:08 | 7s | Approved before any code exists | The client approves the contract, along with the requirements, before a single line of code exists. |
+| 18 | 3:15 | 6s | The plan's visual gate: Cat 4 | The plan gives the page section a fourth gate. A visual check, against the reference. |
+| 19 | 3:21 | 7s | The inner loop: failed, failed, passed | And this is where it gets interesting. The checker failed the page twice, for two completely different reasons. |
+| 20 | 3:28 | 11s | First failure, measured: the table 465px tall against 320px | The first time, the measured layer caught it. Names were wrapping, and the table was four hundred and sixty five pixels tall, against three hundred and twenty in the reference. |
+| 21 | 3:39 | 12s | Second failure, judged: the verifier passed, the checker's eye didn't | The second time... the verifier actually passed. The maker had overcorrected. Tiny text, cramped rows. The numbers squeaked through, but the checker's judgement didn't. That's exactly why there are two layers. |
+| 22 | 3:51 | 9s | Outer loop: evidence, tests, visual-verify, preview | On the third try, it passed. Then the outer loop ran everything again. The evidence, the tests, and the verifier, on its own. |
+| 23 | 4:00 | 9s | Reference, built, difference: every region passes | Reference, built, and difference. Every region green. The only differences left are font rendering, because the runner draws text with Linux fonts. |
+| 24 | 4:09 | 7s | The gate notice shows reference vs built | And that image goes straight into the gate notice. The person approving doesn't have to dig for anything. |
+| 25 | 4:16 | 4s | The built screen, running | Here's the dashboard, running. |
+| 26 | 4:20 | 9s | Approved screens become baselines, in the merge request | And when it's approved, those screens become baselines. The merge request carries them, so the next change to this screen gets checked against them, strictly. |
+| 27 | 4:29 | 16s | Three lessons | Running it for real taught me three things. A git quirk silently dropped the reference. The factory's own guardrail is what exposed it. An agent's contract can be wrong, and that's exactly why a person approves it. And a screenshot from one machine never matches pixels from another. |
+| 28 | 4:45 | 15s | What it doesn't do yet | Now, the limits. Boxes estimated from an image are approximate, so the tolerance is generous. The judged layer is still a model's opinion, it's just forced to show its evidence. And so far, it's been proven on one kind of screen. |
+| 29 | 5:00 | 12s | Verification makes it a factory | Verification is what turns agents writing code into a factory you can trust. The code is open source, and there's a test drive account if you want to look around. Thanks for watching. |

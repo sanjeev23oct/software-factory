@@ -116,7 +116,8 @@ def review(voice):
     for n, line in enumerate(voice["lines"], 1):
         words = len(re.sub(r"<[^>]+>|\[[^\]]+\]", " ", line).split())
         rate = words / spoken(voice, n) * 60
-        print("line {:2d}: {:4.0f} wpm{}".format(n, rate, "   <-- rushed" if rate > 170 else ""))
+        limit = 170 * voice.get("tempo", 1.0)   # a faster tempo is a deliberate choice; judge each line against it
+        print("line {:2d}: {:4.0f} wpm{}".format(n, rate, "   <-- rushed" if rate > limit else ""))
 
 
 if __name__ == "__main__":

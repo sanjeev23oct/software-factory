@@ -1,0 +1,5 @@
+# Checker feedback: section 3 (Page) FAILED
+
+The verifier passes, but only barely (open-value iou 0.633 vs threshold 0.6). The by-eye judgement finds two blocking problems. Nothing was ticked.
+
+1. **Table too small** (`styles.css` lines 13-15). `.customer-table` is `font-size: 12px` and cells are `padding: 6px 14px`. The visual spec says body text ~15px and rows ~45px (padding about 12px). The built table is 219px tall against 320px in the reference (compare.png shows cramped, tiny text). Restore ~15px text and ~12px vertical padding so rows are ~45px. Keep `white-space: nowrap` on the company

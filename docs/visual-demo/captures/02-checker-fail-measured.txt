@@ -1,0 +1,5 @@
+# Checker feedback: Section 3 (Page), FAIL
+
+The checks in loop/page-checker.md and `node --test` pass. The visual check (Cat 4) fails. Evidence is in specs/2-build-this-customer-dashboard-matching-t/evidence/visual/customers/.
+
+1. **table, blocking.** The Customer and Deal stage columns wrap. `styles.css:16` gives `.company` `width: 100%` and `nowrap`, which squeezes the other columns. Names such as "Maria Lopez" break onto two lines. The table is 465.5px tall against 320px in the reference, with rows about 36px instead of about 23px. Fix the column sizing so names stay on one line. Add `white
