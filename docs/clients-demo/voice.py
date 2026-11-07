@@ -24,7 +24,7 @@ from pathlib import Path
 
 HERE = Path(sys.argv[2]).resolve() if len(sys.argv) > 2 else Path(__file__).resolve().parent
 CLIPS = HERE / "voice"
-LEAD, BREATH = 0.3, 0.7   # seconds of quiet before each line, and after it before the next scene
+LEAD, BREATH = 0.3, 0.7   # seconds of quiet before each line, and after it before the next scene (voice.json may override)
 
 
 def key():
@@ -51,7 +51,11 @@ def speak(voice):
         if clip(n).exists():
             continue
         request_body = {"text": line, "model_id": voice["model_id"]}
-        if voice.get("stability") is not None:
+        if voice.get("settings"):
+            # The voice's saved settings, with the speed this narration needs; a line may ask for its own speed.
+            request_body["voice_settings"] = dict(voice["settings"], **({"speed": voice["speeds"][str(n)]}
+                                                                        if str(n) in voice.get("speeds", {}) else {}))
+        elif voice.get("stability") is not None:
             request_body["voice_settings"] = {"stability": voice["stability"]}
         body = json.dumps(request_body).encode()
         request = urllib.request.Request("https://api.elevenlabs.io/v1/text-to-speech/" + voice["voice_id"], data=body, method="POST",
@@ -64,25 +68,31 @@ def speak(voice):
         print("line {:2d}: {:.1f}s".format(n, duration(clip(n))))
 
 
+def gaps(voice):
+    return voice.get("lead", LEAD), voice.get("breath", BREATH)
+
+
 def fit(voice):
+    lead, breath = gaps(voice)
     story = json.loads((HERE / "story.json").read_text())
     if len(story["scenes"]) != len(voice["lines"]):
         sys.exit("voice.json has {} lines for {} scenes".format(len(voice["lines"]), len(story["scenes"])))
     for n, (scene, line) in enumerate(zip(story["scenes"], voice["lines"]), 1):
-        scene["seconds"] = max(4, math.ceil(LEAD + duration(clip(n)) + BREATH))
-        scene["voice"] = re.sub(r"\[[^\]]+\]\s*", "", line)   # the narration script shows words, not delivery cues
+        scene["seconds"] = max(4, math.ceil(lead + duration(clip(n)) + breath))
+        scene["voice"] = re.sub(r"\s*<[^>]+>\s*", " ", re.sub(r"\[[^\]]+\]\s*", "", line)).strip()   # words, not delivery cues or pauses
     (HERE / "story.json").write_text(json.dumps(story, indent=1, ensure_ascii=False) + "\n")
     total = sum(s["seconds"] for s in story["scenes"])
     print("{} scenes, {}:{:02d}".format(len(story["scenes"]), total // 60, total % 60))
 
 
 def mix(voice):
+    lead, _ = gaps(voice)
     story = json.loads((HERE / "story.json").read_text())
     scenes, inputs, parts = story["scenes"], [], []
     for n, scene in enumerate(scenes, 1):
         inputs += ["-i", str(clip(n))]
         parts.append("[{}:a]aresample=44100,aformat=channel_layouts=mono,adelay={}:all=1,apad=whole_dur={},atrim=0:{}[a{}]".format(
-            n - 1, int(LEAD * 1000), scene["seconds"], scene["seconds"], n))
+            n - 1, int(lead * 1000), scene["seconds"], scene["seconds"], n))
     total = sum(s["seconds"] for s in scenes)
     # loudnorm works at 192 kHz; players and YouTube expect 48 kHz stereo, so the track ends as that.
     graph = ";".join(parts) + ";" + "".join("[a{}]".format(n) for n in range(1, len(scenes) + 1)) + \
@@ -96,8 +106,16 @@ def mix(voice):
     print("{}  {}:{:02d}  {:.1f} MB".format(out.name, int(duration(out)) // 60, int(duration(out)) % 60, out.stat().st_size / 1e6))
 
 
+def review(voice):
+    """Words a minute for each clip, pauses included: relaxed narration sits near 150, and above 170 sounds rushed."""
+    for n, line in enumerate(voice["lines"], 1):
+        words = len(re.sub(r"<[^>]+>|\[[^\]]+\]", " ", line).split())
+        rate = words / duration(clip(n)) * 60
+        print("line {:2d}: {:4.0f} wpm{}".format(n, rate, "   <-- rushed" if rate > 170 else ""))
+
+
 if __name__ == "__main__":
-    commands = {"speak": speak, "fit": fit, "mix": mix}
+    commands = {"speak": speak, "fit": fit, "mix": mix, "review": review}
     if len(sys.argv) not in (2, 3) or sys.argv[1] not in commands:
         sys.exit(__doc__)
     commands[sys.argv[1]](json.loads((HERE / "voice.json").read_text()))
