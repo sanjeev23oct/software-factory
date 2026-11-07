@@ -21,7 +21,8 @@
     "build-ui-view",
     "build-ui-page",
     "build-tests",
-    "check-tasks"
+    "check-tasks",
+    "check-visual"
   ],
   "stages": [
     {
@@ -40,6 +41,20 @@
       ],
       "produces": [
         "{spec}/requirements.md"
+      ]
+    },
+    {
+      "id": "visual-spec",
+      "by": "agent",
+      "skill": "write-visual-spec",
+      "agent": "spec",
+      "when_file": "{checkout}/{spec}/reference",
+      "writes": [
+        "{spec}/visual-spec.md",
+        "{spec}/reference/"
+      ],
+      "produces": [
+        "{spec}/visual-spec.md"
       ]
     },
     {
@@ -109,6 +124,22 @@
       ]
     },
     {
+      "id": "visual-verify",
+      "by": "script",
+      "skill": "visual-verify",
+      "on_fail": "build",
+      "commits": true,
+      "error_code": 2,
+      "run": [
+        "python3",
+        "{scripts}/visual_checks.py",
+        "--spec",
+        "{checkout}/{spec}",
+        "--repo",
+        "{checkout}"
+      ]
+    },
+    {
       "id": "preview",
       "by": "script",
       "skill": "publish-preview",
@@ -123,7 +154,8 @@
     },
     {
       "id": "approve-screens",
-      "by": "human"
+      "by": "human",
+      "baselines": true
     },
     {
       "id": "merge-request",

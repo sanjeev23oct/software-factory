@@ -63,6 +63,16 @@ For backend work: data or schema, then data access, then validation and endpoint
 
 Tests are always the last section and use the tests skill.
 
+## When there are reference screens
+
+When `<spec folder>/reference/` holds a contract (`<screen>.json`), the section that finishes that screen (usually **Page**) adds a fourth line to its gate:
+
+```
+> **CHECKER (Cat 4):** visual check of `reference/customers.json` with `/check-visual`; EXPECTED: the verifier passes and no blocking findings.
+```
+
+The tasks that build the screen use the region `data-testid`s the contract names, and say so in their sub-items.
+
 ## Rules
 
 - Every task (a checkbox numbered `N.M`) names a skill that exists on this pipeline.

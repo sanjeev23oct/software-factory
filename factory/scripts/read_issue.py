@@ -7,6 +7,10 @@
     read_issue.py --source file --ref requirement.md --out issue_context.md
     read_issue.py --source github --repo owner/name --list --label factory [--assignee username]
     read_issue.py --source gitlab --project group/repo --ref 12 --notes    the comments, as JSON
+    read_issue.py --source gitlab --project group/repo --ref 12 --out issue_context.md --images DIR
+
+--images saves the PNG and JPEG screenshots attached to a GitLab issue's description into DIR:
+the reference screens a visual check compares the built ones with.
 
 GitLab uses FACTORY_GITLAB_TOKEN when it is set, and the `glab` login otherwise.
 GitHub uses FACTORY_GITHUB_TOKEN when it is set, and the `gh` login otherwise.
@@ -20,6 +24,7 @@ import argparse
 import base64
 import json
 import os
+import re
 import subprocess
 import sys
 import urllib.error
@@ -46,6 +51,51 @@ def http(url, headers):
             return json.loads(response.read())
     except urllib.error.HTTPError as e:
         sys.exit("read_issue: {} said {}: {}".format(url.split("?")[0], e.code, e.read().decode()[:300]))
+
+
+def http_bytes(url, headers):
+    request = urllib.request.Request(url, headers=headers)
+    try:
+        with urllib.request.urlopen(request, timeout=60) as response:
+            return response.read()
+    except urllib.error.HTTPError as e:
+        sys.exit("read_issue: {} said {}".format(url.split("?")[0], e.code))
+
+
+# An image attached to a GitLab issue: ![name](/uploads/<secret>/<file>.png)
+ATTACHED = re.compile(r"!\[[^\]]*\]\((/uploads/([0-9a-f]{16,})/([^)\s]+\.(?:png|jpe?g)))\)", re.I)
+
+
+def attached_images(body):
+    """[(secret, filename)] for each image attached to the description, in order, once each."""
+    seen, out = set(), []
+    for _, secret, name in ATTACHED.findall(body or ""):
+        if (secret, name) not in seen:
+            seen.add((secret, name))
+            out.append((secret, name))
+    return out
+
+
+def save_images(args, body, folder):
+    """Download the description's attached screenshots into folder. Returns the saved paths."""
+    images = attached_images(body)
+    if not images:
+        return []
+    token_env = args.token_env or "FACTORY_GITLAB_TOKEN"
+    if not os.environ.get(token_env):
+        print("read_issue: {} attached image(s) not saved: set {}".format(len(images), token_env), file=sys.stderr)
+        return []
+    os.makedirs(folder, exist_ok=True)
+    saved = []
+    for secret, name in images:
+        url = "https://{}/api/v4/projects/{}/uploads/{}/{}".format(args.host or "gitlab.com", quote(args.project, safe=""),
+                                                                   secret, quote(name))
+        stem = re.sub(r"[^a-z0-9]+", "-", os.path.splitext(os.path.basename(name))[0].lower()).strip("-") or "screen"
+        path = os.path.join(folder, stem + os.path.splitext(name)[1].lower())
+        with open(path, "wb") as f:
+            f.write(http_bytes(url, {"PRIVATE-TOKEN": os.environ[token_env]}))
+        saved.append(path)
+    return saved
 
 
 def github(path):
@@ -128,6 +178,7 @@ def main():
     p.add_argument("--notes", action="store_true", help="print the comments as JSON: [{who, when, text}]")
     p.add_argument("--label", default="factory")
     p.add_argument("--assignee", help="when listing, only issues assigned to this username")
+    p.add_argument("--images", help="save the description's attached screenshots into this folder (GitLab)")
     args = p.parse_args()
 
     if args.list:
@@ -149,6 +200,11 @@ def main():
              "- Labels: {}".format(", ".join(labels) or "none"), "", body or "(no description)"]
     for who, when, text in notes:
         lines += ["", "---", "**{}** · {}".format(who, when), "", text]
+    if args.images and args.source == "gitlab":
+        saved = save_images(args, body, args.images)
+        if saved:
+            lines += ["", "---", "Reference screens saved for the visual check: " + ", ".join(
+                "`{}`".format(os.path.basename(path)) for path in saved)]
     with open(args.out, "w") as f:
         f.write("\n".join(lines) + "\n")
     print(title)

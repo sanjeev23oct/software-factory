@@ -15,6 +15,7 @@ The prompt names one section of `<spec folder>/tasks.md`.
 3. **Cat 1, matches the spec.** Run every command for this section in `<spec folder>/loop/*-checker.md` and compare each result with its `# EXPECTED` value. Then check each task's sub-items against the code by reading it.
 4. **Cat 3, it works.** Run the command the section's gate names (usually the tests) and read the result.
 5. Check that each task was built the way its named skill says, and that nothing was changed that no task asked for.
+6. **Cat 4, it looks like the reference.** When the gate asks for a visual check of a screen, follow the `check-visual` skill (next to this one) for that screen. Its result counts like any other check.
 
 ## Write the evidence (Cat 2)
 

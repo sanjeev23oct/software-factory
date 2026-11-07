@@ -15,7 +15,8 @@
     "build-ui-view",
     "build-ui-page",
     "build-tests",
-    "check-tasks"
+    "check-tasks",
+    "check-visual"
   ],
   "stages": [
     {
@@ -45,13 +46,14 @@
       "by": "agent",
       "skill": "write-visual-spec",
       "agent": "spec",
-      "optional": true,
       "writes": [
-        "{spec}/visual-spec.md"
+        "{spec}/visual-spec.md",
+        "{spec}/reference/"
       ],
       "produces": [
         "{spec}/visual-spec.md"
-      ]
+      ],
+      "optional": true
     },
     {
       "id": "tasks",
@@ -116,8 +118,25 @@
       ]
     },
     {
+      "id": "visual-verify",
+      "by": "script",
+      "skill": "visual-verify",
+      "on_fail": "build",
+      "commits": true,
+      "error_code": 2,
+      "run": [
+        "python3",
+        "{scripts}/visual_checks.py",
+        "--spec",
+        "{checkout}/{spec}",
+        "--repo",
+        "{checkout}"
+      ]
+    },
+    {
       "id": "approve-screens",
-      "by": "human"
+      "by": "human",
+      "baselines": true
     },
     {
       "id": "pull-request",

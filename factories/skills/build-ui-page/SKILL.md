@@ -9,4 +9,6 @@ Build exactly the one task you were given, as its lines in `tasks.md` and the de
 
 Wiring connects logic and view to the page: the element in the page, the event listener, the state, the styles, and sample data that shows every state. Give every control a label a screen reader can read. Define colours as variables. Keep the page working with the keyboard alone.
 
+When `<spec folder>/reference/` has a screenshot for this screen, open it and its contract (`<screen>.json`) first. Match its layout, spacing, type and colour, and give each region the `data-testid` or id the contract names: a checker measures the built screen against it.
+
 You are the maker. Do not tick the task, do not run the section's gate, and do not write evidence. Report what you built and anything the spec left undefined.

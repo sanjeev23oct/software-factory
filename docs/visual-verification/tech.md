@@ -160,10 +160,13 @@ as with the other loops.
 
 1. `visual_verify.mjs` and the mutation suite, proven on the demo CRM screen. **Done:** 6 of 6
    planted defects caught, 0 of 3 false alarms, identical reports on repeat runs.
-2. `read-issue` and `visual-spec` changes: references and region files.
-3. The `check-visual` skill in the build stage's checker.
-4. The gate comment and baselines.
-5. The `verifier miss` events.
+2. `read-issue` and `visual-spec` changes: references and region files. **Done:** `read_issue.py --images`,
+   the intake commits them, `write-visual-spec` writes the contract.
+3. The `check-visual` skill in the build stage's checker. **Done:** `write-tasks` adds a Cat 4 visual gate;
+   `check-tasks` hands it to `check-visual`.
+4. The gate comment and baselines. **Done:** `visual_checks.py` is the `visual-verify` stage; the screens
+   gate embeds `compare.png`; approving writes `baselines/`.
+5. The `verifier miss` events. **Done:** a reply at the screens gate that is not `approve` is logged once.
 
 Each step is useful on its own and lands with its tests.
 
