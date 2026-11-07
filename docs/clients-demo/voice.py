@@ -72,13 +72,18 @@ def gaps(voice):
     return voice.get("lead", LEAD), voice.get("breath", BREATH)
 
 
+def spoken(voice, n):
+    """How long line n takes once played at the narration's tempo (1.25 = a quarter faster, same pitch)."""
+    return duration(clip(n)) / voice.get("tempo", 1.0)
+
+
 def fit(voice):
     lead, breath = gaps(voice)
     story = json.loads((HERE / "story.json").read_text())
     if len(story["scenes"]) != len(voice["lines"]):
         sys.exit("voice.json has {} lines for {} scenes".format(len(voice["lines"]), len(story["scenes"])))
     for n, (scene, line) in enumerate(zip(story["scenes"], voice["lines"]), 1):
-        scene["seconds"] = max(4, math.ceil(lead + duration(clip(n)) + breath))
+        scene["seconds"] = max(4, math.ceil(lead + spoken(voice, n) + breath))
         scene["voice"] = re.sub(r"\s*<[^>]+>\s*", " ", re.sub(r"\[[^\]]+\]\s*", "", line)).strip()   # words, not delivery cues or pauses
     (HERE / "story.json").write_text(json.dumps(story, indent=1, ensure_ascii=False) + "\n")
     total = sum(s["seconds"] for s in story["scenes"])
@@ -91,8 +96,8 @@ def mix(voice):
     scenes, inputs, parts = story["scenes"], [], []
     for n, scene in enumerate(scenes, 1):
         inputs += ["-i", str(clip(n))]
-        parts.append("[{}:a]aresample=44100,aformat=channel_layouts=mono,adelay={}:all=1,apad=whole_dur={},atrim=0:{}[a{}]".format(
-            n - 1, int(lead * 1000), scene["seconds"], scene["seconds"], n))
+        parts.append("[{}:a]aresample=44100,aformat=channel_layouts=mono,atempo={},adelay={}:all=1,apad=whole_dur={},atrim=0:{}[a{}]".format(
+            n - 1, voice.get("tempo", 1.0), int(lead * 1000), scene["seconds"], scene["seconds"], n))
     total = sum(s["seconds"] for s in scenes)
     # loudnorm works at 192 kHz; players and YouTube expect 48 kHz stereo, so the track ends as that.
     graph = ";".join(parts) + ";" + "".join("[a{}]".format(n) for n in range(1, len(scenes) + 1)) + \
@@ -110,7 +115,7 @@ def review(voice):
     """Words a minute for each clip, pauses included: relaxed narration sits near 150, and above 170 sounds rushed."""
     for n, line in enumerate(voice["lines"], 1):
         words = len(re.sub(r"<[^>]+>|\[[^\]]+\]", " ", line).split())
-        rate = words / duration(clip(n)) * 60
+        rate = words / spoken(voice, n) * 60
         print("line {:2d}: {:4.0f} wpm{}".format(n, rate, "   <-- rushed" if rate > 170 else ""))
 
 
