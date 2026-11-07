@@ -1,0 +1,8 @@
+[
+  { "name": "Maria Lopez", "company": "Brightside Bakery", "stage": "Lead", "value": 4500 },
+  { "name": "James Carter", "company": "Northwind Logistics", "stage": "Qualified", "value": 12500 },
+  { "name": "Priya Nair", "company": "Greenleaf Studio", "stage": "Proposal", "value": 1250.5 },
+  { "name": "Tom Becker", "company": "<b>Acme</b> & Sons", "stage": "Negotiation", "value": 30000 },
+  { "name": "Aisha Khan", "company": "Harbor & Vine Hospitality and Event Management International Group", "stage": "Won", "value": 18000 },
+  { "name": "Lucas Meyer", "company": "Meyer Plumbing", "stage": "Lost", "value": 2200 }
+]

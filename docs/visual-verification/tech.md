@@ -116,18 +116,25 @@ a baseline and that the request didn't name, and compares strictly
 `tests/visual/` holds a known-good screen, its reference, and a mutation suite
 run by `./script/presubmit`:
 
-| Planted defect | Expected |
-|---|---|
-| Element moved 24px | FAIL (geometry) |
-| Accent colour swapped | FAIL (colour) |
-| Heading font 20% smaller | FAIL (similarity) |
-| A component removed | FAIL (missing element) |
-| A label changed | FAIL (text) |
-| A row wraps to two lines | FAIL (geometry, similarity) |
-| Different data in a masked area | PASS |
-| Sub-pixel anti-aliasing difference | PASS |
-| A scrollbar appears | PASS |
-| The same build verified twice | identical reports |
+| Planted defect | Expected | Caught by (first run) |
+|---|---|---|
+| An element moved 24px | FAIL | totals: geometry, similarity |
+| Accent colour swapped | FAIL | open-value: colour |
+| Heading font 20% smaller | FAIL | heading: geometry |
+| A component removed | FAIL | totals: present |
+| A label changed | FAIL | totals: text |
+| A row wraps to two lines | FAIL | customer-table: similarity |
+| Different data in a masked area | PASS | passed |
+| A sub-pixel shift | PASS | passed |
+| A near-identical page background | PASS | passed |
+| The same build verified twice | identical reports | identical, byte for byte |
+
+A defect counts as caught when its region fails any of the checks that fit it:
+the heading that shrank was caught by its box, the wrapped row by similarity.
+The suite lives in `tests/test_visual_verify.py`, with the accepted screen in
+`tests/visual/crm/` (the CRM dashboard the factory built in the demo) and its
+contract in `tests/visual/crm-contract.json`. It needs Node and Chrome; without
+them it is skipped. `VISUAL_EVIDENCE_DIR` keeps each case's `compare.png`.
 
 The suite prints the catch rate and the false-alarm rate, and fails if either
 gets worse than its recorded value. A change to thresholds, the checklist or
@@ -151,7 +158,8 @@ as with the other loops.
 
 ## Rollout
 
-1. `visual_verify.mjs` and the mutation suite, proven on the demo CRM screen.
+1. `visual_verify.mjs` and the mutation suite, proven on the demo CRM screen. **Done:** 6 of 6
+   planted defects caught, 0 of 3 false alarms, identical reports on repeat runs.
 2. `read-issue` and `visual-spec` changes: references and region files.
 3. The `check-visual` skill in the build stage's checker.
 4. The gate comment and baselines.

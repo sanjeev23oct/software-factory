@@ -1,0 +1,67 @@
+{
+  "name": "customers",
+  "reference": "reference/customers.png",
+  "url": "index.html",
+  "viewport": [
+    1280,
+    800
+  ],
+  "regions": [
+    {
+      "name": "heading",
+      "selector": "h1",
+      "text": [
+        "Customers"
+      ],
+      "color": "#172033",
+      "box": [
+        160,
+        40,
+        960,
+        42
+      ]
+    },
+    {
+      "name": "totals",
+      "selector": "#totals",
+      "text": [
+        "Customers",
+        "Open deal value",
+        "Deals won"
+      ],
+      "box": [
+        160,
+        96,
+        960,
+        101
+      ]
+    },
+    {
+      "name": "open-value",
+      "testid": "total-open-value",
+      "color": "#1f5fd0",
+      "box": [
+        505.7,
+        138,
+        268.7,
+        42
+      ]
+    },
+    {
+      "name": "customer-table",
+      "selector": "#customers",
+      "text": [
+        "Customer",
+        "Company",
+        "Deal stage",
+        "Deal value"
+      ],
+      "box": [
+        160,
+        211,
+        960,
+        313
+      ]
+    }
+  ]
+}

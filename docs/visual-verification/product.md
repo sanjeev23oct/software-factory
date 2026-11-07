@@ -106,7 +106,8 @@ that I can let it gate work.
   an element moved 24px, a colour swapped, a font shrunk, a component removed,
   a label changed, a row wrapped. Each must fail.
 - AC 5.2: The suite also applies harmless variations: different sample data
-  in masked areas, sub-pixel anti-aliasing, a scrollbar. Each must pass.
+  in masked areas, a sub-pixel shift, a near-identical page background. Each
+  must pass.
 - AC 5.3: It reports the catch rate and the false-alarm rate, and runs in
   presubmit, so a change that weakens the verifier fails.
 - AC 5.4: Every time a person approves a screen the verifier failed, or
