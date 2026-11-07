@@ -113,6 +113,18 @@ class VisualFlowTest(unittest.TestCase):
         self.assertIn("specs/3-dashboard/evidence/visual/x/report.json", git(wt, "show", "--stat", "--name-only", "HEAD"))
         self.assertEqual("", git(wt, "status", "--porcelain"))
 
+    def test_commit_paths_keeps_a_reference_whatever_the_spec_folder_is_called(self):
+        # git's exclusion pathspecs (":!issue_context.md") made `git add` stage nothing for some folder names,
+        # such as specs/2-build-..., so the intake's screenshot was never committed and the next stage tripped on it.
+        wt = flow.checkout(self.item)
+        (wt / "issue_context.md").write_text("the requirement\n")
+        for spec in ("specs/2-build-this-customer-dashboard", "specs/2-x"):
+            (wt / spec / "reference").mkdir(parents=True)
+            (wt / spec / "reference" / "customers.png").write_bytes(b"\x89PNG reference")
+            flow.commit_paths(wt, [spec + "/reference"], "reference: " + spec)
+            self.assertIn(spec + "/reference/customers.png", git(wt, "show", "--name-only", "HEAD"))
+        self.assertEqual("?? issue_context.md", git(wt, "status", "--porcelain"))
+
     def test_a_check_that_could_not_run_stops_for_a_person(self):
         with patch.object(flow, "run_script", return_value=(None, "visual-verify: could not check: no Chrome")):
             flow.step(self.item)

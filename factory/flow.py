@@ -288,7 +288,10 @@ def commit_paths(wt, paths, message):
     present = [p for p in paths if (wt / p).exists()]
     if not present:
         return
-    core.sh(["git", "add", "-A", "--"] + present + [":!" + name for name in SCRATCH], cwd=wt)
+    # Stage, then unstage the scratch files. Exclusion pathspecs (":!name") make `git add` stage nothing for
+    # some paths, such as specs/2-build-..., which once lost a reference screenshot.
+    core.sh(["git", "add", "-A", "--"] + present, cwd=wt)
+    core.sh(["git", "reset", "-q", "--"] + SCRATCH, cwd=wt, check=False)
     if core.sh(["git", "diff", "--cached", "--quiet"], cwd=wt, check=False).returncode:
         core.sh(["git", "commit", "-q", "-m", message], cwd=wt)
 
