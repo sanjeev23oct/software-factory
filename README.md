@@ -160,6 +160,9 @@ nothing is added to that repository except `factory/*` branches. Target
 folders describe private repositories, so they are git-ignored and are not
 part of this repository.
 
+**Bringing the factory to your own repository**, new or existing, step by
+step, and reusing its `CLAUDE.md` and skills: [docs/new-project.md](docs/new-project.md).
+
     python3 factory/factory.py targets
 
 A target may also define its own factory in `targets/<name>/factory.json`:

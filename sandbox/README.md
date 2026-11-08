@@ -24,6 +24,9 @@ request. It refreshes every minute. Approving stays on the issue.
 A typical change takes 20 to 40 minutes of factory time, plus however long the
 gates wait for a person.
 
+To bring the factory to your own codebase, with its own stack, see
+[docs/new-project.md](../docs/new-project.md) instead.
+
 ## What is in this folder
 
 | Path | What it is |
