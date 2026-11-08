@@ -21,6 +21,7 @@ The scenes are listed in story.json. Kinds of scene:
   terminal  terminal output, with chosen lines highlighted
   flow      a pipeline as a row of stages; `stages` is a list of [label, "agent" or "person"]
   stats     a few big numbers; `numbers` is a list of [number, what it counts]
+  presenter who is speaking: `name`, `role`, and a `line` under them
   compare   a table; `columns` names them (the last is highlighted), `rows` is a list of [label, cell, cell, ...]
 
 A story may borrow another video's screenshots with "shots": "../other-folder/shots".
@@ -137,6 +138,10 @@ html, body { margin: 0; width: 1280px; height: 720px; overflow: hidden; backgrou
 .cmp td:first-child { color: var(--muted); font-weight: 600; width: 170px; }
 .cmp td.hot, .cmp th.hot { background: rgba(255,161,84,.09); }
 .cmp td.hot b { color: var(--r4); font-weight: 600; }
+/* presenter: who is speaking */
+.page.presenter h1 { font-size: 120px; }
+.page.presenter .role { font: 700 46px "Barlow Condensed", Arial, sans-serif; letter-spacing: .06em; text-transform: uppercase; color: var(--r4); }
+.page.presenter p { font-size: 28px; }
 """
 FONTS = ('<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700'
          '&family=Barlow+Condensed:wght@600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">')
@@ -271,6 +276,9 @@ def body_of(scene):
         key = scene.get("key", "<span><b>You</b>: two moments to say yes</span><span>Agent: everything else, checked</span>")
         return ('<div class="page wide"><div class="kicker">{}</div><h1>{}</h1><div class="flow">{}</div>'
                 '<div class="flow-key">{}</div></div>').format(e(scene["kicker"]), e(scene["title"]), "".join(cells), key)
+    if kind == "presenter":
+        return ('<div class="page presenter">{}<div class="kicker">{}</div><h1>{}</h1><div class="role">{}</div><p>{}</p></div>').format(
+            BARS, e(scene.get("kicker", "Hi, I'm")), e(scene["name"]), e(scene["role"]), e(scene.get("line", "")))
     if kind == "compare":
         head = "".join('<th class="{}">{}</th>'.format("hot" if n == len(scene["columns"]) - 1 else "", e(c))
                        for n, c in enumerate(scene["columns"]))
@@ -403,6 +411,7 @@ def page(story):
     facts = "".join("<div><b>{}</b><span>{}</span></div>".format(e(str(v)), e(k)) for k, v in story["facts"])
     links = "".join('<li><a href="{}">{}</a></li>'.format(e(u), e(t)) for t, u in story["links"])
     first = story["scenes"][0]
+    titled = next(s for s in story["scenes"] if s.get("kicker"))   # a presenter card may come first, without a kicker
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">'
             "<title>{name}</title>{}<style>{}</style></head><body><div class=\"wrap\">"
             "<header><span class=\"part\">{}</span><h1>{name}</h1><p>{}</p>"
@@ -410,7 +419,7 @@ def page(story):
             '<div class="facts">{}</div>{}'
             "<section><h2>See it for yourself</h2><ul>{}</ul></section>"
             "<footer>Frames and video are built by docs/demo/build.py from the captured output of a real run. Nothing is mocked.</footer>"
-            "</div></body></html>\n").format(FONTS, PAGE_CSS, e(first["kicker"]), e(story["intro"]), first["frame"], facts, "".join(out), links,
+            "</div></body></html>\n").format(FONTS, PAGE_CSS, e(titled["kicker"]), e(story["intro"]), first["frame"], facts, "".join(out), links,
                                     name=e(NAME), video=e(VIDEO))
 
 

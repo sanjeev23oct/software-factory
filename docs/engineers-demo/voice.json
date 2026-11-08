@@ -3,6 +3,8 @@
  "voice_id": "5tFicko4efMCqCs0KAsn",
  "model_id": "eleven_flash_v2_5",
  "lines": [
+  "Hi, I'm Sanjeev. <break time=\"0.4s\" /> For the last few weeks, I've been building a software factory on top of Claude Code... <break time=\"0.3s\" /> and running real requests through it.",
+  "In this video, I'll show you how it works. <break time=\"0.4s\" /> Where it came from, <break time=\"0.2s\" /> what makes it different from just using agents, <break time=\"0.2s\" /> what's under the hood... <break time=\"0.3s\" /> and one real request, from the issue, all the way to a merge request. <break time=\"0.5s\" /> If you already use Claude Code, this is the next step.",
   "So... <break time=\"0.5s\" /> you already use Claude Code. <break time=\"0.5s\" /> Now imagine you stop driving every session yourself, and instead, you build a factory that does it for you. <break time=\"0.4s\" /> Let me show you what that actually looks like.",
   "If you look at how AI coding has evolved, it's happened in three steps. <break time=\"0.4s\" /> It started on your laptop. You prompt, Claude edits, and you check every single change. <break time=\"0.4s\" /> Then came remote agents. You can open the Claude app on your phone, type a prompt, and it builds in the cloud. <break time=\"0.4s\" /> And in parallel, something different showed up. Factories. <break time=\"0.3s\" /> And factories aren't really about where the agent runs... they're about how the work is organised.",
   "Put them side by side, and here's the thing. <break time=\"0.3s\" /> Local and remote agents mostly differ in where they run. <break time=\"0.3s\" /> A factory changes something more important. Who decides what gets built. Who checks it. And what gets recorded. <break time=\"0.4s\" /> You approve the requirements before anything is built, a separate agent checks the work, and every check leaves evidence behind.",
@@ -41,20 +43,20 @@
  "lead": 0.45,
  "breath": 0.6,
  "speeds": {
-  "1": 0.72,
-  "9": 0.72,
-  "10": 0.72,
+  "3": 0.72,
   "11": 0.72,
   "12": 0.72,
   "13": 0.72,
-  "16": 0.72,
-  "19": 0.72,
-  "20": 0.72,
-  "21": 0.7,
-  "27": 0.72,
-  "17": 0.75,
-  "23": 0.75,
-  "26": 0.75
+  "14": 0.72,
+  "15": 0.72,
+  "18": 0.72,
+  "19": 0.75,
+  "21": 0.72,
+  "22": 0.72,
+  "23": 0.7,
+  "25": 0.75,
+  "28": 0.75,
+  "29": 0.72
  },
  "tempo": 1.25
 }

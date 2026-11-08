@@ -45,10 +45,10 @@ scripts and laid out by `python3 docs/demo/build.py docs/clients-demo`;
 
 Two videos for engineers who already use Claude Code, in Sanjeev's voice:
 
-- [engineers-demo-voiced.mp4](docs/engineers-demo/engineers-demo-voiced.mp4) (6 min): local, then remote,
+- [engineers-demo-voiced.mp4](docs/engineers-demo/engineers-demo-voiced.mp4) (6½ min): local, then remote,
   then factories; the definition; autonomy and verification; the inner, outer and meta loops; and one
   real request traced through the eleven-stage pipeline.
-- [visual-demo-voiced.mp4](docs/visual-demo/visual-demo-voiced.mp4) (5 min): visual verification. A
+- [visual-demo-voiced.mp4](docs/visual-demo/visual-demo-voiced.mp4) (6½ min): visual verification. It opens on the problem (a screenshot, and what the AI called done), then a
   screenshot on an issue becomes a contract, the checker measures and judges the built screen, the
   verifier is proven with planted defects (6 of 6 caught, 0 false alarms), and a real request goes end
   to end, failing twice before it passes. The design is in

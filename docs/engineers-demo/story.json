@@ -34,6 +34,45 @@
  ],
  "scenes": [
   {
+   "kind": "presenter",
+   "name": "Sanjeev Gulati",
+   "role": "AI Coding Expert",
+   "line": "Building software factories on Claude Code",
+   "say": "Sanjeev Gulati · AI Coding Expert",
+   "seconds": 9,
+   "voice": "Hi, I'm Sanjeev. For the last few weeks, I've been building a software factory on top of Claude Code... and running real requests through it."
+  },
+  {
+   "kind": "chapter",
+   "kicker": "In this video",
+   "title": "From agents to a factory",
+   "one_column": true,
+   "points": [
+    [
+     "Three ways",
+     "Local, remote, and factories: what actually changes.",
+     "var(--r2)"
+    ],
+    [
+     "The idea",
+     "Autonomy, verification, and the three loops.",
+     "var(--r1)"
+    ],
+    [
+     "Under the hood",
+     "The pipeline, the skills, the checker's gates.",
+     "var(--r4)"
+    ],
+    [
+     "A real request",
+     "From an issue to a merge request.",
+     "var(--r3)"
+    ]
+   ],
+   "seconds": 16,
+   "voice": "In this video, I'll show you how it works. Where it came from, what makes it different from just using agents, what's under the hood... and one real request, from the issue, all the way to a merge request. If you already use Claude Code, this is the next step."
+  },
+  {
    "kind": "title",
    "kicker": "For engineers who already use Claude Code",
    "title": "Inside a <em>software</em><br>factory",
