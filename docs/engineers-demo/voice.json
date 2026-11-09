@@ -34,7 +34,7 @@
   "Want to try it yourself? <break time=\"0.5s\" /> There's a playground. <break time=\"0.3s\" /> Your own GitLab project, with nothing to install. <break time=\"0.4s\" /> File an issue, and watch it go through. <break time=\"0.5s\" /> The code is open source, <break time=\"0.2s\" /> and there's a longer write up on Medium."
  ],
  "settings": {
-  "stability": 0.5,
+  "stability": 0.65,
   "similarity_boost": 0.75,
   "style": 0.0,
   "use_speaker_boost": true,
@@ -43,21 +43,23 @@
  "lead": 0.45,
  "breath": 0.6,
  "speeds": {
-  "3": 0.72,
-  "11": 0.72,
-  "12": 0.72,
-  "13": 0.72,
-  "14": 0.72,
-  "15": 0.72,
-  "18": 0.72,
+  "3": 0.75,
+  "11": 0.75,
+  "12": 0.75,
+  "13": 0.75,
+  "14": 0.75,
+  "15": 0.75,
+  "18": 0.75,
   "19": 0.75,
-  "21": 0.72,
-  "22": 0.72,
-  "23": 0.7,
+  "21": 0.75,
+  "22": 0.75,
+  "23": 0.75,
   "25": 0.75,
   "28": 0.75,
-  "29": 0.72,
-  "1": 0.72
+  "29": 0.75,
+  "1": 0.75
  },
- "tempo": 1.25
+ "tempo": 1.25,
+ "seed": 4242,
+ "stitch": true
 }
