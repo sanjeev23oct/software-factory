@@ -1,0 +1,579 @@
+1
+00:00:00,450 --> 00:00:04,628
+For the last few weeks, I've been building a software factory on top of Claude Code,
+
+2
+00:00:04,628 --> 00:00:06,469
+and running real requests through it.
+
+3
+00:00:08,450 --> 00:00:10,735
+In this video, I'll show you how it works.
+
+4
+00:00:10,735 --> 00:00:14,381
+Where it came from, what makes it different from just using agents,
+
+5
+00:00:14,381 --> 00:00:15,578
+what's under the hood…
+
+6
+00:00:15,578 --> 00:00:19,332
+and one real request, from the issue, all the way to a merge request.
+
+7
+00:00:19,332 --> 00:00:22,271
+If you already use Claude Code, this is the next step.
+
+8
+00:00:23,450 --> 00:00:23,617
+So…
+
+9
+00:00:23,617 --> 00:00:25,181
+you already use Claude Code.
+
+10
+00:00:25,181 --> 00:00:28,810
+Now imagine you stop driving every session yourself, and instead,
+
+11
+00:00:28,810 --> 00:00:31,099
+you build a factory that does it for you.
+
+12
+00:00:31,099 --> 00:00:33,667
+Let me show you what that actually looks like.
+
+13
+00:00:35,450 --> 00:00:37,445
+AI coding has evolved in three steps.
+
+14
+00:00:37,445 --> 00:00:40,357
+First, on your laptop, where you prompt, Claude edits,
+
+15
+00:00:40,357 --> 00:00:42,298
+and you check every change yourself.
+
+16
+00:00:42,298 --> 00:00:43,593
+Then came remote agents.
+
+17
+00:00:43,593 --> 00:00:46,612
+You type a prompt in the Claude app, even on your phone,
+
+18
+00:00:46,612 --> 00:00:48,446
+and the work happens in the cloud.
+
+19
+00:00:48,446 --> 00:00:51,681
+And alongside them, something different appeared: factories.
+
+20
+00:00:51,681 --> 00:00:54,000
+A factory isn't about where the agent runs.
+
+21
+00:00:54,000 --> 00:00:55,995
+It's about how the work is organised.
+
+22
+00:00:57,450 --> 00:00:58,706
+Put them side by side.
+
+23
+00:00:58,706 --> 00:01:01,902
+Local and remote agents differ mostly in where they run.
+
+24
+00:01:01,902 --> 00:01:05,384
+A factory changes who decides what gets built, who checks it,
+
+25
+00:01:05,384 --> 00:01:06,697
+and what gets recorded.
+
+26
+00:01:06,697 --> 00:01:09,779
+You approve the requirements before anything is built,
+
+27
+00:01:09,779 --> 00:01:13,945
+a separate agent checks the work, and every check leaves evidence behind.
+
+28
+00:01:15,450 --> 00:01:18,669
+The definition I like best comes from Dru Knox, at Tessl.
+
+29
+00:01:18,669 --> 00:01:23,130
+A software factory is any agentic system where agents write all of the code you
+
+30
+00:01:23,130 --> 00:01:23,412
+ship.
+
+31
+00:01:23,412 --> 00:01:25,050
+Which means your job changes.
+
+32
+00:01:25,050 --> 00:01:26,744
+You stop building the product…
+
+33
+00:01:26,744 --> 00:01:29,568
+and you start building the machine that builds it.
+
+34
+00:01:31,450 --> 00:01:33,986
+So how do you know if your factory is any good?
+
+35
+00:01:33,986 --> 00:01:36,576
+Knox uses three measures, and the order matters.
+
+36
+00:01:36,576 --> 00:01:37,440
+First, autonomy.
+
+37
+00:01:37,440 --> 00:01:40,731
+How often does a person have to step in and nudge the agents?
+
+38
+00:01:40,731 --> 00:01:41,595
+Then automation.
+
+39
+00:01:41,595 --> 00:01:44,455
+How much can you let run without anyone reviewing it?
+
+40
+00:01:44,455 --> 00:01:45,372
+And then quality.
+
+41
+00:01:45,372 --> 00:01:47,908
+You earn automation, by proving autonomy first.
+
+42
+00:01:49,450 --> 00:01:50,898
+And what makes autonomy safe?
+
+43
+00:01:50,898 --> 00:01:51,548
+Verification.
+
+44
+00:01:51,548 --> 00:01:55,044
+You can only stop reading every line if something else is checking it.
+
+45
+00:01:55,044 --> 00:01:55,593
+Every time.
+
+46
+00:01:55,593 --> 00:01:57,891
+And leaving a record you can actually inspect.
+
+47
+00:01:57,891 --> 00:02:01,487
+Without that, honestly, a factory is just a faster way to ship mistakes.
+
+48
+00:02:03,450 --> 00:02:05,326
+Now, a factory runs in three loops.
+
+49
+00:02:05,326 --> 00:02:09,292
+The inner loop is where agents iterate before anything goes up for review.
+
+50
+00:02:09,292 --> 00:02:10,686
+It's fast, and it's cheap.
+
+51
+00:02:10,686 --> 00:02:13,258
+The outer loop is the slower, thorough checking,
+
+52
+00:02:13,258 --> 00:02:15,402
+the kind that replaces your review time.
+
+53
+00:02:15,402 --> 00:02:17,064
+And then there's the meta loop.
+
+54
+00:02:17,064 --> 00:02:19,744
+That one watches the corrections and the failures…
+
+55
+00:02:19,744 --> 00:02:23,549
+and fixes the factory itself, so the same mistake doesn't happen twice.
+
+56
+00:02:25,450 --> 00:02:25,739
+Okay.
+
+57
+00:02:25,739 --> 00:02:28,631
+Here's the factory I built, on top of Claude Code.
+
+58
+00:02:28,631 --> 00:02:29,845
+It has eleven stages.
+
+59
+00:02:29,845 --> 00:02:32,968
+Agents write the requirements, the plan, and the code.
+
+60
+00:02:32,968 --> 00:02:36,148
+Scripts do everything that can be checked mechanically.
+
+61
+00:02:36,148 --> 00:02:38,230
+And a person steps in exactly twice.
+
+62
+00:02:39,450 --> 00:02:40,677
+And here's the thing.
+
+63
+00:02:40,677 --> 00:02:42,547
+The whole pipeline is just data.
+
+64
+00:02:42,547 --> 00:02:46,403
+Each stage says who does the work, an agent, a script, or a human,
+
+65
+00:02:46,403 --> 00:02:49,616
+which skill it follows, and what it's allowed to write.
+
+66
+00:02:49,616 --> 00:02:53,531
+If a stage fails three times, the factory stops, and asks a person.
+
+67
+00:02:55,450 --> 00:02:57,584
+Every kind of job has a skill.
+
+68
+00:02:57,584 --> 00:03:00,358
+It's just a short, written instruction.
+
+69
+00:03:00,358 --> 00:03:02,065
+This one's for UI logic.
+
+70
+00:03:02,065 --> 00:03:04,412
+Pure functions, no DOM, no clock.
+
+71
+00:03:04,412 --> 00:03:06,261
+And look at the last line.
+
+72
+00:03:06,261 --> 00:03:11,240
+The maker never ticks its own task, and never writes its own evidence.
+
+73
+00:03:12,450 --> 00:03:12,908
+Alright.
+
+74
+00:03:12,908 --> 00:03:15,942
+Let's watch one real request, go all the way through.
+
+75
+00:03:17,450 --> 00:03:21,106
+It starts as a plain GitLab issue, with the factory label on it.
+
+76
+00:03:21,106 --> 00:03:23,506
+A webhook kicks off a pass, straight away.
+
+77
+00:03:25,450 --> 00:03:28,424
+Within about a minute, the requirements are written.
+
+78
+00:03:28,424 --> 00:03:29,968
+And then the factory stops…
+
+79
+00:03:29,968 --> 00:03:31,283
+and waits for a person.
+
+80
+00:03:32,450 --> 00:03:35,373
+The requirements are user stories, with acceptance criteria.
+
+81
+00:03:35,373 --> 00:03:37,760
+Everything downstream gets checked against these,
+
+82
+00:03:37,760 --> 00:03:39,806
+so this approval actually means something.
+
+83
+00:03:41,450 --> 00:03:43,157
+Approving is one word on the issue.
+
+84
+00:03:43,157 --> 00:03:43,986
+Oh, and no slash.
+
+85
+00:03:43,986 --> 00:03:46,911
+GitLab quietly swallows a comment that's only slash approve.
+
+86
+00:03:48,450 --> 00:03:49,713
+Next, comes the plan.
+
+87
+00:03:49,713 --> 00:03:53,802
+The work is split into sections, and every section ends with a gate,
+
+88
+00:03:53,802 --> 00:03:55,546
+that the checker has to pass.
+
+89
+00:03:57,450 --> 00:03:59,594
+And these are the checker's gates.
+
+90
+00:03:59,594 --> 00:04:02,937
+They're written into the plan before any code exists.
+
+91
+00:04:02,937 --> 00:04:05,271
+Real commands, with expected results.
+
+92
+00:04:05,271 --> 00:04:09,118
+The module's exports, no DOM access, the currency formatting,
+
+93
+00:04:09,118 --> 00:04:11,010
+totals right down to the cent.
+
+94
+00:04:12,450 --> 00:04:14,368
+This is the inner loop in action.
+
+95
+00:04:14,368 --> 00:04:16,286
+A maker session builds a section.
+
+96
+00:04:16,286 --> 00:04:20,820
+Then a completely separate checker session, one that never saw the maker work,
+
+97
+00:04:20,820 --> 00:04:21,634
+runs the gate.
+
+98
+00:04:21,634 --> 00:04:23,842
+If it passes, the next section starts.
+
+99
+00:04:23,842 --> 00:04:24,540
+If it fails…
+
+100
+00:04:24,540 --> 00:04:26,865
+a fresh maker gets the written findings.
+
+101
+00:04:28,450 --> 00:04:30,578
+The checker writes down its evidence.
+
+102
+00:04:30,578 --> 00:04:33,913
+What it ran, what it expected, and what it actually found.
+
+103
+00:04:33,913 --> 00:04:34,603
+In this run…
+
+104
+00:04:34,603 --> 00:04:36,846
+four sections, four passes, first time.
+
+105
+00:04:38,450 --> 00:04:40,220
+Then, the outer loop kicks in.
+
+106
+00:04:40,220 --> 00:04:44,880
+A script re-runs the checks instead of trusting them, the full test suite runs,
+
+107
+00:04:44,880 --> 00:04:46,178
+and a preview goes up.
+
+108
+00:04:47,450 --> 00:04:52,500
+Now, the person who asked for it gets to try the real thing, right in a browser.
+
+109
+00:04:52,500 --> 00:04:53,573
+And they approve…
+
+110
+00:04:53,573 --> 00:04:53,952
+again.
+
+111
+00:04:55,450 --> 00:04:59,537
+And then a merge request opens, with the specs and every bit of evidence linked.
+
+112
+00:04:59,537 --> 00:05:01,171
+Merging is still a human's call.
+
+113
+00:05:02,450 --> 00:05:04,231
+So how does it actually run?
+
+114
+00:05:04,231 --> 00:05:07,283
+An issue or a comment in GitLab fires a webhook,
+
+115
+00:05:07,283 --> 00:05:09,763
+and that starts a pipeline on a runner.
+
+116
+00:05:09,763 --> 00:05:14,342
+Each pass pulls the factory's state from a git branch, walks the stages,
+
+117
+00:05:14,342 --> 00:05:17,140
+and runs claude dash p for every agent step.
+
+118
+00:05:17,140 --> 00:05:21,846
+Then it pushes the work, comments on the issue, and saves its state again.
+
+119
+00:05:21,846 --> 00:05:23,627
+Nothing runs on your laptop.
+
+120
+00:05:25,450 --> 00:05:26,918
+Mapped back to the loops…
+
+121
+00:05:26,918 --> 00:05:31,029
+the inner loop is maker and checker, per section, with three attempts.
+
+122
+00:05:31,029 --> 00:05:34,787
+The outer loop is scripts and tests, and then a person tries it.
+
+123
+00:05:34,787 --> 00:05:35,844
+And the meta loop?
+
+124
+00:05:35,844 --> 00:05:38,722
+Every time someone has to step in, it's recorded,
+
+125
+00:05:38,722 --> 00:05:41,071
+and the fix goes into a skill or a rule.
+
+126
+00:05:41,071 --> 00:05:41,599
+Honestly…
+
+127
+00:05:41,599 --> 00:05:43,185
+right now, that loop is me.
+
+128
+00:05:43,185 --> 00:05:43,654
+By hand.
+
+129
+00:05:45,450 --> 00:05:47,288
+Here are the numbers from that run.
+
+130
+00:05:47,288 --> 00:05:50,753
+Seventeen minutes from issue to merge request, approvals included.
+
+131
+00:05:50,753 --> 00:05:51,751
+Ten agent sessions.
+
+132
+00:05:51,751 --> 00:05:54,166
+About a dollar and twenty cents at API prices.
+
+133
+00:05:54,166 --> 00:05:57,264
+And every single section passed its checker the first time.
+
+134
+00:05:58,450 --> 00:05:59,491
+Now, the limits.
+
+135
+00:05:59,491 --> 00:06:01,378
+Checks prove the checks pass…
+
+136
+00:06:01,378 --> 00:06:03,199
+not that the spec was right.
+
+137
+00:06:03,199 --> 00:06:06,192
+That's exactly why a person approves the spec.
+
+138
+00:06:06,192 --> 00:06:08,143
+The meta loop is still manual.
+
+139
+00:06:08,143 --> 00:06:10,811
+The runner handles one request at a time.
+
+140
+00:06:10,811 --> 00:06:13,608
+And it works best on small, clear requests.
+
+141
+00:06:15,450 --> 00:06:16,814
+Want to try it yourself?
+
+142
+00:06:16,814 --> 00:06:18,008
+There's a playground.
+
+143
+00:06:18,008 --> 00:06:20,794
+Your own GitLab project, with nothing to install.
+
+144
+00:06:20,794 --> 00:06:23,012
+File an issue, and watch it go through.
+
+145
+00:06:23,012 --> 00:06:26,707
+The code is open source, and there's a longer write up on Medium.

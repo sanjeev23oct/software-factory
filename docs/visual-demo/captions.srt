@@ -1,0 +1,571 @@
+1
+00:00:00,450 --> 00:00:04,337
+In my last video, I showed you a software factory, built on Claude Code.
+
+2
+00:00:04,337 --> 00:00:06,766
+This time, I want to tackle its weakest link.
+
+3
+00:00:08,450 --> 00:00:09,033
+Be honest.
+
+4
+00:00:09,033 --> 00:00:12,941
+How many times have you handed an AI a Figma file, or a screenshot…
+
+5
+00:00:12,941 --> 00:00:13,991
+and it said, done?
+
+6
+00:00:13,991 --> 00:00:16,032
+And then you actually looked at it.
+
+7
+00:00:16,032 --> 00:00:17,373
+The names are wrapping.
+
+8
+00:00:17,373 --> 00:00:18,831
+The table's way too tall.
+
+9
+00:00:18,831 --> 00:00:20,173
+Nothing quite lines up.
+
+10
+00:00:20,173 --> 00:00:21,514
+And this isn't made up.
+
+11
+00:00:21,514 --> 00:00:23,905
+It's a real attempt, from my own factory.
+
+12
+00:00:25,450 --> 00:00:30,115
+So how do you prove a screen looks right, without a person checking every pixel?
+
+13
+00:00:30,115 --> 00:00:34,723
+In this video, I'll show you the design, how I proved the checker itself works,
+
+14
+00:00:34,723 --> 00:00:37,638
+a real request that failed twice before it passed…
+
+15
+00:00:37,638 --> 00:00:40,088
+and how the same idea works for APIs, too.
+
+16
+00:00:41,450 --> 00:00:44,019
+In a software factory, verification is everything.
+
+17
+00:00:44,019 --> 00:00:46,691
+And for user interfaces, it's been the weakest link.
+
+18
+00:00:46,691 --> 00:00:46,845
+So…
+
+19
+00:00:46,845 --> 00:00:49,363
+let's fix that, and then prove it actually works.
+
+20
+00:00:50,450 --> 00:00:52,198
+Here's the honest starting point.
+
+21
+00:00:52,198 --> 00:00:56,596
+The factory could already prove a screen had the right text and the right test ids,
+
+22
+00:00:56,596 --> 00:00:57,973
+and that the tests passed.
+
+23
+00:00:57,973 --> 00:01:01,470
+But it couldn't tell you whether the screen actually looked right.
+
+24
+00:01:01,470 --> 00:01:02,795
+So, a person had to look.
+
+25
+00:01:02,795 --> 00:01:04,490
+And wherever verification stops…
+
+26
+00:01:04,490 --> 00:01:05,497
+autonomy stops too.
+
+27
+00:01:07,450 --> 00:01:09,015
+So the idea is three layers.
+
+28
+00:01:09,015 --> 00:01:09,910
+First, measured.
+
+29
+00:01:09,910 --> 00:01:14,103
+A script checks what can be measured, and gives the same answer every time.
+
+30
+00:01:14,103 --> 00:01:14,942
+Second, judged.
+
+31
+00:01:14,942 --> 00:01:19,470
+A separate agent looks at the images, and has to cite evidence for every finding.
+
+32
+00:01:19,470 --> 00:01:20,588
+And third, accepted.
+
+33
+00:01:20,588 --> 00:01:24,726
+A person sees the reference, the result, and the difference, side by side.
+
+34
+00:01:26,450 --> 00:01:28,375
+Here's how it fits into the pipeline.
+
+35
+00:01:28,375 --> 00:01:31,341
+A screenshot attached to the issue becomes the reference.
+
+36
+00:01:31,341 --> 00:01:34,931
+The visual spec turns it into a contract, and a person approves that,
+
+37
+00:01:34,931 --> 00:01:36,232
+before anything is built.
+
+38
+00:01:36,232 --> 00:01:38,209
+The plan gives the page a visual gate.
+
+39
+00:01:38,209 --> 00:01:39,926
+The checker measures, and judges.
+
+40
+00:01:39,926 --> 00:01:42,060
+After the tests, the verifier runs again.
+
+41
+00:01:42,060 --> 00:01:45,806
+And when the person approves the result, those screens become baselines.
+
+42
+00:01:47,450 --> 00:01:49,641
+The measured layer is one small script.
+
+43
+00:01:49,641 --> 00:01:54,080
+It renders the screen in headless Chrome, then for each region in the contract,
+
+44
+00:01:54,080 --> 00:01:55,316
+it checks five things.
+
+45
+00:01:55,316 --> 00:01:55,990
+Is it there.
+
+46
+00:01:55,990 --> 00:01:57,395
+Is it in the right place.
+
+47
+00:01:57,395 --> 00:01:58,968
+Does it say the right words.
+
+48
+00:01:58,968 --> 00:02:00,260
+Is it the right colour.
+
+49
+00:02:00,260 --> 00:02:01,665
+And does it look similar.
+
+50
+00:02:01,665 --> 00:02:03,462
+Every number goes into a report.
+
+51
+00:02:05,450 --> 00:02:07,697
+Now, here's the part most teams skip.
+
+52
+00:02:07,697 --> 00:02:09,457
+A verifier nobody has tested…
+
+53
+00:02:09,457 --> 00:02:10,611
+is just an opinion.
+
+54
+00:02:10,611 --> 00:02:13,586
+So I tested it the way you'd test any other code.
+
+55
+00:02:15,450 --> 00:02:20,089
+I took a screen the factory had already built, and planted one defect at a time.
+
+56
+00:02:20,089 --> 00:02:20,901
+Like this one.
+
+57
+00:02:20,901 --> 00:02:22,988
+The totals moved twenty-four pixels.
+
+58
+00:02:22,988 --> 00:02:24,960
+The region goes red on both sides,
+
+59
+00:02:24,960 --> 00:02:27,859
+and the difference panel shows exactly what moved.
+
+60
+00:02:29,450 --> 00:02:30,648
+A swapped accent colour.
+
+61
+00:02:30,648 --> 00:02:31,997
+Caught by the colour check.
+
+62
+00:02:31,997 --> 00:02:34,094
+The difference is measured, not eyeballed.
+
+63
+00:02:35,450 --> 00:02:37,719
+A table row that wraps onto two lines.
+
+64
+00:02:37,719 --> 00:02:38,973
+The box barely moved…
+
+65
+00:02:38,973 --> 00:02:40,466
+but similarity caught it.
+
+66
+00:02:42,450 --> 00:02:45,101
+Six planted defects, and all six were caught.
+
+67
+00:02:45,101 --> 00:02:47,810
+And just as important, three harmless changes,
+
+68
+00:02:47,810 --> 00:02:50,638
+like different sample data or a sub-pixel shift…
+
+69
+00:02:50,638 --> 00:02:51,933
+and zero false alarms.
+
+70
+00:02:51,933 --> 00:02:56,233
+It runs in presubmit, so if anyone weakens the verifier, the build fails.
+
+71
+00:02:57,450 --> 00:02:58,604
+And it's deterministic.
+
+72
+00:02:58,604 --> 00:03:02,168
+The same build, verified twice, gives a byte-for-byte identical report.
+
+73
+00:03:03,450 --> 00:03:03,776
+Okay.
+
+74
+00:03:03,776 --> 00:03:06,448
+Now, let's run a real request through it…
+
+75
+00:03:06,448 --> 00:03:07,165
+end to end.
+
+76
+00:03:08,450 --> 00:03:12,812
+The client attaches a screenshot to the issue, and then writes what they want,
+
+77
+00:03:12,812 --> 00:03:13,651
+in plain words.
+
+78
+00:03:15,450 --> 00:03:18,113
+The intake saves that screenshot with the spec,
+
+79
+00:03:18,113 --> 00:03:21,060
+and the visual spec agent writes a contract from it.
+
+80
+00:03:22,450 --> 00:03:24,462
+And here's something I didn't plan for.
+
+81
+00:03:24,462 --> 00:03:26,784
+The first contract the agent wrote was wrong.
+
+82
+00:03:26,784 --> 00:03:29,932
+It measured the heading's text instead of the heading itself,
+
+83
+00:03:29,932 --> 00:03:33,080
+and it demanded a total that only existed in the sample data.
+
+84
+00:03:33,080 --> 00:03:36,382
+Approve that, and a correct build would have failed three times.
+
+85
+00:03:37,450 --> 00:03:39,136
+So I didn't patch the contract.
+
+86
+00:03:39,136 --> 00:03:41,311
+I fixed the skill that writes contracts.
+
+87
+00:03:41,311 --> 00:03:42,943
+That's the meta loop, working.
+
+88
+00:03:42,943 --> 00:03:44,955
+And the second contract got it right.
+
+89
+00:03:46,450 --> 00:03:49,271
+The client approves the contract, along with the requirements,
+
+90
+00:03:49,271 --> 00:03:50,908
+before a single line of code exists.
+
+91
+00:03:52,450 --> 00:03:54,912
+The plan gives the page section a fourth gate.
+
+92
+00:03:54,912 --> 00:03:56,945
+A visual check, against the reference.
+
+93
+00:03:58,450 --> 00:04:00,298
+And this is where it gets interesting.
+
+94
+00:04:00,298 --> 00:04:03,800
+The checker failed the page twice, for two completely different reasons.
+
+95
+00:04:05,450 --> 00:04:07,842
+The first time, the measured layer caught it.
+
+96
+00:04:07,842 --> 00:04:12,043
+Names were wrapping, and the table was four hundred and sixty five pixels tall,
+
+97
+00:04:12,043 --> 00:04:14,701
+against three hundred and twenty in the reference.
+
+98
+00:04:16,450 --> 00:04:17,300
+The second time…
+
+99
+00:04:17,300 --> 00:04:18,842
+the verifier actually passed.
+
+100
+00:04:18,842 --> 00:04:20,330
+The maker had overcorrected.
+
+101
+00:04:20,330 --> 00:04:21,606
+Tiny text, cramped rows.
+
+102
+00:04:21,606 --> 00:04:25,061
+The numbers squeaked through, but the checker's judgement didn't.
+
+103
+00:04:25,061 --> 00:04:27,187
+That's exactly why there are two layers.
+
+104
+00:04:28,450 --> 00:04:30,005
+Look at them side by side.
+
+105
+00:04:30,005 --> 00:04:31,142
+Every box is green…
+
+106
+00:04:31,142 --> 00:04:33,954
+but the table has shrunk, and the text is tiny.
+
+107
+00:04:33,954 --> 00:04:36,586
+A script on its own would have shipped this.
+
+108
+00:04:38,450 --> 00:04:40,023
+On the third try, it passed.
+
+109
+00:04:40,023 --> 00:04:42,326
+Then the outer loop ran everything again.
+
+110
+00:04:42,326 --> 00:04:45,360
+The evidence, the tests, and the verifier, on its own.
+
+111
+00:04:46,450 --> 00:04:48,298
+Reference, built, and difference.
+
+112
+00:04:48,298 --> 00:04:49,361
+Every region green.
+
+113
+00:04:49,361 --> 00:04:51,881
+The only differences left are font rendering,
+
+114
+00:04:51,881 --> 00:04:54,512
+because the runner draws text with Linux fonts.
+
+115
+00:04:56,450 --> 00:04:58,772
+And that image goes straight into the gate notice.
+
+116
+00:04:58,772 --> 00:05:01,280
+The person approving doesn't have to dig for anything.
+
+117
+00:05:02,450 --> 00:05:04,048
+Here's the dashboard, running.
+
+118
+00:05:06,450 --> 00:05:08,965
+And when it's approved, those screens become baselines.
+
+119
+00:05:08,965 --> 00:05:10,382
+The merge request carries them,
+
+120
+00:05:10,382 --> 00:05:13,583
+so the next change to this screen gets checked against them, strictly.
+
+121
+00:05:15,450 --> 00:05:17,597
+Running it for real taught me three things.
+
+122
+00:05:17,597 --> 00:05:19,744
+A git quirk silently dropped the reference.
+
+123
+00:05:19,744 --> 00:05:22,091
+The factory's own guardrail is what exposed it.
+
+124
+00:05:22,091 --> 00:05:25,986
+An agent's contract can be wrong, and that's exactly why a person approves it.
+
+125
+00:05:25,986 --> 00:05:29,382
+And a screenshot from one machine never matches pixels from another.
+
+126
+00:05:30,450 --> 00:05:32,522
+And this isn't only about screens.
+
+127
+00:05:32,522 --> 00:05:34,412
+The pattern is always the same.
+
+128
+00:05:34,412 --> 00:05:35,692
+Agree on a reference.
+
+129
+00:05:35,692 --> 00:05:36,972
+Measure what you can.
+
+130
+00:05:36,972 --> 00:05:38,252
+Judge what you can't.
+
+131
+00:05:38,252 --> 00:05:41,178
+And keep what a person accepts, as the baseline.
+
+132
+00:05:41,178 --> 00:05:43,494
+For an API, the reference is the spec.
+
+133
+00:05:43,494 --> 00:05:46,481
+Status codes, schemas and contracts get measured,
+
+134
+00:05:46,481 --> 00:05:51,541
+a reviewer agent judges the behaviour, and recorded responses become the baselines.
+
+135
+00:05:51,541 --> 00:05:54,710
+And it works the same way for data, and for reports.
+
+136
+00:05:56,450 --> 00:05:57,297
+Now, the limits.
+
+137
+00:05:57,297 --> 00:06:01,320
+Boxes estimated from an image are approximate, so the tolerance is generous.
+
+138
+00:06:01,320 --> 00:06:05,713
+The judged layer is still a model's opinion, it's just forced to show its evidence.
+
+139
+00:06:05,713 --> 00:06:08,413
+And so far, it's been proven on one kind of screen.
+
+140
+00:06:10,450 --> 00:06:14,638
+Verification is what turns agents writing code into a factory you can trust.
+
+141
+00:06:14,638 --> 00:06:15,961
+The code is open source,
+
+142
+00:06:15,961 --> 00:06:19,267
+and there's a test drive account if you want to look around.
+
+143
+00:06:19,267 --> 00:06:20,370
+Thanks for watching.
