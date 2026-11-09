@@ -39,8 +39,8 @@
    "role": "AI Coding Expert",
    "line": "Building software factories on Claude Code",
    "say": "Sanjeev Gulati · AI Coding Expert",
-   "seconds": 9,
-   "voice": "Hi, I'm Sanjeev. For the last few weeks, I've been building a software factory on top of Claude Code... and running real requests through it."
+   "seconds": 8,
+   "voice": "For the last few weeks, I've been building a software factory on top of Claude Code, and running real requests through it."
   },
   {
    "kind": "chapter",
@@ -102,8 +102,8 @@
      "var(--r4)"
     ]
    ],
-   "voice": "If you look at how AI coding has evolved, it's happened in three steps. It started on your laptop. You prompt, Claude edits, and you check every single change. Then came remote agents. You can open the Claude app on your phone, type a prompt, and it builds in the cloud. And in parallel, something different showed up. Factories. And factories aren't really about where the agent runs... they're about how the work is organised.",
-   "seconds": 25
+   "voice": "AI coding has evolved in three steps. First, on your laptop, where you prompt, Claude edits, and you check every change yourself. Then came remote agents. You type a prompt in the Claude app, even on your phone, and the work happens in the cloud. And alongside them, something different appeared: factories. A factory isn't about where the agent runs. It's about how the work is organised.",
+   "seconds": 21
   },
   {
    "kind": "compare",
@@ -159,7 +159,7 @@
     ]
    ],
    "say": "A factory changes who decides, who checks, and what's recorded",
-   "voice": "Put them side by side, and here's the thing. Local and remote agents mostly differ in where they run. A factory changes something more important. Who decides what gets built. Who checks it. And what gets recorded. You approve the requirements before anything is built, a separate agent checks the work, and every check leaves evidence behind.",
+   "voice": "Put them side by side. Local and remote agents differ mostly in where they run. A factory changes who decides what gets built, who checks it, and what gets recorded. You approve the requirements before anything is built, a separate agent checks the work, and every check leaves evidence behind.",
    "seconds": 19
   },
   {

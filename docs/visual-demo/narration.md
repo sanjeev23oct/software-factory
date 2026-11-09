@@ -4,7 +4,7 @@ One line per scene, timed to `visual-demo.mp4` (6:30). "Starts" is when the scen
 
 | # | Starts | Length | On screen | Narration |
 |---|---|---|---|---|
-| 1 | 0:00 | 9s | Sanjeev Gulati · AI Coding Expert | Hi, I'm Sanjeev. In my last video, I showed you a software factory, built on Claude Code. This time, I want to tackle its weakest link. |
+| 1 | 0:00 | 9s | Sanjeev Gulati · AI Coding Expert | In my last video, I showed you a software factory, built on Claude Code. This time, I want to tackle its weakest link. |
 | 2 | 0:09 | 17s | What you asked for, and what the AI called done | Be honest. How many times have you handed an AI a Figma file, or a screenshot... and it said, done? And then you actually looked at it. The names are wrapping. The table's way too tall. Nothing quite lines up. And this isn't made up. It's a real attempt, from my own factory. |
 | 3 | 0:26 | 18s | Proving it, not trusting it | So how do you prove a screen looks right, without a person checking every pixel? In this video, I'll show you the design, how I proved the checker itself works, a real request that failed twice before it passed... and how the same idea works for APIs, too. |
 | 4 | 0:44 | 10s | Proving it looks right | In a software factory, verification is everything. And for user interfaces, it's been the weakest link. So... let's fix that, and then prove it actually works. |

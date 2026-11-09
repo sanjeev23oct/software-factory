@@ -3,11 +3,11 @@
  "voice_id": "5tFicko4efMCqCs0KAsn",
  "model_id": "eleven_flash_v2_5",
  "lines": [
-  "Hi, I'm Sanjeev. <break time=\"0.4s\" /> For the last few weeks, I've been building a software factory on top of Claude Code... <break time=\"0.3s\" /> and running real requests through it.",
+  "For the last few weeks, I've been building a software factory on top of Claude Code, <break time=\"0.3s\" /> and running real requests through it.",
   "In this video, I'll show you how it works. <break time=\"0.4s\" /> Where it came from, <break time=\"0.2s\" /> what makes it different from just using agents, <break time=\"0.2s\" /> what's under the hood... <break time=\"0.3s\" /> and one real request, from the issue, all the way to a merge request. <break time=\"0.5s\" /> If you already use Claude Code, this is the next step.",
   "So... <break time=\"0.5s\" /> you already use Claude Code. <break time=\"0.5s\" /> Now imagine you stop driving every session yourself, and instead, you build a factory that does it for you. <break time=\"0.4s\" /> Let me show you what that actually looks like.",
-  "If you look at how AI coding has evolved, it's happened in three steps. <break time=\"0.4s\" /> It started on your laptop. You prompt, Claude edits, and you check every single change. <break time=\"0.4s\" /> Then came remote agents. You can open the Claude app on your phone, type a prompt, and it builds in the cloud. <break time=\"0.4s\" /> And in parallel, something different showed up. Factories. <break time=\"0.3s\" /> And factories aren't really about where the agent runs... they're about how the work is organised.",
-  "Put them side by side, and here's the thing. <break time=\"0.3s\" /> Local and remote agents mostly differ in where they run. <break time=\"0.3s\" /> A factory changes something more important. Who decides what gets built. Who checks it. And what gets recorded. <break time=\"0.4s\" /> You approve the requirements before anything is built, a separate agent checks the work, and every check leaves evidence behind.",
+  "AI coding has evolved in three steps. <break time=\"0.4s\" /> First, on your laptop, where you prompt, Claude edits, and you check every change yourself. <break time=\"0.4s\" /> Then came remote agents. You type a prompt in the Claude app, even on your phone, and the work happens in the cloud. <break time=\"0.4s\" /> And alongside them, something different appeared: factories. <break time=\"0.4s\" /> A factory isn't about where the agent runs. It's about how the work is organised.",
+  "Put them side by side. <break time=\"0.4s\" /> Local and remote agents differ mostly in where they run. <break time=\"0.4s\" /> A factory changes who decides what gets built, who checks it, and what gets recorded. <break time=\"0.4s\" /> You approve the requirements before anything is built, a separate agent checks the work, and every check leaves evidence behind.",
   "The definition I like best comes from Dru Knox, at Tessl. <break time=\"0.3s\" /> A software factory is any agentic system where agents write all of the code you ship. <break time=\"0.4s\" /> Which means your job changes. You stop building the product... and you start building the machine that builds it.",
   "So how do you know if your factory is any good? <break time=\"0.3s\" /> Knox uses three measures, and the order matters. <break time=\"0.3s\" /> First, autonomy. How often does a person have to step in and nudge the agents? <break time=\"0.3s\" /> Then automation. How much can you let run without anyone reviewing it? <break time=\"0.3s\" /> And then quality. You earn automation, by proving autonomy first.",
   "And what makes autonomy safe? <break time=\"0.3s\" /> Verification. <break time=\"0.4s\" /> You can only stop reading every line if something else is checking it. Every time. And leaving a record you can actually inspect. <break time=\"0.4s\" /> Without that, honestly, a factory is just a faster way to ship mistakes.",
@@ -56,7 +56,8 @@
   "23": 0.7,
   "25": 0.75,
   "28": 0.75,
-  "29": 0.72
+  "29": 0.72,
+  "1": 0.72
  },
  "tempo": 1.25
 }

@@ -29,7 +29,7 @@
   "25": 0.72
  },
  "lines": [
-  "Hi, I'm Sanjeev. <break time=\"0.4s\" /> In my last video, I showed you a software factory, built on Claude Code. <break time=\"0.4s\" /> This time, I want to tackle its weakest link.",
+  "In my last video, I showed you a software factory, built on Claude Code. <break time=\"0.4s\" /> This time, I want to tackle its weakest link.",
   "Be honest. <break time=\"0.4s\" /> How many times have you handed an AI a Figma file, or a screenshot... <break time=\"0.3s\" /> and it said, done? <break time=\"0.5s\" /> And then you actually looked at it. <break time=\"0.4s\" /> The names are wrapping. The table's way too tall. <break time=\"0.3s\" /> Nothing quite lines up. <break time=\"0.4s\" /> And this isn't made up. It's a real attempt, from my own factory.",
   "So how do you prove a screen looks right, without a person checking every pixel? <break time=\"0.4s\" /> In this video, I'll show you the design, <break time=\"0.2s\" /> how I proved the checker itself works, <break time=\"0.2s\" /> a real request that failed twice before it passed... <break time=\"0.3s\" /> and how the same idea works for APIs, too.",
   "In a software factory, verification is everything. <break time=\"0.4s\" /> And for user interfaces, it's been the weakest link. <break time=\"0.4s\" /> So... let's fix that, and then prove it actually works.",
