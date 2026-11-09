@@ -38,7 +38,7 @@
    "role": "AI Coding Expert",
    "line": "Building software factories on Claude Code",
    "say": "Sanjeev Gulati · AI Coding Expert",
-   "seconds": 9,
+   "seconds": 8,
    "voice": "In my last video, I showed you a software factory, built on Claude Code. This time, I want to tackle its weakest link."
   },
   {
@@ -75,7 +75,7 @@
      "var(--r3)"
     ]
    ],
-   "seconds": 18,
+   "seconds": 16,
    "voice": "So how do you prove a screen looks right, without a person checking every pixel? In this video, I'll show you the design, how I proved the checker itself works, a real request that failed twice before it passed... and how the same idea works for APIs, too."
   },
   {
@@ -83,7 +83,7 @@
    "kicker": "Software factories, for engineers",
    "title": "Proving it <em>looks</em><br>right",
    "say": "Checking built screens against a reference screenshot, and proving the checker works.",
-   "seconds": 10,
+   "seconds": 9,
    "voice": "In a software factory, verification is everything. And for user interfaces, it's been the weakest link. So... let's fix that, and then prove it actually works."
   },
   {
@@ -92,7 +92,7 @@
    "title": "Scripts can't see",
    "colour": "var(--r3)",
    "define": "The factory could prove the <b>text</b>, the <b>test ids</b> and the <b>tests</b>. It couldn't prove a screen <b>looks like the design</b>. So a person looked, and where verification stops, autonomy stops.",
-   "seconds": 16,
+   "seconds": 17,
    "voice": "Here's the honest starting point. The factory could already prove a screen had the right text and the right test ids, and that the tests passed. But it couldn't tell you whether the screen actually looked right. So, a person had to look. And wherever verification stops... autonomy stops too."
   },
   {
@@ -117,7 +117,7 @@
      "var(--r4)"
     ]
    ],
-   "seconds": 20,
+   "seconds": 19,
    "voice": "So the idea is three layers. First, measured. A script checks what can be measured, and gives the same answer every time. Second, judged. A separate agent looks at the images, and has to cite evidence for every finding. And third, accepted. A person sees the reference, the result, and the difference, side by side."
   },
   {
@@ -168,7 +168,7 @@
    ],
    "key": "<span><b>You</b>: approve the contract, then the result</span><span>Scripts measure; agents build and judge</span>",
    "say": "Screenshot in, baselines out",
-   "seconds": 22,
+   "seconds": 21,
    "voice": "Here's how it fits into the pipeline. A screenshot attached to the issue becomes the reference. The visual spec turns it into a contract, and a person approves that, before anything is built. The plan gives the page a visual gate. The checker measures, and judges. After the tests, the verifier runs again. And when the person approves the result, those screens become baselines."
   },
   {
@@ -198,7 +198,7 @@
    "kind": "image",
    "image": "pd-element-moved-24px.png",
    "say": "Planted: an element moved 24px. Caught: geometry and similarity",
-   "seconds": 15,
+   "seconds": 14,
    "voice": "I took a screen the factory had already built, and planted one defect at a time. Like this one. The totals moved twenty-four pixels. The region goes red on both sides, and the difference panel shows exactly what moved."
   },
   {
@@ -212,7 +212,7 @@
    "kind": "image",
    "image": "pd-row-wraps-to-two-lines.png",
    "say": "Planted: a row wraps. Caught: similarity",
-   "seconds": 6,
+   "seconds": 7,
    "voice": "A table row that wraps onto two lines. The box barely moved... but similarity caught it."
   },
   {
@@ -292,14 +292,14 @@
    "kind": "image",
    "image": "v05-contract.png",
    "say": "Fixed in the skill, not in the result: the meta loop",
-   "seconds": 10,
+   "seconds": 9,
    "voice": "So I didn't patch the contract. I fixed the skill that writes contracts. That's the meta loop, working. And the second contract got it right."
   },
   {
    "kind": "image",
    "image": "v07-approve.png",
    "say": "Approved before any code exists",
-   "seconds": 7,
+   "seconds": 6,
    "voice": "The client approves the contract, along with the requirements, before a single line of code exists."
   },
   {
@@ -350,21 +350,21 @@
    "kind": "image",
    "image": "v09-outer-loop.png",
    "say": "Outer loop: evidence, tests, visual-verify, preview",
-   "seconds": 9,
+   "seconds": 8,
    "voice": "On the third try, it passed. Then the outer loop ran everything again. The evidence, the tests, and the verifier, on its own."
   },
   {
    "kind": "image",
    "image": "v12-compare.png",
    "say": "Reference, built, difference: every region passes",
-   "seconds": 9,
+   "seconds": 10,
    "voice": "Reference, built, and difference. Every region green. The only differences left are font rendering, because the runner draws text with Linux fonts."
   },
   {
    "kind": "image",
    "image": "v10-gate.png",
    "say": "The gate notice shows reference vs built",
-   "seconds": 7,
+   "seconds": 6,
    "voice": "And that image goes straight into the gate notice. The person approving doesn't have to dig for anything."
   },
   {
@@ -403,7 +403,7 @@
      "var(--r1)"
     ]
    ],
-   "seconds": 16,
+   "seconds": 15,
    "voice": "Running it for real taught me three things. A git quirk silently dropped the reference. The factory's own guardrail is what exposed it. An agent's contract can be wrong, and that's exactly why a person approves it. And a screenshot from one machine never matches pixels from another."
   },
   {
@@ -429,7 +429,7 @@
     ]
    ],
    "say": "Agree a reference, measure what you can, judge what you can't, keep what a person accepts",
-   "seconds": 24,
+   "seconds": 26,
    "voice": "And this isn't only about screens. The pattern is always the same. Agree on a reference. Measure what you can. Judge what you can't. And keep what a person accepts, as the baseline. For an API, the reference is the spec. Status codes, schemas and contracts get measured, a reviewer agent judges the behaviour, and recorded responses become the baselines. And it works the same way for data, and for reports."
   },
   {
@@ -454,7 +454,7 @@
      "var(--r1)"
     ]
    ],
-   "seconds": 15,
+   "seconds": 14,
    "voice": "Now, the limits. Boxes estimated from an image are approximate, so the tolerance is generous. The judged layer is still a model's opinion, it's just forced to show its evidence. And so far, it's been proven on one kind of screen."
   },
   {
@@ -463,7 +463,7 @@
    "title": "Verification makes it a factory",
    "colour": "var(--r4)",
    "say": "The code: github.com/sanjeev23oct/software-factory · test drive: login testdrive",
-   "seconds": 12,
+   "seconds": 11,
    "voice": "Verification is what turns agents writing code into a factory you can trust. The code is open source, and there's a test drive account if you want to look around. Thanks for watching."
   }
  ]

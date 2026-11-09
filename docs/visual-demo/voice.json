@@ -3,7 +3,7 @@
  "voice_id": "5tFicko4efMCqCs0KAsn",
  "model_id": "eleven_flash_v2_5",
  "settings": {
-  "stability": 0.5,
+  "stability": 0.65,
   "similarity_boost": 0.75,
   "style": 0.0,
   "use_speaker_boost": true,
@@ -13,20 +13,20 @@
  "lead": 0.45,
  "breath": 0.6,
  "speeds": {
-  "9": 0.72,
-  "10": 0.72,
-  "15": 0.7,
-  "16": 0.7,
-  "17": 0.72,
-  "19": 0.72,
-  "20": 0.72,
-  "23": 0.72,
-  "26": 0.72,
-  "28": 0.72,
-  "34": 0.72,
-  "1": 0.72,
-  "3": 0.72,
-  "25": 0.72
+  "9": 0.75,
+  "10": 0.75,
+  "15": 0.75,
+  "16": 0.75,
+  "17": 0.75,
+  "19": 0.75,
+  "20": 0.75,
+  "23": 0.75,
+  "26": 0.75,
+  "28": 0.75,
+  "34": 0.75,
+  "1": 0.75,
+  "3": 0.75,
+  "25": 0.75
  },
  "lines": [
   "In my last video, I showed you a software factory, built on Claude Code. <break time=\"0.4s\" /> This time, I want to tackle its weakest link.",
@@ -63,5 +63,7 @@
   "And this isn't only about screens. <break time=\"0.4s\" /> The pattern is always the same. <break time=\"0.2s\" /> Agree on a reference. Measure what you can. Judge what you can't. <break time=\"0.3s\" /> And keep what a person accepts, as the baseline. <break time=\"0.5s\" /> For an API, the reference is the spec. <break time=\"0.2s\" /> Status codes, schemas and contracts get measured, a reviewer agent judges the behaviour, <break time=\"0.2s\" /> and recorded responses become the baselines. <break time=\"0.4s\" /> And it works the same way for data, and for reports.",
   "Now, the limits. <break time=\"0.3s\" /> Boxes estimated from an image are approximate, so the tolerance is generous. <break time=\"0.3s\" /> The judged layer is still a model's opinion, it's just forced to show its evidence. <break time=\"0.3s\" /> And so far, it's been proven on one kind of screen.",
   "Verification is what turns agents writing code into a factory you can trust. <break time=\"0.4s\" /> The code is open source, and there's a test drive account if you want to look around. <break time=\"0.3s\" /> Thanks for watching."
- ]
+ ],
+ "seed": 4242,
+ "stitch": true
 }

@@ -57,6 +57,12 @@ def speak(voice):
                                                                         if str(n) in voice.get("speeds", {}) else {}))
         elif voice.get("stability") is not None:
             request_body["voice_settings"] = {"stability": voice["stability"]}
+        if voice.get("seed") is not None:
+            request_body["seed"] = voice["seed"]
+        if voice.get("stitch"):
+            # Each line is its own request, so without its neighbours the voice's tone drifts from scene to scene.
+            words = lambda k: plain(voice["lines"][k]) if 0 <= k < len(voice["lines"]) else ""
+            request_body["previous_text"], request_body["next_text"] = words(n - 2), words(n)
         body = json.dumps(request_body).encode()
         request = urllib.request.Request("https://api.elevenlabs.io/v1/text-to-speech/" + voice["voice_id"], data=body, method="POST",
                                          headers={"xi-api-key": secret, "Content-Type": "application/json"})
@@ -66,6 +72,16 @@ def speak(voice):
         except urllib.error.HTTPError as e:
             sys.exit("line {}: ElevenLabs said {} {}".format(n, e.code, e.read()[:300]))
         print("line {:2d}: {:.1f}s".format(n, duration(clip(n))))
+
+
+def plain(line):
+    return re.sub(r"\s*<[^>]+>\s*", " ", re.sub(r"\[[^\]]+\]\s*", "", line)).strip()
+
+
+def loudness(path):
+    out = subprocess.run(["ffmpeg", "-hide_banner", "-i", str(path), "-af", "ebur128", "-f", "null", "-"],
+                         capture_output=True, text=True).stderr
+    return float(re.findall(r"I:\s+(-?[\d.]+) LUFS", out)[-1])
 
 
 def gaps(voice):
@@ -96,8 +112,10 @@ def mix(voice):
     scenes, inputs, parts = story["scenes"], [], []
     for n, scene in enumerate(scenes, 1):
         inputs += ["-i", str(clip(n))]
-        parts.append("[{}:a]aresample=44100,aformat=channel_layouts=mono,atempo={},adelay={}:all=1,apad=whole_dur={},atrim=0:{}[a{}]".format(
-            n - 1, voice.get("tempo", 1.0), int(lead * 1000), scene["seconds"], scene["seconds"], n))
+        # Bring every clip to one loudness first, so no scene sounds nearer or louder than the one before it.
+        gain = -23 - loudness(clip(n))
+        parts.append("[{}:a]aresample=44100,aformat=channel_layouts=mono,volume={:.2f}dB,atempo={},adelay={}:all=1,apad=whole_dur={},atrim=0:{}[a{}]".format(
+            n - 1, gain, voice.get("tempo", 1.0), int(lead * 1000), scene["seconds"], scene["seconds"], n))
     total = sum(s["seconds"] for s in scenes)
     # loudnorm works at 192 kHz; players and YouTube expect 48 kHz stereo, so the track ends as that.
     # The fades go before loudnorm: it hands on its first 3 seconds as one frame, and a fade after it mutes all of them.
