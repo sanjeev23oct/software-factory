@@ -100,8 +100,9 @@ def mix(voice):
             n - 1, voice.get("tempo", 1.0), int(lead * 1000), scene["seconds"], scene["seconds"], n))
     total = sum(s["seconds"] for s in scenes)
     # loudnorm works at 192 kHz; players and YouTube expect 48 kHz stereo, so the track ends as that.
+    # The fades go before loudnorm: it hands on its first 3 seconds as one frame, and a fade after it mutes all of them.
     graph = ";".join(parts) + ";" + "".join("[a{}]".format(n) for n in range(1, len(scenes) + 1)) + \
-        "concat=n={}:v=0:a=1,loudnorm=I=-16:TP=-1.5,afade=t=in:d=0.4,afade=t=out:st={}:d=1.5,aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo[out]".format(len(scenes), total - 1.5)
+        "concat=n={}:v=0:a=1,afade=t=in:d=0.4,afade=t=out:st={}:d=1.5,loudnorm=I=-16:TP=-1.5,aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo[out]".format(len(scenes), total - 1.5)
     track = HERE / "voice" / "track.m4a"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", graph, "-map", "[out]",
                     "-c:a", "aac", "-b:a", "160k", str(track)], check=True)
