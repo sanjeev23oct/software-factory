@@ -140,6 +140,20 @@ Only people listed in `approvers` count, or the `assignee` if there is no list.
 Only replies written after the gate opened count, so an old `approve` cannot pass a later gate.
 Anyone else's reply is ignored.
 
+## Ask for changes at a gate
+
+Reply in plain words instead of `approve`: answers to the open questions, or what
+to change. The factory hands the reply to the agent that wrote the document you
+are reading, which revises it, and the gate opens again with the new version. Each
+reply is used once, and a revision does not count against the stage's attempts.
+After five rounds the factory stops and leaves it to a maintainer.
+
+The agent to send it back to is the nearest one before the gate that wrote a
+document; at `approve-requirements` that is `requirements`. A gate can name it
+with `"revise": "<stage>"`. At a gate after the code is built, such as
+`approve-screens`, a reply does not start a rebuild: it is recorded as something
+the checks may have missed.
+
 ## See what it is doing
 
 - The **issue**: the gate comments and, at the end, the merge request.
