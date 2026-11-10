@@ -52,8 +52,11 @@ def speak(voice):
     for n, line in enumerate(voice["lines"], 1):
         if clip(n).exists():
             continue
-        request_body = {"text": line, "model_id": voice["model_id"]}
-        if voice.get("settings"):
+        request_body = {"text": model_text(voice, line), "model_id": voice["model_id"]}
+        if voice.get("settings") and voice["model_id"].startswith("eleven_v4"):
+            # v4 takes only these two; it has no speed or style setting.
+            request_body["voice_settings"] = {k: voice["settings"][k] for k in ("stability", "similarity_boost") if k in voice["settings"]}
+        elif voice.get("settings"):
             # The voice's saved settings, with the speed this narration needs; a line may ask for its own speed.
             request_body["voice_settings"] = dict(voice["settings"], **({"speed": voice["speeds"][str(n)]}
                                                                         if str(n) in voice.get("speeds", {}) else {}))
@@ -74,6 +77,23 @@ def speak(voice):
         except urllib.error.HTTPError as e:
             sys.exit("line {}: ElevenLabs said {} {}".format(n, e.code, e.read()[:300]))
         print("line {:2d}: {:.1f}s".format(n, duration(clip(n))))
+
+
+def load():
+    """The folder's voice.json, with the shared voice profile it names taking precedence over everything but the lines."""
+    voice = json.loads((HERE / "voice.json").read_text())
+    if voice.get("profile"):
+        profile = json.loads((HERE / voice["profile"]).read_text())
+        voice = dict(voice, **{k: v for k, v in profile.items() if k not in ("about", "chosen")})
+        voice.pop("speeds", None)   # per-line speeds belong to the old Flash setup; pacing now lives in the script
+    return voice
+
+
+def model_text(voice, line):
+    """v3 and v4 read SSML break tags aloud or ignore them; pauses come from punctuation and paragraphs instead."""
+    if voice["model_id"].startswith(("eleven_v3", "eleven_v4")):
+        return re.sub(r"\s*<break[^>]*/>\s*", " ", line).strip()
+    return line
 
 
 def plain(line):
@@ -120,9 +140,10 @@ def mix(voice):
             n - 1, gain, voice.get("tempo", 1.0), int(lead * 1000), scene["seconds"], scene["seconds"], n))
     total = sum(s["seconds"] for s in scenes)
     # loudnorm works at 192 kHz; players and YouTube expect 48 kHz stereo, so the track ends as that.
+    # The profile's target is -14 LUFS, what YouTube normalises to.
     # The fades go before loudnorm: it hands on its first 3 seconds as one frame, and a fade after it mutes all of them.
     graph = ";".join(parts) + ";" + "".join("[a{}]".format(n) for n in range(1, len(scenes) + 1)) + \
-        "concat=n={}:v=0:a=1,afade=t=in:d=0.4,afade=t=out:st={}:d=1.5,loudnorm=I=-16:TP=-1.5,aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo[out]".format(len(scenes), total - 1.5)
+        "concat=n={}:v=0:a=1,afade=t=in:d=0.4,afade=t=out:st={}:d=1.5,loudnorm=I={}:TP=-1.5,aresample=48000,aformat=sample_rates=48000:channel_layouts=stereo[out]".format(len(scenes), total - 1.5, voice.get("loudness", -16))
     track = HERE / "voice" / "track.m4a"
     subprocess.run(["ffmpeg", "-y", "-loglevel", "error", *inputs, "-filter_complex", graph, "-map", "[out]",
                     "-c:a", "aac", "-b:a", "160k", str(track)], check=True)
@@ -288,4 +309,4 @@ if __name__ == "__main__":
     commands = {"speak": speak, "fit": fit, "mix": mix, "review": review, "check": check}
     if len(sys.argv) not in (2, 3) or sys.argv[1] not in commands:
         sys.exit(__doc__)
-    commands[sys.argv[1]](json.loads((HERE / "voice.json").read_text()))
+    commands[sys.argv[1]](load())

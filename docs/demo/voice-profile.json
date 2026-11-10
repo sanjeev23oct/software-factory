@@ -1,0 +1,14 @@
+{
+ "about": "The narration voice for every video. A video's voice.json points here with \"profile\" and holds only its lines, so every video sounds the same. Change it here, never per video.",
+ "name": "Sanjeev (cloned) on Eleven v4",
+ "voice_id": "5tFicko4efMCqCs0KAsn",
+ "model_id": "eleven_v4",
+ "settings": {"stability": 0.5, "similarity_boost": 0.75},
+ "seed": 4242,
+ "stitch": true,
+ "tempo": 1.0,
+ "lead": 0.45,
+ "breath": 0.6,
+ "loudness": -14,
+ "chosen": "2026-11-10: picked over Flash with a speed-up after a 4-minute test held its tone within 3% from minute 1 to minute 3+"
+}
