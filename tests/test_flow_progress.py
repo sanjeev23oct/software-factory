@@ -116,6 +116,13 @@ class ProgressTest(unittest.TestCase):
         self.assertEqual(1, len(second))
         self.assertNotIn("Picked up", second[0])
 
+    def test_a_finished_item_logs_nothing_on_later_passes(self):
+        item = dict(self.item, status="done")
+        flow.step(item)
+        flow.step(item)
+        self.assertFalse((self.state / "events.jsonl").exists())
+        self.assertEqual([], self.report())
+
     def test_report_skips_items_with_only_bookkeeping(self):
         self.write_events(record("GL5", "build", "moved on"), record("GL5", "build", "agent task handed out"))
         self.assertEqual([], self.report())

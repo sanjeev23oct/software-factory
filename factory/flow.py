@@ -402,6 +402,7 @@ def step(item):
     """Advance through every stage the factory can do alone. Returns the next
     agent task, or None when the item needs a human, is blocked, or is done."""
     limit = DEFINITION.get("limits", {}).get("max_attempts", 3)
+    arrived = item["status"]
     while item["status"] not in ("done", "blocked"):
         stage = current(item)
         if stage["by"] == "human":
@@ -452,7 +453,10 @@ def step(item):
             (checkout(item) / FEEDBACK).write_text(item["revision"])
         log(item, "agent task handed out")
         return agent_task(item, stage)
-    log(item, item["status"])
+    if item["status"] != arrived:
+        # Only when it got here on this call: every pass steps finished items too, and a "done" logged each
+        # time became a new progress comment on the issue every ten minutes.
+        log(item, item["status"])
     return None
 
 
