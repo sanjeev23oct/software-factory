@@ -190,10 +190,18 @@ def unchecked_tasks(item):
     return [task_id for _, waiting in open_sections(item) for task_id in waiting]
 
 
-def maker_skills():
+def skill_dirs(wt=None):
+    """Where a task's skill may live: the pipeline's own skills, then the repository's `.claude/skills`.
+
+    A team's shared skills (installed into each repository, for example from an ai-assets library) are
+    then usable by the factory as they are. The pipeline's copy wins when both have a skill of that name."""
+    return [core.TARGETS / core.NAME / "skills"] + ([Path(wt) / ".claude" / "skills"] if wt else [])
+
+
+def maker_skills(wt=None):
     """The skills a task may name, with what each one is for. Given to the agent that writes the tasks."""
     rows = []
-    for name, meta in sorted(lint_tasks.load_skills([core.TARGETS / core.NAME / "skills"]).items()):
+    for name, meta in sorted(lint_tasks.load_skills(skill_dirs(wt)).items()):
         if name.startswith("build-") and name != "build-tasks":
             rows.append("- `/{}`: {}{}".format(name, meta.get("description", ""),
                                                " Use for files matching: {}.".format(", ".join(meta["applies_to"])) if meta.get("applies_to") else ""))
@@ -381,8 +389,10 @@ def agent_task(item, stage, role=None):
                   "Verify that one section against the spec, by running its gate. You may write only under {0}/evidence/ and tick boxes in {0}/tasks.md.".format(item["spec"]),
                   "Do not change any code. The factory rejects a checker that does.",
                   "If the section passes, write its evidence and tick its boxes. If it fails, tick nothing and write your findings to {} at the checkout root for the maker.".format(FEEDBACK)]
-    if stage["id"] == "tasks" and maker_skills():
-        lines += ["", "Maker skills available in this pipeline. Name exactly one per task, chosen by the files the task touches:"] + maker_skills()
+    if stage["id"] == "tasks" and maker_skills(wt):
+        lines += ["", "Maker skills available in this pipeline. Name exactly one per task, chosen by the files the task touches:"] + maker_skills(wt)
+    if role == "maker":
+        lines.append("A skill a task names is in {}.".format(" or ".join(str(d) for d in skill_dirs(wt))))
     if (wt / FEEDBACK).exists() and role != "checker" and item.get("revision"):
         lines.append("The person who approves this work asked for changes. They are in {}. Revise what you wrote "
                      "to reflect every one, and keep the rest.".format(FEEDBACK))

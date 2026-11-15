@@ -205,15 +205,21 @@ built for Claude Code is used as it is:
 
 ### Make an existing skill a maker skill
 
-The plan agent chooses a skill for every task, from the pipeline's maker skills:
-the ones in `targets/<name>/skills/` whose names start with `build-`. To offer it
-one of your own:
+The plan agent chooses a skill for every task from the maker skills: every skill
+whose name starts with `build-`, in the pipeline's `targets/<name>/skills/` **or
+in the repository's own `.claude/skills/`**. So a repository whose skills are
+already called `build-*`, for example a team library installed into each
+repository, needs nothing more: the plan names them (`→ run: /build-api-controller`),
+the plan checker accepts them, and the maker follows them. When both places have a
+skill of the same name, the pipeline's copy wins.
 
-1. **Import it into the pipeline** under a `build-` name, either with the
-   editor's **Skills → Import** or by copying the folder:
-   `cp -r ~/code/shop/.claude/skills/add-endpoint targets/shop/skills/build-endpoint`
+For a skill with another name, or to tighten the plan check:
+
+1. **Give it a `build-` name**, by renaming it in the repository or copying it
+   into the pipeline: `cp -r ~/code/shop/.claude/skills/add-endpoint targets/shop/skills/build-endpoint`
 2. **Say which files it is for**, in its front matter, so the plan checker can
-   tell a task named the right skill:
+   tell a task named the right skill. Without `applies_to` the skill can still be
+   named; the checker just can't catch a task that names the wrong one.
 
    ```markdown
    ---
@@ -223,11 +229,15 @@ one of your own:
    ---
    ```
 
-3. **Add the factory's maker contract** at the end, the one line that makes it
-   safe in a maker/checker loop:
+3. **Mind the maker contract.** The factory's own prompt already tells the maker
+   not to tick tasks, run the section's gate or write evidence. If the skill tells
+   it to do any of those, the factory rejects the result, so take that part out of
+   the copy the factory uses.
 
-   > You are the maker. Do not tick the task, do not run the section's gate, and
-   > do not write evidence. Report what you built and anything the spec left undefined.
+**A hook that blocks test commands for makers** (a common maker-checker guard)
+works with the factory: the maker shouldn't run the gate anyway. If it only lets a
+command through with a marker, such as `# checker-agent`, tell the checker in the
+pipeline's `AGENTS.md` to add that marker to its test commands.
 
 ### Make an existing review skill the checker
 
