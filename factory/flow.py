@@ -445,6 +445,9 @@ def step(item):
             move(item)
             continue
         phase = item.get("phase", "make") if stage.get("checker") else None
+        if item.get("revision") and phase != "check":
+            # Kept on the item, not only in the checkout, so a paused pass does not lose what the person asked.
+            (checkout(item) / FEEDBACK).write_text(item["revision"])
         if stage.get("until") == "all-tasks-ticked" and not unchecked_tasks(item) \
                 and not (checkout(item) / FEEDBACK).exists() and phase != "check":
             log(item, "all tasks ticked")
@@ -458,9 +461,6 @@ def step(item):
             role = "checker" if phase == "check" else "maker"
             log(item, "{} session handed out".format(role), (open_sections(item) or [("", [])])[0][0])
             return agent_task(item, stage, role)
-        if item.get("revision"):
-            # Kept on the item, not only in the checkout, so a paused pass does not lose what the person asked.
-            (checkout(item) / FEEDBACK).write_text(item["revision"])
         log(item, "agent task handed out")
         return agent_task(item, stage)
     if item["status"] != arrived:
@@ -557,6 +557,7 @@ def finish(item, cost=None, session=None):
             shutil.move(str(wt / fill(item, produced)), str(reports(item) / Path(produced).name))
     if role == "maker":
         sessions["maker"] = session
+        item.pop("revision", None)
         # Normally the checker goes next. When every task is already ticked, the maker was fixing something a
         # script found, and that script is what re-checks it.
         item["phase"] = "check" if unchecked_tasks(item) else "make"
@@ -975,6 +976,8 @@ def record_misses(item, notes):
         key = note["who"] + "@" + note["when"]
         if key not in seen:
             seen.add(key)
+            # Marked before logging: log() saves the item, and a reply saved unmarked was logged again every pass.
+            item["misses_seen"] = sorted(seen)
             log(item, "verifier miss", "{}: {}".format(note["who"], " ".join(note["text"].split())[:300]))
     item["misses_seen"] = sorted(seen)
 
@@ -987,6 +990,9 @@ def change_requests(item, notes):
     used, found = set(item.get("revision_notes", [])), []
     for note in notes:
         key = "{}@{}".format(note["who"], note["when"])
+        first = (note["text"].strip().split() or [""])[0].lower()
+        if first.startswith(("approve", "/approve")):
+            continue   # an approval, or a near miss at one ("approve-screens"): never a list of changes
         if note["when"][:19] < item["waiting_since"] or key in used or not note["text"].strip() \
                 or "<!-- software-factory:" in note["text"] or note["who"] == os.environ.get("FACTORY_BOT_USER") \
                 or not may_approve(note["who"]):
@@ -998,9 +1004,9 @@ def change_requests(item, notes):
 def revise_target(item, gate):
     """The agent stage that wrote what the person at this gate is reading, or None.
 
-    A gate may name it with "revise". Otherwise it is the nearest agent stage before the gate that wrote a
-    document; a stage that was skipped and wrote nothing is passed over. A gate after code was built has none:
-    rework there is not something a comment should start."""
+    A gate may name it with "revise". Otherwise it is the nearest agent stage before the gate: one that writes a
+    document, passing over one that was skipped and wrote nothing, or the stage that builds the code, whose maker
+    then reworks what was built."""
     if gate.get("revise"):
         return gate["revise"]
     order = stages(item)
@@ -1010,7 +1016,7 @@ def revise_target(item, gate):
         if stage["by"] != "agent":
             continue
         if not stage.get("produces"):
-            return None
+            return stage["id"] if stage.get("checker") or stage.get("until") else None
         if any((wt / path.format(spec=item["spec"]).rstrip("/")).exists() for path in stage["produces"]):
             return stage["id"]
     return None
@@ -1035,10 +1041,14 @@ def revise(item, gate, target, requests):
     item.pop("waiting_since", None)
     item.pop("notified", None)            # the gate notice is posted again, with the revised document
     move(item, target)
+    if any(s["id"] == target and s.get("checker") for s in stages(item)):
+        item["phase"] = "make"            # the maker reworks; scripts and the gate check it again
     log(item, "changes requested", "{} -> {}: {}".format(gate["id"], target, " ".join(words.split())[:300]))
     produced = [Path(p).name for s in stages(item) if s["id"] == target for p in s.get("produces", [])]
-    ok, output = post_note(item, "Thanks. Revising {} with your reply; you'll get a new link to approve here. "
-                                 "<!-- software-factory:revise {} -->\n".format(" and ".join(produced) or "it", item["id"]), "note")
+    what = ("Revising {} with your reply".format(" and ".join(produced)) if produced
+            else "Reworking what was built with your reply; it is checked again")
+    ok, output = post_note(item, "Thanks. {}, and you'll get a new link to approve here. "
+                                 "<!-- software-factory:revise {} -->\n".format(what, item["id"]), "note")
     if not ok:
         print("{}: could not acknowledge the change request - {}".format(item["id"], output))
     print("{}: changes requested at `{}`, back to `{}`".format(item["id"], gate["id"], target))

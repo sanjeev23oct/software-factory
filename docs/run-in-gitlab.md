@@ -151,10 +151,15 @@ reply is used once, and a revision does not count against the stage's attempts.
 After five rounds the factory stops and leaves it to a maintainer.
 
 The agent to send it back to is the nearest one before the gate that wrote a
-document; at `approve-requirements` that is `requirements`. A gate can name it
-with `"revise": "<stage>"`. At a gate after the code is built, such as
-`approve-screens`, a reply does not start a rebuild: it is recorded as something
-the checks may have missed.
+document; at `approve-requirements` that is `requirements`. At a gate after the
+code is built, such as `approve-screens`, it is the build's maker: it reworks what
+was built to match the reply, and the scripts check it again before the gate
+reopens with a new **Try it** link. A gate can name the stage with
+`"revise": "<stage>"`. A reply at the screens gate is also recorded once as
+something the checks may have missed, the input for tuning them.
+
+Only `approve` approves. A reply that starts with something like it, such as
+`approve-screens`, does nothing: neither an approval nor a change.
 
 ## See what it is doing
 

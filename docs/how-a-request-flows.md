@@ -78,6 +78,10 @@ which revises the document, and the gate opens again with a new link.
 
 The issue's progress comment shows each step as it happens.
 
+**The person** tries it and replies `approve`. Or they reply with what is wrong:
+the next pass hands the reply to the build's maker, which reworks the change; the
+scripts check it again, and the gate reopens with a new **Try it** link.
+
 ## Pass 3: hand-over (a minute)
 
 | Stage | Who | What happens |

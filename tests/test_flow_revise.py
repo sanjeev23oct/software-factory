@@ -34,7 +34,7 @@ class RevisionTest(unittest.TestCase):
                        {"id": "visual-spec", "by": "agent", "produces": ["{spec}/visual-spec.md"]},
                        {"id": "approve-requirements", "by": "human"},
                        {"id": "tasks", "by": "agent", "produces": ["{spec}/tasks.md"]},
-                       {"id": "build", "by": "agent", "until": "all-tasks-ticked"},
+                       {"id": "build", "by": "agent", "until": "all-tasks-ticked", "checker": {"skill": "check-tasks"}},
                        {"id": "approve-screens", "by": "human", "baselines": True}]}
         self.posted = []
         for key, value in (("STATE", self.state), ("DEFINITION", self.definition),
@@ -97,8 +97,40 @@ class RevisionTest(unittest.TestCase):
     def test_a_stage_that_was_skipped_is_passed_over(self):
         self.assertEqual("requirements", flow.revise_target(self.item, self.definition["stages"][3]))
 
-    def test_no_revision_once_code_is_built(self):
-        self.assertIsNone(flow.revise_target(self.item, self.definition["stages"][6]))
+    def test_after_the_build_changes_go_back_to_its_maker(self):
+        self.assertEqual("build", flow.revise_target(self.item, self.definition["stages"][6]))
+
+    def screens_gate(self, notes):
+        self.item.update(stage="approve-screens", notified="approve-screens", phase="make")
+        self.save(self.item)
+        return self.gates(notes)
+
+    def test_a_reply_at_the_screens_gate_reworks_the_build(self):
+        item = self.screens_gate([note("lakshya.kalra", "2026-11-10T11:40:00Z", "Needs a header, a footer and a menu.")])
+        self.assertEqual(("build", "pending", "make"), (item["stage"], item["status"], item["phase"]))
+        self.assertIn("a header, a footer and a menu", item["revision"])
+        self.assertIn("Reworking what was built", self.posted[0])
+
+    def test_rework_is_handed_to_the_maker_even_with_every_task_ticked(self):
+        item = self.screens_gate([note("lakshya.kalra", "2026-11-10T11:40:00Z", "Needs a menu.")])
+        with patch.object(flow, "unchecked_tasks", return_value=[]), \
+                patch.object(flow, "open_sections", return_value=[]), \
+                patch.object(flow, "agent_task", side_effect=lambda item, stage, role=None: {"role": role}):
+            self.assertEqual({"role": "maker"}, flow.step(item))
+        self.assertIn("Needs a menu.", (self.wt / flow.FEEDBACK).read_text())
+
+    def test_a_near_miss_at_approving_is_not_a_change_request(self):
+        item = self.screens_gate([note("lakshya.kalra", "2026-11-10T11:40:00Z", "approve-screens")])
+        self.assertEqual("approve-screens", item["stage"])
+        self.assertNotIn("revision", item)
+
+    def test_a_reply_at_the_screens_gate_is_logged_as_a_miss_once(self):
+        reply = note("lakshya.kalra", "2026-11-10T11:40:00Z", "approve-screens")
+        self.screens_gate([reply])
+        for _ in range(2):   # later passes start from what the last one saved
+            self.gates([reply])
+        misses = [line for line in (self.state / "events.jsonl").read_text().splitlines() if "verifier miss" in line]
+        self.assertEqual(1, len(misses))
 
     def test_a_gate_may_name_the_stage_to_revise(self):
         self.assertEqual("tasks", flow.revise_target(self.item, {"id": "approve-requirements", "revise": "tasks"}))
