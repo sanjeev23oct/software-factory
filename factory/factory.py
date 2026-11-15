@@ -697,6 +697,9 @@ def run_headless(task):
     cmd = ["claude", "-p", task["prompt"], "--output-format", "json", "--setting-sources", "project",
            "--append-system-prompt", body, "--permission-mode", "acceptEdits", "--max-budget-usd", BUDGET_USD,
            "--tools", tools, "--add-dir", str(HOME)]
+    if NAME and (TARGETS / NAME).is_dir():
+        # The pipeline's AGENTS.md and skills live outside the checkout; on a runner, outside HOME too.
+        cmd += ["--add-dir", str(TARGETS / NAME)]
     for path in task.get("add_dirs", []):
         cmd += ["--add-dir", str(path)]
     if MODEL:
