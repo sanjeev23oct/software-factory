@@ -123,6 +123,8 @@ each changed repository and posts their links on the original issue. It never
 merges them. Merge the requests in a compatible order: two GitLab merges
 cannot happen as one atomic operation.
 
+What one request goes through, pass by pass: [how-a-request-flows.md](how-a-request-flows.md).
+
 ## Approve a gate
 
 When work reaches a gate, the factory comments on the issue:

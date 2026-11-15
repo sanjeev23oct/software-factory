@@ -152,6 +152,9 @@ issue. A Claude subscription works, through `claude setup-token`. Setup is in
 [docs/run-in-gitlab.md](docs/run-in-gitlab.md), and the job file is
 [factories/ci/gitlab-ci.yml](factories/ci/gitlab-ci.yml).
 
+One request from the issue to the merge request, pass by pass, including what is
+cloned where: [docs/how-a-request-flows.md](docs/how-a-request-flows.md).
+
 ## Other repositories, and defining your own factory
 
 The factory can work on a repository elsewhere on disk. Each one is a folder
