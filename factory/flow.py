@@ -519,7 +519,10 @@ def finish(item, cost=None, session=None):
             errors.append("the checker wrote findings and also ticked tasks; a failed section must stay unticked")
     if errors:
         item["attempts"][stage["id"]] = tries + 1
-        log(item, "{} result rejected".format(role or "agent"), "\n".join(errors), cost)
+        reply = " ".join(str(getattr(core, "LAST_REPLY", "") or "").split())[:1200]
+        log(item, "{} result rejected".format(role or "agent"), "\n".join(errors) + ("\nThe agent said: " + reply if reply else ""), cost)
+        if reply:
+            print("{}: the agent said: {}".format(item["id"], reply))
         if role:
             # Undo what was not allowed, so the next session starts from the last accepted state.
             core.sh(["git", "checkout", "-q", "--", "."], cwd=wt)

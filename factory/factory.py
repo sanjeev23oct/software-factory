@@ -719,8 +719,9 @@ def run_headless(task):
         if USAGE_LIMIT.search(str(data.get("result"))):
             raise UsageLimit("Claude's usage limit was reached: {}".format(str(data.get("result"))[:300]))
         raise FactoryError("{} agent failed: {}".format(task["agent"], str(data.get("result"))[:2000]))
-    global LAST_SESSION
+    global LAST_SESSION, LAST_REPLY
     LAST_SESSION = data.get("session_id")   # each run is its own session; the flow engine records which one did what
+    LAST_REPLY = str(data.get("result") or "")   # what the agent said last: the only clue when it stops without the work
     return data.get("total_cost_usd")
 
 

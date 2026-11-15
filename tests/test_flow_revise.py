@@ -142,6 +142,18 @@ class RevisionTest(unittest.TestCase):
         self.assertEqual("approve-requirements", item["stage"])
         self.assertIn("A maintainer will pick it up", self.posted[0])
 
+    def test_a_rejected_result_keeps_what_the_agent_said(self):
+        self.item.update(stage="requirements", status="pending")
+        (self.wt / "specs" / "1" / "requirements.md").unlink()
+        with patch.object(flow.core, "LAST_REPLY", "I need more detail before I can write requirements.", create=True), \
+                patch.object(flow.core, "changed_paths", return_value=set()), \
+                patch.object(flow.core, "PROTECTED", ()), patch.object(flow, "REPOSITORIES", None), \
+                patch.object(flow, "fill", lambda item, text: text.format(spec=item["spec"])):
+            with self.assertRaises(flow.core.FactoryError):
+                flow.finish(self.item, 0.03)
+        events = (self.state / "events.jsonl").read_text()
+        self.assertIn("The agent said: I need more detail", events)
+
     def test_the_agent_gets_the_changes_until_it_finishes(self):
         item = self.gates([note("vikram.virk", "2026-11-10T11:39:52Z", "Several tasters")])
         with patch.object(flow, "agent_task", return_value={"stage": "requirements"}):
