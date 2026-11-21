@@ -690,6 +690,28 @@ def apply(issue, stage, cost=None):
 # --- headless driver -------------------------------------------------------
 
 
+# Files that hold secrets or real data, not code: agents never read them. A target can replace the
+# list with "deny_read" in target.json. Liquibase changesets and other source .sql files stay readable.
+DENY_READ = ["**/.env", "**/.env.*", "**/appsettings.Production*.json", "**/appsettings.Uat*.json",
+             "**/secrets/**", "**/*.pem", "**/*.key", "**/*.pfx", "**/*.p12",
+             "**/*dump*.sql", "**/*backup*.sql", "**/*.bak", "**/*.csv", "**/*.xlsx", "**/*.xls", "**/*.log"]
+
+
+def knowledge_dir():
+    """The organisation's knowledge: shared services and platforms agents reuse instead of rebuilding.
+    By default `knowledge/` next to `targets/` in the factory project; FACTORY_KNOWLEDGE_DIR overrides."""
+    path = Path(os.environ.get("FACTORY_KNOWLEDGE_DIR") or TARGETS.parent / "knowledge")
+    return path if (path / "INDEX.md").is_file() else None
+
+
+def deny_read():
+    if NAME and (TARGETS / NAME / "target.json").exists():
+        configured = json.loads((TARGETS / NAME / "target.json").read_text()).get("deny_read")
+        if configured is not None:
+            return configured
+    return DENY_READ
+
+
 def run_headless(task):
     """Run a task with `claude -p`. Returns the cost in dollars."""
     _, front, body = (HOME / ".claude" / "agents" / (task["agent"] + ".md")).read_text().split("---\n", 2)
@@ -700,6 +722,13 @@ def run_headless(task):
     if NAME and (TARGETS / NAME).is_dir():
         # The pipeline's AGENTS.md and skills live outside the checkout; on a runner, outside HOME too.
         cmd += ["--add-dir", str(TARGETS / NAME)]
+    if knowledge_dir():
+        cmd += ["--add-dir", str(knowledge_dir())]
+    deny = deny_read()
+    settings = {"permissions": {"deny": ["Read({})".format(p) for p in deny]},
+                "hooks": {"PreToolUse": [{"matcher": "Bash", "hooks": [
+                    {"type": "command", "command": "python3 {}".format(HOME / "factory" / "scripts" / "read_guard.py")}]}]}}
+    cmd += ["--settings", json.dumps(settings)]
     for path in task.get("add_dirs", []):
         cmd += ["--add-dir", str(path)]
     if MODEL or task.get("model"):
@@ -710,7 +739,8 @@ def run_headless(task):
             "Bash(git diff:*)", "Bash(git log:*)",
             "Bash(git show:*)", "Bash(git status:*)", "Bash(git rev-parse:*)", "Bash(git merge main)"]
     try:
-        proc = subprocess.run(cmd, cwd=task["cwd"], text=True, capture_output=True, timeout=AGENT_TIMEOUT)
+        proc = subprocess.run(cmd, cwd=task["cwd"], text=True, capture_output=True, timeout=AGENT_TIMEOUT,
+                              env=dict(os.environ, FACTORY_DENY_READ=json.dumps(deny)))
     except subprocess.TimeoutExpired:
         raise FactoryError("{} agent ran past {} minutes and was stopped".format(task["agent"], AGENT_TIMEOUT // 60))
     try:

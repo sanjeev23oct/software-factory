@@ -82,3 +82,9 @@ The tasks that build the screen use the region `data-testid`s the contract names
 - All boxes start unticked.
 
 If `factory_feedback.md` exists, a check rejected your last attempt. Fix every finding in it.
+
+## Existing services
+
+Where the requirements name an existing shared service, plan tasks that **call** it as its entry in
+the organisation knowledge describes (client, configuration, the endpoints to use), never tasks that
+rebuild what it does. A task that re-implements a catalogued service fails review.

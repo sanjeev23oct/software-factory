@@ -135,7 +135,9 @@
         "--base",
         "{base}",
         "--report",
-        "{checkout}/{spec}/evidence/security.md"
+        "{checkout}/{spec}/evidence/security.md",
+        "--allow-file",
+        "{target}/pii-allow.txt"
       ]
     },
     {

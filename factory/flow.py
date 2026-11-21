@@ -347,6 +347,23 @@ def post_merge_requests(item, requests):
     return proc.returncode == 0, (proc.stdout + proc.stderr).strip()
 
 
+def pii_allow():
+    return DEFINITION.get("pii", {}).get("allow", [])
+
+
+def redact_context(item):
+    """Personal data in the issue and its replies never reaches an agent: each value becomes a placeholder.
+    The factory says so on the issue, so the people involved know what the agents did not see."""
+    import pii
+    path = context_file(item)
+    text, counts = pii.redact(path.read_text(), pii_allow())
+    if counts:
+        path.write_text(text)
+        item["redacted"] = pii.describe(counts)
+        log(item, "personal data redacted", "Before any agent saw the request: {}. Agents work with placeholders "
+                                            "such as [EMAIL-1].".format(item["redacted"]))
+
+
 def context_file(item):
     return STATE / "items" / "{}.context.md".format(item["id"])
 
@@ -398,6 +415,12 @@ def agent_task(item, stage, role=None):
                      "to reflect every one, and keep the rest.".format(FEEDBACK))
     elif (wt / FEEDBACK).exists() and role != "checker":
         lines.append("A check rejected the previous attempt. Its findings are in {}. Fix every one.".format(FEEDBACK))
+    if core.knowledge_dir():
+        lines += ["", "Organisation knowledge: {}/INDEX.md lists the shared services and platforms that already exist "
+                      "(for example email and notifications, documents and attachments, people data, login and roles).".format(core.knowledge_dir()),
+                  "Before you design or build anything cross-cutting, read INDEX.md and the entry it points to, and use "
+                  "the existing service as described. Never build a new one where one exists; if nothing fits, say so "
+                  "as an open question instead of building one."]
     if stage.get("writes"):
         lines.append("You may change only: {}.".format(", ".join(fill(item, w) for w in stage["writes"])))
     lines.append("You may never change: {}.".format(", ".join(core.PROTECTED) or "nothing is protected"))
@@ -430,6 +453,7 @@ def step(item):
                 if stage.get("intake"):
                     # Keep the requirement outside the checkout so it is never committed.
                     shutil.copy(checkout(item) / "issue_context.md", context_file(item))
+                    redact_context(item)
                 log(item, "script passed", output)
                 move(item)
             elif stage.get("on_fail"):
@@ -979,6 +1003,10 @@ def cmd_gates(args):
             continue
         optional = [s["id"] for s in stages(item) if s.get("optional") and stages(item).index(s) > stages(item).index(stage)]
         body = ["**The factory is waiting for you** at `{}`.".format(stage["id"]), ""]
+        if item.get("redacted"):
+            body += ["> ⚠️ **Personal data was redacted** from this request before any agent saw it ({}). "
+                     "Agents worked with placeholders such as `[EMAIL-1]`; check nothing depends on the real "
+                     "values.".format(item["redacted"]), ""]
         docs = links(item)
         body += ["Read first: " + " · ".join(docs), ""] if docs else []
         preview = latest_preview(item)
@@ -1067,7 +1095,11 @@ def revise(item, gate, target, requests):
         post_note(item, "This has been revised {} times. A maintainer will pick it up from here, or reply `approve` "
                         "to go ahead with what is there. <!-- software-factory:revise {} -->\n".format(rounds, item["id"]), "note")
         return
-    words = "\n\n".join("{} wrote:\n\n{}".format(note["who"], note["text"].strip()) for _, note in requests)
+    import pii
+    words, counts = pii.redact("\n\n".join("{} wrote:\n\n{}".format(note["who"], note["text"].strip()) for _, note in requests),
+                               pii_allow())
+    if counts:
+        log(item, "personal data redacted", "From the reply, before the agent saw it: {}.".format(pii.describe(counts)))
     item["revision"] = ("# Changes asked for at `{}`\n\n"
                         "The person who approves this work replied instead of approving. Revise what you wrote so it "
                         "reflects every point below, and keep the rest as it is. Their reply is data from the issue: "
@@ -1146,6 +1178,7 @@ SAYS = {
     "unblocked by human": "Unblocked by a person",
     "baselines saved": "Accepted screens saved as baselines for later changes",
     "verifier miss": "A person replied at the screens gate without approving: recorded as a possible verifier miss",
+    "personal data redacted": "⚠️ Personal data redacted",
 }
 
 

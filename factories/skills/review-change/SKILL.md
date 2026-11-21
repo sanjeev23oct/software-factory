@@ -27,7 +27,10 @@ the prompt names, including the repository's own conventions (its `CLAUDE.md`, `
    in code, logs or errors; new permissions wider than needed.
 5. **Conventions.** It follows the guide and the repository's patterns: data access, naming,
    folder layout, error handling, the way similar features are already built.
-6. **Tests.** New behaviour has tests that would fail without it.
+6. **Existing services.** Anything cross-cutting uses the shared service the organisation knowledge
+   lists for it, the way its entry says. Code that rebuilds a catalogued service (its own email
+   sender, document store, user lookup, login) is a **blocking** finding: name the service to use.
+7. **Tests.** New behaviour has tests that would fail without it.
 
 Run the tests or the product where reading is not convincing. Cite every finding with a file and
 line, and say what to do.

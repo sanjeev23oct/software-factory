@@ -7,6 +7,8 @@ Only the change is judged, so findings already on the base branch never block a 
 
 - secrets: gitleaks over the commits since the base
 - code: semgrep's default rules over the files the change touched; ERROR findings block
+- personal data: emails, phone numbers, IP and MAC addresses, Aadhaar, PAN and card numbers in the
+  added lines, and added files that look like data rows; reported masked, never in full
 - packages: when a manifest or lock file changed, the vulnerable packages (high or critical)
   on this branch that the base does not already have. dotnet for .NET, pnpm or npm for Node.
 
@@ -107,6 +109,34 @@ def vulnerable(repo, files):
     return found
 
 
+INSERT_ROW = re.compile(r"^\s*(?:INSERT\s+INTO|\(\s*['\d])", re.I)
+
+
+def mask(value):
+    return value[:2] + "***" + (value[-2:] if len(value) > 6 else "")
+
+
+def personal_data(repo, base, allow):
+    """Personal or infrastructure data in the lines the change adds, and added files that look like data."""
+    sys.path.insert(0, str(Path(__file__).parent))
+    import pii
+    proc = run(["git", "diff", "--no-color", "-U0", "{}...HEAD".format(base)], repo)
+    found, path, rows = [], None, {}
+    for line in proc.stdout.splitlines():
+        if line.startswith("+++ "):
+            path = line[6:] if line.startswith("+++ b/") else None
+            continue
+        if not path or not line.startswith("+") or line.startswith("+++"):
+            continue
+        for kind, value in pii.find(line[1:], allow):
+            found.append("{} {} in {}".format(kind.lower(), mask(value), path))
+        if path.lower().endswith((".csv", ".tsv")) or (path.lower().endswith(".sql") and INSERT_ROW.match(line[1:])):
+            rows[path] = rows.get(path, 0) + 1
+    found += ["{} adds {} rows of data: real records do not belong in the code; use a few obviously fake ones"
+              .format(f, n) for f, n in sorted(rows.items()) if n >= 50]
+    return found
+
+
 def packages(repo, base, files):
     if not any(DOTNET.search(f) or f.endswith(NODE_LOCKS) for f in files):
         return []
@@ -126,13 +156,19 @@ def main():
     parser.add_argument("--repo", required=True)
     parser.add_argument("--base", required=True)
     parser.add_argument("--report")
+    parser.add_argument("--allow-file", help="regexes, one per line, for values that are fine (e.g. a public support email)")
     args = parser.parse_args()
     repo = Path(args.repo)
     rows, findings = [], []
+    allow_file = Path(args.allow_file) if args.allow_file else None
+    allow = [l.strip() for l in allow_file.read_text().splitlines() if l.strip() and not l.startswith("#")] \
+        if allow_file and allow_file.exists() else []
     try:
         files = changed_files(repo, args.base)
         for name, check in (("Secrets (gitleaks, commits since {})".format(args.base), lambda: secrets(repo, args.base)),
                             ("Code (semgrep p/default, {} changed files)".format(len(files)), lambda: code(repo, files)),
+                            ("Personal data (emails, phones, IPs, MACs, Aadhaar, PAN, cards, data rows)",
+                             lambda: personal_data(repo, args.base, allow)),
                             ("New vulnerable packages (high, critical)", lambda: packages(repo, args.base, files))):
             found = check()
             rows.append((name, "PASS" if not found else "FAIL", len(found)))

@@ -96,6 +96,23 @@ The request is done. **A person reviews and merges** the merge request like any
 other: the project's own CI runs, and its normal deployment takes it from there.
 The factory never merges.
 
+## Personal data and shared services
+
+- **Redacted before agents see it.** Emails, phone numbers, IP and MAC addresses, Aadhaar, PAN and
+  card numbers in the issue and in replies become placeholders such as `[EMAIL-1]` before any agent
+  reads them. The issue's progress comment and every gate notice say so, with a count.
+- **Files agents never read:** `.env` files, production and UAT settings, keys and certificates,
+  database dumps and backups, CSV and Excel files, logs. Denied by Claude Code's permissions and by a
+  hook on shell commands. A pipeline sets its own list with `deny_read` in `target.json`.
+- **Nothing personal in the change:** the security gate also scans the added lines for the same
+  kinds of data, and added files that look like data rows. It reports values masked. Values that are
+  fine (a public support address) go in the pipeline's `pii-allow.txt`, one regex per line.
+- **Shared services reused:** agents check the organisation knowledge before designing anything
+  cross-cutting, and the reviewer blocks a change that rebuilds a catalogued service. See
+  [organisation-knowledge.md](organisation-knowledge.md).
+
+Pattern checks catch structured values well; they cannot recognise every name or free-text detail.
+
 ## Cost and limits
 
 **Models by kind of work.** Planning (requirements, design, plan) uses a stronger model; building and
