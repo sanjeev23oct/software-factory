@@ -702,8 +702,9 @@ def run_headless(task):
         cmd += ["--add-dir", str(TARGETS / NAME)]
     for path in task.get("add_dirs", []):
         cmd += ["--add-dir", str(path)]
-    if MODEL:
-        cmd += ["--model", MODEL]
+    if MODEL or task.get("model"):
+        # FACTORY_MODEL forces one model for every run; otherwise the pipeline's choice for this kind of work.
+        cmd += ["--model", MODEL or task["model"]]
     cmd += ["--allowedTools", "Bash(python3:*)", "Bash({})".format(PRESUBMIT[0]), *EXTRA_TOOLS,
             *task.get("allowed_tools", []),
             "Bash(git diff:*)", "Bash(git log:*)",

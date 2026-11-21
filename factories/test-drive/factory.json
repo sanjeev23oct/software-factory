@@ -124,6 +124,24 @@
       ]
     },
     {
+      "id": "security",
+      "by": "script",
+      "skill": "security-scan",
+      "on_fail": "build",
+      "commits": true,
+      "error_code": 2,
+      "run": [
+        "python3",
+        "{scripts}/security_scan.py",
+        "--repo",
+        "{checkout}",
+        "--base",
+        "{base}",
+        "--report",
+        "{checkout}/{spec}/evidence/security.md"
+      ]
+    },
+    {
       "id": "visual-verify",
       "by": "script",
       "skill": "visual-verify",
@@ -137,6 +155,29 @@
         "{checkout}/{spec}",
         "--repo",
         "{checkout}"
+      ]
+    },
+    {
+      "id": "ai-review",
+      "by": "agent",
+      "skill": "review-change",
+      "agent": "review",
+      "writes": [
+        "{spec}/review.md"
+      ],
+      "produces": [
+        "{spec}/review.md"
+      ]
+    },
+    {
+      "id": "check-review",
+      "by": "script",
+      "skill": "check-review",
+      "on_fail": "build",
+      "run": [
+        "python3",
+        "{scripts}/check_verdict.py",
+        "{checkout}/{spec}/review.md"
       ]
     },
     {

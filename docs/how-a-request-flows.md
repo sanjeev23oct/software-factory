@@ -72,7 +72,10 @@ which revises the document, and the gate opens again with a new link.
 | build | maker, then checker | Per section: a **maker** session builds it by following the named skills and commits. A **checker**, a separate session that never saw the maker, runs the section's checks and tests, writes `evidence/<n>-gate.md`, and ticks the section only if everything passed. A failure goes back to the maker with the findings, up to three tries |
 | check-evidence | script | Re-runs the commands the checkers recorded: the factory never takes an agent's word for a result |
 | verify | script | `targets/shop/presubmit`: the project's build and tests. A failure goes back to build |
+| security | script | **Mandatory.** What the change adds, compared with `main`: secrets (gitleaks), risky code (semgrep), and new high or critical vulnerable packages (`dotnet list package --vulnerable`, `pnpm audit`). Findings go back to the maker; a check that cannot run stops the request for a person. The report is committed as `evidence/security.md` |
 | visual-verify | script | With a reference screenshot: the built screen measured against it in Chrome |
+| ai-review | agent | A reviewer that did not write the change reads the whole diff against the requirements: does it do what was asked, AI slop (dead code, needless abstraction, invented APIs, silent fallbacks), security, the repository's conventions, tests. Writes `review.md` with a verdict |
+| check-review | script | Passes only on `Verdict: APPROVE`; blocking findings go back to the maker, and the review runs again |
 | preview | script | Posts the **Try it** link, when a preview deployment is set up |
 | **approve-screens** | **person** | Pushes the branch, comments *"waiting for you"* with the evidence and screenshots, saves progress, and the job ends |
 
@@ -94,6 +97,15 @@ other: the project's own CI runs, and its normal deployment takes it from there.
 The factory never merges.
 
 ## Cost and limits
+
+**Models by kind of work.** Planning (requirements, design, plan) uses a stronger model; building and
+checking (makers, checkers, the reviewer), which are most of the sessions, a cheaper one. Defaults:
+`plan` opus, `build` sonnet, `check` sonnet. A pipeline changes them in `factory.json`,
+`"models": {"plan": "opus", "build": "sonnet", "check": "haiku"}`, and one stage with `"model"`.
+`FACTORY_MODEL` forces one model for every run.
+
+**Checked sections are pushed as they pass,** so the branch on GitLab shows the work as it is built,
+and a pass that dies part-way loses no checked section.
 
 A typical request is 10 to 12 agent sessions: requirements, plan, and a maker
 and a checker per section, plus any retries. A session stops at

@@ -42,6 +42,24 @@
       ]
     },
     {
+      "id": "security",
+      "by": "script",
+      "skill": "security-scan",
+      "on_fail": "fix",
+      "commits": true,
+      "error_code": 2,
+      "run": [
+        "python3",
+        "{scripts}/security_scan.py",
+        "--repo",
+        "{checkout}",
+        "--base",
+        "{base}",
+        "--report",
+        "{checkout}/{spec}/evidence/security.md"
+      ]
+    },
+    {
       "id": "review",
       "by": "agent",
       "skill": "review-change",

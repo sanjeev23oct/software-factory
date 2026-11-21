@@ -403,6 +403,7 @@ def agent_task(item, stage, role=None):
     lines.append("You may never change: {}.".format(", ".join(core.PROTECTED) or "nothing is protected"))
     lines.append("Do not commit, push, or open a merge request. The factory does that.")
     return {"id": item["id"], "stage": stage["id"], "agent": stage.get("agent", "spec"), "role": role,
+            "model": model_for(stage, role),
             "cwd": str(wt), "prompt": "\n".join(lines), "add_dirs": [str(path) for path in extra_paths.values()],
             "allowed_tools": [tool for entry in (REPOSITORIES.repos.values() if extra_paths else [])
                               for tool in entry.get("allowed_tools", [])]}
@@ -570,6 +571,7 @@ def finish(item, cost=None, session=None):
         if findings is None:
             item["attempts"][stage["id"]] = 0
             log(item, "checker session passed the section", "session {}; evidence written and stamped".format((session or "unknown")[:8]), cost)
+            push_checked_section(item)
         else:
             item["attempts"][stage["id"]] = tries + 1
             log(item, "checker session failed the section", findings[:600], cost)
@@ -751,7 +753,38 @@ def validate(definition, skills_dir):
         seen.append(name)
     if not any(s.get("by") == "human" for s in stage_list) and not definition.get("gate_outside"):
         problems.append("no stage is done by a human; a factory needs at least one human gate")
+    if builds and any(writes_code(s) for s in stage_list) and not any(
+            s.get("skill") == "security-scan" and s.get("enabled", True) for s in stage_list):
+        problems.append("agents in this pipeline write code, so it needs the security gate: "
+                        "a `security-scan` stage after the build (see factories/ui-app/factory.json)")
+    unknown = set(definition.get("models", {})) - set(MODEL_KINDS)
+    if unknown:
+        problems.append("models: unknown kind {}; use {}".format(", ".join(sorted(unknown)), ", ".join(MODEL_KINDS)))
     return problems
+
+
+def writes_code(stage):
+    """An agent stage that builds or fixes code, as opposed to one that writes a document."""
+    return stage.get("by") == "agent" and stage.get("enabled", True) and (
+        bool(stage.get("checker")) or bool(stage.get("until")) or stage.get("skill") in ("fix-bug", "build-tasks"))
+
+
+# Which model does which kind of work. Planning is where a stronger model pays for itself; building
+# and checking are the bulk of the sessions, so they default to a cheaper one. A pipeline sets its
+# own with "models", and a single stage with "model".
+MODEL_KINDS = {"plan": "opus", "build": "sonnet", "check": "sonnet"}
+
+
+def model_for(stage, role=None):
+    if stage.get("model"):
+        return stage["model"]
+    if role == "checker" or stage.get("skill") == "review-change":
+        kind = "check"
+    elif role == "maker" or writes_code(stage):
+        kind = "build"
+    else:
+        kind = "plan"
+    return dict(MODEL_KINDS, **DEFINITION.get("models", {}))[kind]
 
 
 def cmd_scheduled(args):
@@ -1295,6 +1328,18 @@ def cmd_page(args):
         *cards, "</main>", "</body>", "</html>", ""])
     (STATE / "status.html").write_text(page)
     print("page: {} request(s) on status.html".format(len(items)))
+
+
+def push_checked_section(item):
+    """On a runner, push the branch as soon as a section is checked: people can follow the work on GitLab
+    while a long build runs, and a pass that dies later loses no checked section. Only checked work is
+    pushed, so the branch never shows a section the checker has not passed."""
+    if not os.environ.get("FACTORY_REPOS_DIR") or item.get("sha"):
+        return
+    import cloud
+    pushed = cloud.push_branch(core.REPO, "factory/{}".format(item["id"]), token_env=core.TOKEN_ENV)
+    print("{}: checked section pushed{}".format(item["id"], "" if pushed.returncode == 0 else
+                                                 " - not pushed: " + (pushed.stderr or "").strip()[:200]))
 
 
 def cmd_publish(args):

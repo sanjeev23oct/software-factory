@@ -13,7 +13,10 @@
     "build-backend",
     "build-db",
     "build-tests",
-    "check-tasks"
+    "check-review",
+    "check-tasks",
+    "review-change",
+    "security-scan"
   ],
   "stages": [
     {
@@ -115,6 +118,47 @@
       "on_fail": "build",
       "run": [
         "{presubmit}"
+      ]
+    },
+    {
+      "id": "security",
+      "by": "script",
+      "skill": "security-scan",
+      "on_fail": "build",
+      "commits": true,
+      "error_code": 2,
+      "run": [
+        "python3",
+        "{scripts}/security_scan.py",
+        "--repo",
+        "{checkout}",
+        "--base",
+        "{base}",
+        "--report",
+        "{checkout}/{spec}/evidence/security.md"
+      ]
+    },
+    {
+      "id": "ai-review",
+      "by": "agent",
+      "skill": "review-change",
+      "agent": "review",
+      "writes": [
+        "{spec}/review.md"
+      ],
+      "produces": [
+        "{spec}/review.md"
+      ]
+    },
+    {
+      "id": "check-review",
+      "by": "script",
+      "skill": "check-review",
+      "on_fail": "build",
+      "run": [
+        "python3",
+        "{scripts}/check_verdict.py",
+        "{checkout}/{spec}/review.md"
       ]
     },
     {
